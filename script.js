@@ -960,9 +960,12 @@ function qtLoad(i) {
   iframe.src = `https://www.youtube.com/embed/${t.ytId}?autoplay=1&rel=0&origin=${origin}`;
   iframe.style.cssText = 'display:block; position:absolute; inset:0; width:100%; height:100%; border:none; z-index:1;';
 
-  // 2) 스플래시 숨기기
-  const splash = document.getElementById('qtp-splash');
-  if (splash) splash.style.display = 'none';
+  // 2) 스플래시는 그대로 유지 — YouTube 로고/영상/제목 카드를 가려서
+  //    오디오만 재생되는 것처럼 보이게 함 (z-index로 iframe을 덮음)
+  const splashLogo = document.getElementById('qtp-splash-logo');
+  const splashHint = document.getElementById('qtp-splash-hint');
+  if (splashLogo) splashLogo.textContent = '♪';
+  if (splashHint) splashHint.textContent = 'Now Playing';
 
   // 3) 상태 업데이트
   qtLoaded  = true;
@@ -1013,6 +1016,8 @@ function qtTogglePlay() {
   const iframe = document.getElementById('qt-iframe');
   if (!iframe) return;
 
+  const splashHint = document.getElementById('qtp-splash-hint');
+
   if (qtPlaying) {
     // 일시정지
     iframe.contentWindow?.postMessage(
@@ -1020,6 +1025,7 @@ function qtTogglePlay() {
     qtPlaying = false;
     const btn = document.getElementById('qt-play');
     if (btn) btn.textContent = '▶';
+    if (splashHint) splashHint.textContent = 'Paused';
   } else {
     // 재생 재개
     iframe.contentWindow?.postMessage(
@@ -1027,6 +1033,7 @@ function qtTogglePlay() {
     qtPlaying = true;
     const btn = document.getElementById('qt-play');
     if (btn) btn.textContent = '⏸';
+    if (splashHint) splashHint.textContent = 'Now Playing';
   }
 }
 
@@ -1046,6 +1053,10 @@ function qtCloseBoth() {
   if (iframe) { iframe.src = 'about:blank'; iframe.style.display = 'none'; }
   const splash = document.getElementById('qtp-splash');
   if (splash) splash.style.display = 'flex';
+  const splashLogo = document.getElementById('qtp-splash-logo');
+  const splashHint = document.getElementById('qtp-splash-hint');
+  if (splashLogo) splashLogo.textContent = '▶';
+  if (splashHint) splashHint.textContent = 'Press ▶ to play';
   qtLoaded = false; qtPlaying = false;
   clearInterval(qtTimer);
   const fill = document.getElementById('qtp-fill');
