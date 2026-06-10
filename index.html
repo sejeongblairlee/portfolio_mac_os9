@@ -343,7 +343,10 @@
 
         <!-- Noise canvas + particle target -->
         <div class="cu-video-wrap">
-          <canvas id="cu-canvas" class="cu-vid"></canvas>
+          <video id="cu-canvas" class="cu-vid" autoplay muted loop playsinline>
+            <source src="src/CU-SeeME/hello.mp4" type="video/mp4">
+            <source src="src/CU-SeeME/hello.mov" type="video/quicktime">
+          </video>
           <div class="cu-scanlines"></div>
           <div class="cu-particles" id="cu-particles"></div>
         </div>

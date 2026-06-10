@@ -234,8 +234,9 @@ function playSound(name) {
           screen.addEventListener('transitionend', () => {
             screen.remove();
             window.removeEventListener('resize', _resizeHandler);
-            // 초기 상태: CU-SeeMe만 오픈
+            // 초기 상태: Projects 폴더 + CU-SeeMe 오픈
             // QuickTime Player는 CU-SeeMe 닫은 후 등장
+            openWindow('portfolio');
             setTimeout(openCuSeeMe, 1500);
           }, { once: true });
         }, 300);
@@ -248,57 +249,17 @@ function playSound(name) {
 // CU-SeeMe — 2개 독립 창 (Local + Remote)
 // ═══════════════════════════════════════════════════════════
 
-let _cuNoiseRaf = null;
 let _cuStream   = null;
 
-// ─── Local 창: 90s 노이즈 캔버스 ───────────────────────────
+// ─── Local 창: Blair 소개 영상 재생 ─────────────────────────
 function initCuCanvas() {
-  const canvas = document.getElementById('cu-canvas');
-  if (!canvas) return;
-  const ctx = canvas.getContext('2d');
+  const video = document.getElementById('cu-canvas');
+  if (!video) return;
 
-  canvas.width  = canvas.offsetWidth  || 238;
-  canvas.height = canvas.offsetHeight || 178;
-
-  let tick = 0;
-  const TARGET_FPS = 6;          // 4~8fps 끊기는 느낌
-  const SKIP = Math.round(60 / TARGET_FPS);
-
-  function draw() {
-    tick++;
-    _cuNoiseRaf = requestAnimationFrame(draw);
-    if (tick % SKIP !== 0) return;
-
-    const w = canvas.width, h = canvas.height;
-
-    // 어두운 배경
-    ctx.fillStyle = '#111';
-    ctx.fillRect(0, 0, w, h);
-
-    // 인물 실루엣 그라디언트 (밝은 타원)
-    const grd = ctx.createRadialGradient(w*.5, h*.38, h*.04, w*.5, h*.38, h*.52);
-    grd.addColorStop(0,   'rgba(155,155,155,.55)');
-    grd.addColorStop(.45, 'rgba(70,70,70,.3)');
-    grd.addColorStop(1,   'rgba(5,5,5,0)');
-    ctx.fillStyle = grd;
-    ctx.fillRect(0, 0, w, h);
-
-    // 헤비 그레인
-    const id = ctx.getImageData(0, 0, w, h);
-    const d  = id.data;
-    for (let i = 0; i < d.length; i += 4) {
-      const n = (Math.random() - .5) * 85;
-      d[i] = d[i+1] = d[i+2] = Math.max(0, Math.min(255, d[i] + n));
-    }
-    ctx.putImageData(id, 0, 0);
-
-    // 랜덤 수평 글리치
-    if (Math.random() < .09) {
-      ctx.fillStyle = `rgba(255,255,255,${Math.random()*.22})`;
-      ctx.fillRect(0, Math.random()*h, w, 1 + Math.random()*2);
-    }
-  }
-  _cuNoiseRaf = requestAnimationFrame(draw);
+  video.muted = true;
+  video.loop = true;
+  const playPromise = video.play();
+  if (playPromise && playPromise.catch) playPromise.catch(() => {});
 
   // Local FPS 스탯 시뮬레이션
   const localStats = document.getElementById('cu-local-stats');
@@ -384,8 +345,7 @@ function spawnParticles(key) {
 
 // ─── 두 창 동시 종료 → QuickTime Player 등장 ────────────────
 function closeBothCuWindows() {
-  if (_cuStream)   { _cuStream.getTracks().forEach(t => t.stop()); _cuStream = null; }
-  if (_cuNoiseRaf) { cancelAnimationFrame(_cuNoiseRaf); _cuNoiseRaf = null; }
+  if (_cuStream) { _cuStream.getTracks().forEach(t => t.stop()); _cuStream = null; }
   closeWindow('cu-local');
   closeWindow('cu-remote');
   // CU-SeeMe 닫힘 → QuickTime Player 등장 (close 애니메이션 후)
