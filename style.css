@@ -1,0 +1,2110 @@
+/* ═══════════════════════════════════════════════════════════
+   Mac OS 9 Platinum UI — Portfolio
+   Blair Lee Studio
+═══════════════════════════════════════════════════════════ */
+
+/* ─── CSS Custom Properties ─────────────────────────────── */
+:root {
+  /* Design system colors (from Figma) */
+  --ds-black:    #262626;   /* Primary / Black (900) */
+  --ds-white:    #FFFFFF;   /* Primary / White (100) */
+  --ds-lavender: #CCCCFF;   /* Colours / Lavender */
+  --ds-azul:     #333399;   /* Colours / Azul */
+  --ds-gray-200: #EEEEEE;
+  --ds-gray-300: #DDDDDD;
+  --ds-gray-400: #CCCCCC;
+  --ds-gray-500: #BBBBBB;
+  --ds-gray-600: #999999;
+  --ds-gray-700: #808080;
+  --ds-gray-800: #666666;
+
+  /* Semantic aliases */
+  --desktop-bg:     #999999;
+  --menubar-bg:     #DDDDDD;   /* Grays / 300 */
+  --menubar-border: #262626;   /* Primary / Black */
+  --win-chrome:     #CCCCCC;   /* Grays / 400 */
+  --close-size:     13px;
+
+  /* Fonts */
+  --font-ui:        'Charcoal', Geneva, 'Helvetica Neue', sans-serif;
+  --font-body:      'Geneva', 'Helvetica Neue', sans-serif;
+  --font-editorial: 'Apple Garamond Light', 'EB Garamond', Georgia, serif;
+  --font-mono:      'Monaco', 'Courier New', monospace;
+
+  /* Window shadow (per Figma design tokens) */
+  --win-shadow:
+    2px 2px 0px 0px rgba(38,38,38,1),
+    inset 2px 2px 0px 0px rgba(255,255,255,0.6),
+    inset -2px -2px 0px 0px rgba(38,38,38,0.4);
+}
+
+/* ─── Reset & Base ──────────────────────────────────────── */
+*, *::before, *::after {
+  box-sizing: border-box;
+  margin: 0;
+  padding: 0;
+}
+
+html, body {
+  width: 100%;
+  height: 100%;
+  overflow: hidden;
+  font-family: var(--font-body);
+  font-size: 10px;
+  color: var(--ds-black);
+  background: var(--desktop-bg);
+  -webkit-font-smoothing: none;
+  image-rendering: pixelated;
+}
+
+/* ─── Custom Cursor: Classic Mac arrow ──────────────────── */
+/*
+  SVG: slightly left-leaning black arrow with white stroke
+  hotspot: 2px 2px
+*/
+* {
+  cursor: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='18' height='22' viewBox='0 0 18 22'%3E%3Cpath d='M3 2 L3 17 L6.5 13 L9 20 L11.5 19 L9 12 L14 12 Z' fill='white' stroke='white' stroke-width='2.5' stroke-linejoin='round' stroke-linecap='round'/%3E%3Cpath d='M3 2 L3 17 L6.5 13 L9 20 L11.5 19 L9 12 L14 12 Z' fill='black'/%3E%3C/svg%3E") 3 2, auto;
+}
+
+button {
+  cursor: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='18' height='22' viewBox='0 0 18 22'%3E%3Cpath d='M3 2 L3 17 L6.5 13 L9 20 L11.5 19 L9 12 L14 12 Z' fill='white' stroke='white' stroke-width='2.5' stroke-linejoin='round' stroke-linecap='round'/%3E%3Cpath d='M3 2 L3 17 L6.5 13 L9 20 L11.5 19 L9 12 L14 12 Z' fill='black'/%3E%3C/svg%3E") 3 2, pointer;
+}
+
+/* ═══════════════════════════════════════════════════════════
+   TOP MENU BAR
+═══════════════════════════════════════════════════════════ */
+
+#menu-bar {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  height: 20px;
+  z-index: 2000;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  background: var(--menubar-bg);
+  border-bottom: 1px solid var(--menubar-border);
+  user-select: none;
+  -webkit-user-select: none;
+}
+
+.menu-left {
+  display: flex;
+  align-items: center;
+  height: 100%;
+}
+
+/* Apple logo */
+.apple-logo {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 24px;
+  height: 100%;
+  font-size: 12px;
+  border-right: 1px solid var(--ds-gray-400);
+  padding: 0 2px;
+}
+
+.menu-item {
+  display: flex;
+  align-items: center;
+  height: 100%;
+  padding: 0 8px;
+  font-family: var(--font-ui);
+  font-size: 12px;
+  font-weight: 400;
+  line-height: 1;
+  letter-spacing: 0.035em;
+  white-space: nowrap;
+  color: var(--ds-black);
+  transition: none;
+}
+
+.menu-item:hover,
+.menu-item.pressed {
+  background: var(--ds-azul);
+  color: var(--ds-white);
+}
+
+/* Right side: clock */
+.menu-right {
+  display: flex;
+  align-items: center;
+  height: 100%;
+  padding: 0 8px;
+  border-left: 1px solid var(--ds-gray-400);
+}
+
+#clock {
+  font-size: 12px;
+  font-family: var(--font-ui);
+  color: var(--ds-black);
+  letter-spacing: 0.035em;
+}
+
+/* ═══════════════════════════════════════════════════════════
+   DESKTOP
+═══════════════════════════════════════════════════════════ */
+
+#desktop {
+  position: fixed;
+  top: 20px;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background: var(--desktop-bg) url('src/images/wallpaper.png') center/cover no-repeat;
+  overflow: hidden;
+}
+
+/* ═══════════════════════════════════════════════════════════
+   DESKTOP ICONS
+═══════════════════════════════════════════════════════════ */
+
+#icons-container {
+  position: absolute;
+  top: 12px;
+  right: 8px;
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  z-index: 10;
+}
+
+.desktop-icon {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  width: 76px;
+  padding: 5px 4px 4px;
+  border-radius: 2px;
+  user-select: none;
+  -webkit-user-select: none;
+  -webkit-tap-highlight-color: transparent;
+}
+
+.desktop-icon:hover {
+  background: rgba(0, 0, 120, 0.12);
+}
+
+.desktop-icon.selected {
+  background: rgba(51, 51, 153, 0.15);
+}
+
+.desktop-icon.selected .icon-label {
+  background: var(--ds-azul);
+  color: var(--ds-white);
+}
+
+.icon-image {
+  font-size: 34px;
+  line-height: 1;
+  margin-bottom: 5px;
+  text-align: center;
+  pointer-events: none;
+}
+
+.icon-label {
+  font-family: var(--font-body);
+  font-size: 10px;
+  color: var(--ds-black);
+  text-align: center;
+  line-height: 1.3;
+  padding: 1px 4px;
+  max-width: 76px;
+  word-break: break-word;
+  text-shadow:
+    1px  1px 0 var(--ds-gray-600),
+   -1px -1px 0 var(--ds-gray-600),
+    1px -1px 0 var(--ds-gray-600),
+   -1px  1px 0 var(--ds-gray-600);
+  pointer-events: none;
+}
+
+/* ═══════════════════════════════════════════════════════════
+   MAC OS 9 PLATINUM WINDOW
+═══════════════════════════════════════════════════════════ */
+
+.mac-window {
+  position: absolute;
+  top: 36px;
+  left: 50%;
+  transform: translateX(-50%);
+  width: 540px;
+  max-width: calc(100vw - 32px);
+  max-height: 640px;
+  min-height: 180px;
+  display: flex;
+  flex-direction: column;
+  z-index: 100;
+  border: 1px solid var(--ds-black);
+  outline: none;
+  box-shadow: var(--win-shadow);
+  will-change: transform, opacity;
+  background: var(--ds-white);
+}
+
+/* ─── Visibility states ─────────────────────────────────── */
+
+.mac-window.hidden {
+  display: none;
+}
+
+/* ─── Open animation (desktop) ──────────────────────────── */
+
+@keyframes winOpen {
+  from {
+    opacity: 0;
+    transform: translateX(-50%) scale(0.55);
+  }
+  to {
+    opacity: 1;
+    transform: translateX(-50%) scale(1);
+  }
+}
+
+@keyframes winClose {
+  from {
+    opacity: 1;
+    transform: translateX(-50%) scale(1);
+  }
+  to {
+    opacity: 0;
+    transform: translateX(-50%) scale(0.45);
+  }
+}
+
+.mac-window.opening {
+  animation: winOpen 0.14s cubic-bezier(0.2, 0, 0.3, 1) forwards;
+}
+
+.mac-window.closing {
+  animation: winClose 0.12s cubic-bezier(0.5, 0, 0.8, 0.5) forwards;
+}
+
+/* ─── Window Shade (Collapse) ───────────────────────────── */
+.mac-window.shaded {
+  overflow: hidden;
+  /* height is set via JS to titlebar height */
+}
+/* Collapse box: visual hint when shaded */
+.mac-window.shaded .titlebar-collapse {
+  background: linear-gradient(135deg, #F1F1F1 0%, #9A9A9A 100%);
+}
+
+/* ─── Zoomed (Maximize) ──────────────────────────────────── */
+.mac-window.zoomed {
+  transition: left 0.12s ease, top 0.12s ease,
+              width 0.12s ease, height 0.12s ease;
+}
+
+/* ─── Inactive window ───────────────────────────────────── */
+
+.mac-window.inactive .window-titlebar {
+  background: var(--ds-gray-300);
+  box-shadow: none;
+}
+
+.mac-window.inactive .window-close-btn {
+  opacity: 0.5;
+}
+
+/* ─── Title Bar (Mac OS 9 Finder Style) ─────────────────── */
+
+.window-titlebar {
+  height: 19px;
+  min-height: 19px;
+  flex-shrink: 0;
+  position: relative;
+  background: var(--win-chrome);
+  border-bottom: 1px solid var(--ds-black);
+  box-shadow:
+    inset -2px -2px 0px 0px rgba(38,38,38,0.4),
+    inset  2px  2px 0px 0px rgba(38,38,38,0.1);
+  user-select: none;
+  -webkit-user-select: none;
+}
+
+/* Close box — absolute top-left x=3 y=3 */
+.window-close-btn {
+  position: absolute;
+  left: 3px;
+  top: 3px;
+  width: 13px;
+  height: 13px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 0;
+  background: linear-gradient(135deg, #9A9A9A 0%, #F1F1F1 100%);
+  border: 1px solid var(--ds-black);
+  border-radius: 0;
+  z-index: 2;
+}
+.window-close-btn:active {
+  background: linear-gradient(135deg, #F1F1F1 0%, #9A9A9A 100%);
+}
+.close-icon { display: none; pointer-events: none; }
+.window-close-btn:hover .close-icon { display: block; }
+
+/* Collapse box — absolute top-right x=3 y=3 */
+.titlebar-collapse {
+  position: absolute;
+  right: 3px;
+  top: 3px;
+  width: 13px;
+  height: 13px;
+  background: linear-gradient(135deg, #9A9A9A 0%, #F1F1F1 100%);
+  border: 1px solid var(--ds-black);
+  z-index: 2;
+  /* window-shade icon: horizontal lines */
+  background-image: linear-gradient(135deg, #9A9A9A 0%, #F1F1F1 100%);
+}
+
+/* Inner row: [picker | label | picker | zoom] */
+/* Inset from close (19px left) and collapse (19px right) boxes */
+.titlebar-inner {
+  position: absolute;
+  left: 19px;
+  right: 19px;
+  top: 3px;
+  height: 13px;
+  display: flex;
+  align-items: center;
+  gap: 4px;
+}
+
+/* Bar picker — horizontal alternating pinstripe */
+.titlebar-picker {
+  flex: 1;
+  height: 13px;
+  background: repeating-linear-gradient(
+    to bottom,
+    #EEEEEE 0px, #EEEEEE 1px,
+    #C5C5C5 1px, #C5C5C5 2px
+  );
+}
+
+/* Label area: icon + title */
+.titlebar-label {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  flex-shrink: 0;
+  max-width: 65%;
+}
+
+.titlebar-icon {
+  width: 13px;
+  height: 13px;
+  flex-shrink: 0;
+  object-fit: contain;
+  image-rendering: auto;
+}
+
+/* Zoom box */
+.titlebar-zoom {
+  width: 13px;
+  height: 13px;
+  flex-shrink: 0;
+  background: linear-gradient(135deg, #9A9A9A 0%, #F1F1F1 100%);
+  border: 1px solid var(--ds-black);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+.titlebar-zoom::after {
+  content: '';
+  width: 5px;
+  height: 5px;
+  border: 1px solid #666;
+  display: block;
+}
+
+/* Window title text */
+.window-title {
+  font-family: var(--font-ui);
+  font-size: 12px;
+  font-weight: 400;
+  letter-spacing: 0.035em;
+  line-height: 0.98;
+  color: var(--ds-black);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  pointer-events: none;
+}
+
+/* Inactive: plain gray, no pinstripe */
+.mac-window.inactive .window-titlebar {
+  background: var(--ds-gray-300);
+  box-shadow: none;
+}
+.mac-window.inactive .titlebar-picker {
+  background: var(--ds-gray-300);
+}
+
+/* Legacy spacer — not used in new structure but safe to keep */
+.titlebar-spacer { display: none; }
+
+/* ─── Toolbar ────────────────────────────────────────────── */
+
+.window-toolbar {
+  display: flex;
+  align-items: center;
+  height: 20px;
+  min-height: 20px;
+  padding: 0 5px;
+  gap: 4px;
+  flex-shrink: 0;
+  background: var(--ds-gray-300);
+  border-bottom: 1px solid var(--ds-black);
+}
+
+.toolbar-nav {
+  width: 20px;
+  height: 16px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 9px;
+  line-height: 1;
+  background: linear-gradient(to bottom, #EFEFEF, #D0D0D0);
+  border-top:    1px solid #FFF;
+  border-left:   1px solid #FFF;
+  border-right:  1px solid #888;
+  border-bottom: 1px solid #888;
+  color: #444;
+  padding: 0;
+}
+
+.toolbar-nav:active {
+  border-top:    1px solid #888;
+  border-left:   1px solid #888;
+  border-right:  1px solid #FFF;
+  border-bottom: 1px solid #FFF;
+}
+
+.toolbar-sep {
+  width: 1px;
+  height: 14px;
+  background: var(--ds-gray-600);
+  margin: 0 2px;
+}
+
+.toolbar-path {
+  font-family: var(--font-body);
+  font-size: 10px;
+  color: var(--ds-black);
+}
+
+/* ─── Window Content Area ───────────────────────────────── */
+
+.window-content {
+  flex: 1;
+  overflow-y: auto;
+  overflow-x: hidden;
+  background: var(--ds-white);
+  min-height: 120px;
+}
+
+/* Mac OS 9 style scrollbar */
+.window-content::-webkit-scrollbar {
+  width: 16px;
+}
+.window-content::-webkit-scrollbar-track {
+  background: var(--ds-gray-300);
+  border-left: 1px solid var(--ds-black);
+}
+.window-content::-webkit-scrollbar-thumb {
+  background: var(--ds-gray-400);
+  border: 1px solid var(--ds-gray-700);
+}
+.window-content::-webkit-scrollbar-button {
+  background: var(--ds-gray-400);
+  border: 1px solid var(--ds-gray-700);
+  height: 16px;
+}
+
+/* ─── Status Bar ─────────────────────────────────────────── */
+
+.window-statusbar {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  height: 20px;
+  min-height: 20px;
+  padding: 0 8px 0 6px;
+  background: var(--ds-gray-300);
+  border-top: 1px solid var(--ds-black);
+  font-family: var(--font-body);
+  font-size: 10px;
+  color: #555;
+  font-family: var(--font-ui);
+  flex-shrink: 0;
+}
+
+.resize-grip {
+  opacity: 0.7;
+  line-height: 0;
+}
+
+/* ═══════════════════════════════════════════════════════════
+   PROJECTS WINDOW  (Mac OS 9 Finder list view — Figma 85:24876)
+═══════════════════════════════════════════════════════════ */
+
+#window-portfolio { width: 780px; min-width: 420px; min-height: 240px; }
+#window-getinfo   { width: 360px; min-width: 280px; min-height: 260px; }
+#window-cuseme    { min-width: 300px; min-height: 200px; }
+#window-blairTunes { min-width: 300px; min-height: 200px; }
+
+/* Status bar — 20px, Grays/300, inset bevel */
+.pj-statusbar {
+  height: 20px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 0 94px;
+  background: var(--ds-gray-300);
+  border-bottom: 1px solid var(--ds-black);
+  box-shadow:
+    inset 0  2px 0 0 rgba(255,255,255,1),
+    inset 2px 0  0 0 rgba(255,255,255,1),
+    inset 0 -2px 0 0 rgba(38,38,38,0.4),
+    inset -2px 0 0 0 rgba(38,38,38,0.4);
+  font-family: 'Geneva 9.1', 'Geneva', 'Helvetica Neue', sans-serif;
+  font-size: 10px;
+  color: var(--ds-black);
+  flex-shrink: 0;
+  white-space: nowrap;
+}
+
+/* Content area with left spacer + table + right scrollbar */
+.pj-content {
+  display: flex;
+  flex: 1;
+  min-height: 0;
+  overflow: hidden;
+  box-shadow: -1px -1px 0 0 rgba(38,38,38,0.4);
+}
+
+/* Left spacer (4px) */
+.pj-content::before {
+  content: '';
+  width: 4px;
+  flex-shrink: 0;
+  background: var(--ds-white);
+  border-right: 1px solid var(--ds-black);
+}
+
+/* Scrollable table area */
+.pj-scroll {
+  flex: 1;
+  overflow-x: hidden;
+  overflow-y: auto;
+}
+
+/* Column row */
+.pj-table {
+  display: flex;
+  min-width: 100%;
+  min-height: 100%;
+}
+
+.pj-col {
+  display: flex;
+  flex-direction: column;
+  flex-shrink: 0;
+  border-right: 1px solid var(--ds-gray-500);
+}
+.pj-col:last-child { border-right: none; flex: 1; }
+
+.pj-col-service { width: 208px; }
+.pj-col-client  { width: 150px; }
+.pj-col-role    { width: 220px; }
+.pj-col-domain  { width: 90px; }
+.pj-col-date    { width: 150px; }
+
+/* ── Column headers ───────────────────────────────────────── */
+.pj-header {
+  height: 21px;
+  min-height: 21px;
+  display: flex;
+  align-items: flex-end;
+  padding: 0 8px 3px;
+  background: var(--ds-gray-400);
+  border-bottom: 1px solid var(--ds-black);
+  box-shadow:
+    inset 0  2px 0 0 rgba(255,255,255,1),
+    inset 2px 0  0 0 rgba(255,255,255,1),
+    inset 0 -2px 0 0 rgba(128,128,128,1),
+    inset -2px 0 0 0 rgba(128,128,128,1);
+  font-family: 'Geneva 9.1', 'Geneva', 'Helvetica Neue', sans-serif;
+  font-size: 10px;
+  color: var(--ds-black);
+  white-space: nowrap;
+  overflow: hidden;
+  flex-shrink: 0;
+  user-select: none;
+}
+
+/* Service column header — Grays/600, dark bevel, 58px left padding */
+.pj-header-dark {
+  background: var(--ds-gray-600);
+  padding-left: 58px;
+  box-shadow:
+    inset 0  2px 0 0 rgba(38,38,38,0.6),
+    inset 2px 0  0 0 rgba(38,38,38,0.6),
+    inset 0 -2px 0 0 rgba(255,255,255,0.2),
+    inset -2px 0 0 0 rgba(255,255,255,0.2);
+  color: var(--ds-white);
+}
+
+/* ── Row cells ────────────────────────────────────────────── */
+/* Non-service cells: WHITE background, Geneva 9.1 */
+.pj-cell {
+  height: 32px;
+  min-height: 32px;
+  display: flex;
+  align-items: center;
+  padding: 0 8px;
+  background: var(--ds-white);
+  border-bottom: 1px solid var(--ds-gray-300);
+  font-family: 'Geneva 9.1', 'Geneva', 'Helvetica Neue', sans-serif;
+  font-size: 10px;
+  color: var(--ds-black);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  flex-shrink: 0;
+}
+
+/* Service column cells: Grays/300 (#DDD), chevron + icon + text */
+.pj-cell-folder {
+  background: var(--ds-gray-300);
+  padding: 0 4px;
+  gap: 4px;
+  border-bottom-color: var(--ds-gray-400);
+}
+
+/* ▶ expand chevron (12px) */
+.pj-chevron {
+  font-size: 7px;
+  color: var(--ds-black);
+  flex-shrink: 0;
+  width: 10px;
+  text-align: center;
+  line-height: 1;
+}
+
+/* Folder icon (32×32 at 2x → display 16px) */
+.pj-icon {
+  width: 20px;
+  height: 20px;
+  flex-shrink: 0;
+  image-rendering: auto;
+  object-fit: contain;
+}
+
+/* File name text */
+.pj-name {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+/* Right scrollbar column (16px) */
+.pj-scrollbar {
+  width: 16px;
+  flex-shrink: 0;
+  background: var(--ds-gray-300);
+  border-left: 1px solid var(--ds-black);
+  position: relative;
+}
+.pj-scrollbar::after {
+  content: '▲';
+  position: absolute;
+  bottom: 0;
+  left: 0;
+  width: 100%;
+  height: 16px;
+  background: var(--ds-gray-400);
+  border-top: 1px solid var(--ds-black);
+  font-size: 8px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  text-align: center;
+  line-height: 16px;
+}
+
+/* ═══════════════════════════════════════════════════════════
+   PROJECTS — Accordion folder list
+═══════════════════════════════════════════════════════════ */
+
+.pj-acc-wrap {
+  flex: 1;
+  overflow-y: auto;
+  background: var(--ds-white);
+  box-shadow: -1px -1px 0 0 rgba(38,38,38,0.4);
+}
+
+/* Category row */
+.pj-acc-item {
+  border-bottom: 1px solid var(--ds-gray-400);
+}
+
+/* Category header */
+.pj-acc-header {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  padding: 0 8px;
+  height: 21px;
+  background: var(--ds-gray-400);
+  border-bottom: 1px solid var(--ds-black);
+  cursor: pointer;
+  user-select: none;
+  box-shadow:
+    inset 0  2px 0 0 rgba(255,255,255,1),
+    inset 2px 0  0 0 rgba(255,255,255,1),
+    inset 0 -2px 0 0 rgba(128,128,128,1),
+    inset -2px 0 0 0 rgba(128,128,128,1);
+}
+.pj-acc-header:hover {
+  background: var(--ds-gray-500);
+}
+
+/* Expand arrow */
+.pj-acc-arrow {
+  font-size: 8px;
+  display: inline-block;
+  transition: transform 0.18s ease;
+  width: 10px;
+  font-family: 'pix Chicago', monospace;
+  -webkit-font-smoothing: none;
+  color: var(--ds-black);
+}
+.pj-acc-item[data-open="true"] .pj-acc-arrow {
+  transform: rotate(90deg);
+}
+
+/* Color chip (6×6 square) */
+.pj-acc-chip {
+  width: 8px;
+  height: 8px;
+  border: 1px solid var(--ds-black);
+  flex-shrink: 0;
+  display: inline-block;
+}
+
+/* Category name */
+.pj-acc-name {
+  font-family: 'Geneva 9.1', 'Geneva', 'Helvetica Neue', sans-serif;
+  font-size: 10px;
+  color: var(--ds-black);
+  font-weight: bold;
+  flex: 1;
+}
+
+/* Count badge */
+.pj-acc-count {
+  font-family: 'Geneva 9.1', 'Geneva', sans-serif;
+  font-size: 9px;
+  color: var(--ds-gray-700);
+}
+
+/* File list (accordion body) */
+/* ── Accordion files container ──────────────────────────── */
+.pj-acc-files {
+  max-height: 0;
+  overflow: hidden;
+  transition: max-height 0.22s ease;
+}
+.pj-acc-item[data-open="true"] .pj-acc-files {
+  max-height: 400px; /* enough for any # of rows */
+}
+
+/* ── Mac OS 9 Finder list row ───────────────────────────── */
+/* Ref image: grey #DDDDDD bg · 32px height · ▶ + icon + name */
+.pj-finder-row {
+  display: flex;
+  align-items: center;
+  height: 32px;
+  padding: 0 4px;
+  gap: 4px;
+  background: var(--ds-gray-300);          /* #DDDDDD — Finder name col */
+  border-bottom: 1px solid var(--ds-gray-400);
+  font-family: 'Geneva 9.1', 'Geneva', 'Helvetica Neue', sans-serif;
+  font-size: 10px;
+  color: var(--ds-black);
+  cursor: default;
+  -webkit-font-smoothing: none;
+  font-smooth: never;
+  user-select: none;
+}
+.pj-finder-row:last-child { border-bottom: none; }
+
+/* ▶ expand chevron */
+.pj-fr-chevron {
+  font-size: 7px;
+  width: 10px;
+  text-align: center;
+  flex-shrink: 0;
+  color: var(--ds-black);
+  font-family: 'Geneva', monospace;
+  -webkit-font-smoothing: none;
+}
+
+/* Blue folder icon */
+.pj-fr-icon {
+  width: 20px;
+  height: 20px;
+  flex-shrink: 0;
+  image-rendering: auto;
+  object-fit: contain;
+}
+
+/* File name */
+.pj-fr-name {
+  flex: 1;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+/* Mac OS 9 full-row INVERT highlight on hover */
+.pj-finder-row:hover {
+  background: var(--ds-black);
+  color: var(--ds-white);
+}
+.pj-finder-row:hover .pj-fr-icon    { filter: invert(1); }
+.pj-finder-row:hover .pj-fr-chevron { color: var(--ds-white); }
+
+/* ═══════════════════════════════════════════════════════════
+   CU-SEEME WINDOW CONTENT
+═══════════════════════════════════════════════════════════ */
+
+.cuseme-content {
+  padding: 0;
+}
+
+.cuseme-header {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 16px 16px 14px;
+  background: var(--ds-gray-200);
+}
+
+.cuseme-avatar {
+  font-size: 36px;
+  width: 52px;
+  height: 52px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: var(--ds-gray-300);
+  border: 1px solid var(--ds-black);
+}
+
+.cuseme-name {
+  font-family: var(--font-editorial);
+  font-size: 24px;
+  font-weight: 400;
+  letter-spacing: -0.02em;
+  color: var(--ds-black);
+  margin-bottom: 4px;
+}
+
+.cuseme-status {
+  display: flex;
+  align-items: center;
+  gap: 5px;
+  font-family: var(--font-body);
+  font-size: 10px;
+  color: var(--ds-gray-800);
+}
+
+.status-dot {
+  width: 6px;
+  height: 6px;
+  border-radius: 0;
+  background: var(--ds-azul);
+  display: inline-block;
+}
+
+.cuseme-divider {
+  border: none;
+  border-top: 1px solid var(--ds-black);
+  margin: 0;
+}
+
+.cuseme-rows {
+  padding: 10px 0;
+}
+
+.cuseme-row {
+  display: flex;
+  align-items: baseline;
+  gap: 12px;
+  padding: 4px 16px;
+}
+
+.cuseme-label {
+  font-family: var(--font-ui);
+  font-size: 12px;
+  font-weight: 400;
+  letter-spacing: 0.035em;
+  color: var(--ds-black);
+  width: 64px;
+  flex-shrink: 0;
+}
+
+.cuseme-value {
+  font-family: var(--font-body);
+  font-size: 10px;
+  color: var(--ds-azul);
+  text-decoration: underline;
+}
+
+.cuseme-bio {
+  padding: 12px 16px 16px;
+  font-family: var(--font-body);
+  font-size: 10px;
+  color: var(--ds-gray-800);
+  line-height: 1.7;
+}
+
+/* ═══════════════════════════════════════════════════════════
+   QUICKTIME PLAYER (2창 분리)
+═══════════════════════════════════════════════════════════ */
+
+/* ── Window 1: Player ───────────────────────────────────── */
+#window-blairTunes {
+  width: 400px;
+  min-width: 280px;
+  min-height: 260px;
+}
+
+/* 영상 영역 */
+.qtp-video-area {
+  flex: 1;
+  position: relative;
+  background: #000;
+  min-height: 0;
+  overflow: hidden;
+}
+
+/* Click to Play 스플래시 */
+.qtp-splash {
+  position: absolute;
+  inset: 0;
+  background: #0a0a14;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+  z-index: 2;
+  cursor: default;
+}
+.qtp-splash-logo {
+  font-size: 36px;
+  color: rgba(255,255,255,0.15);
+  line-height: 1;
+}
+.qtp-splash-track {
+  font-family: var(--font-ui);
+  font-size: 10px;
+  color: var(--ds-gray-500);
+  letter-spacing: 0.06em;
+  -webkit-font-smoothing: none;
+  text-align: center;
+  padding: 0 12px;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  max-width: 100%;
+}
+.qtp-splash-hint {
+  font-family: var(--font-body);
+  font-size: 9px;
+  color: var(--ds-gray-700);
+  -webkit-font-smoothing: none;
+}
+
+/* iframe (재생 시 표시) */
+#qt-iframe {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  border: none;
+  display: none;
+  z-index: 1;
+}
+
+/* ── 컨트롤바 ───────────────────────────────────────────── */
+.qtp-ctrl {
+  flex-shrink: 0;
+  background: var(--ds-gray-300);
+  border-top: 1px solid var(--ds-black);
+  padding: 4px 6px 5px;
+  box-shadow: inset 0 1px 0 rgba(255,255,255,0.7);
+}
+
+.qtp-track-info {
+  display: flex;
+  gap: 6px;
+  align-items: baseline;
+  overflow: hidden;
+  margin-bottom: 3px;
+}
+.qtp-track-title {
+  font-family: var(--font-ui);
+  font-size: 10px;
+  color: var(--ds-black);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  flex: 1;
+  letter-spacing: 0.03em;
+  -webkit-font-smoothing: none;
+}
+.qtp-track-artist {
+  font-family: var(--font-body);
+  font-size: 9px;
+  color: var(--ds-gray-700);
+  white-space: nowrap;
+  flex-shrink: 0;
+  -webkit-font-smoothing: none;
+}
+
+.qtp-ctrl-row {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+}
+
+/* 버튼 */
+.qtp-btn {
+  width: 24px;
+  height: 20px;
+  background: var(--ds-gray-400);
+  border-top:    2px solid #FFFFFF;
+  border-left:   2px solid #FFFFFF;
+  border-right:  2px solid #808080;
+  border-bottom: 2px solid #808080;
+  font-size: 9px;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 0;
+  flex-shrink: 0;
+  -webkit-font-smoothing: none;
+}
+.qtp-btn:active {
+  border-top:    2px solid #808080;
+  border-left:   2px solid #808080;
+  border-right:  2px solid #FFFFFF;
+  border-bottom: 2px solid #FFFFFF;
+}
+.qtp-play-btn { width: 28px; font-size: 11px; }
+
+/* 진행 바 */
+.qtp-progress {
+  flex: 1;
+  height: 8px;
+  background: var(--ds-gray-500);
+  border: 1px solid var(--ds-gray-700);
+  position: relative;
+  cursor: pointer;
+  min-width: 0;
+}
+.qtp-progress-fill {
+  height: 100%;
+  width: 0%;
+  background: var(--ds-azul);
+  pointer-events: none;
+}
+
+.qtp-time {
+  font-family: var(--font-body);
+  font-size: 9px;
+  color: var(--ds-black);
+  white-space: nowrap;
+  flex-shrink: 0;
+  -webkit-font-smoothing: none;
+}
+
+.qtp-vol-icon { font-size: 10px; flex-shrink: 0; }
+
+.qtp-vol {
+  -webkit-appearance: none;
+  appearance: none;
+  width: 52px;
+  height: 8px;
+  background: var(--ds-gray-500);
+  border: 1px solid var(--ds-gray-700);
+  border-radius: 0;
+  outline: none;
+  cursor: pointer;
+  flex-shrink: 0;
+}
+.qtp-vol::-webkit-slider-thumb {
+  -webkit-appearance: none;
+  width: 10px;
+  height: 14px;
+  background: linear-gradient(to bottom, #eee, #bbb);
+  border: 1px solid #888;
+  border-radius: 0;
+  cursor: pointer;
+}
+
+/* ── Window 2: Playlist ─────────────────────────────────── */
+#window-qt-playlist {
+  width: 300px;
+  min-width: 200px;
+  min-height: 200px;
+  /* height는 JS가 Player와 동일하게 동적 설정 */
+}
+
+/* 리스트 내부 스크롤 보장 */
+#window-qt-playlist .qtp-list {
+  flex: 1;
+  min-height: 0;      /* flex 자식 스크롤 필수 */
+  overflow-y: auto;
+  overflow-x: hidden;
+}
+
+/* Finder 컬럼 헤더 */
+.qtp-list-hdr {
+  display: flex;
+  align-items: center;
+  height: 20px;
+  background: var(--ds-gray-600);
+  border-bottom: 1px solid var(--ds-black);
+  flex-shrink: 0;
+  box-shadow:
+    inset 0 2px 0 rgba(38,38,38,0.5),
+    inset 0 -2px 0 rgba(255,255,255,0.15);
+  color: var(--ds-white);
+  font-family: var(--font-body);
+  font-size: 9px;
+  -webkit-font-smoothing: none;
+  user-select: none;
+}
+.qtp-col-num    { width: 28px; padding: 0 4px; text-align: right; flex-shrink: 0; }
+.qtp-col-title  { flex: 1; padding: 0 4px; min-width: 0; }
+.qtp-col-artist { width: 90px; padding: 0 4px; flex-shrink: 0; overflow: hidden; }
+.qtp-col-dur    { width: 36px; padding: 0 6px 0 0; text-align: right; flex-shrink: 0; }
+
+/* 트랙 리스트 */
+.qtp-list {
+  flex: 1;
+  overflow-y: auto;
+  overflow-x: hidden;
+  background: var(--ds-white);
+}
+
+/* 트랙 행 */
+.qtp-row {
+  display: flex;
+  align-items: center;
+  height: 22px;
+  border-bottom: 1px solid var(--ds-gray-300);
+  cursor: default;
+  user-select: none;
+  -webkit-font-smoothing: none;
+}
+.qtp-row:hover {
+  background: var(--ds-black);
+  color: var(--ds-white);
+}
+.qtp-row.active {
+  background: var(--ds-azul);
+  color: var(--ds-white);
+}
+.qtp-row .qtp-col-num    { color: var(--ds-gray-600); font-family: var(--font-body); font-size: 9px; }
+.qtp-row .qtp-col-title  { font-family: var(--font-body); font-size: 10px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.qtp-row .qtp-col-artist { font-family: var(--font-body); font-size: 9px; color: var(--ds-gray-700); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.qtp-row .qtp-col-dur    { font-family: var(--font-body); font-size: 9px; color: var(--ds-gray-600); }
+.qtp-row.active .qtp-col-num,
+.qtp-row.active .qtp-col-artist,
+.qtp-row.active .qtp-col-dur    { color: rgba(255,255,255,0.7); }
+.qtp-row:hover .qtp-col-num,
+.qtp-row:hover .qtp-col-artist,
+.qtp-row:hover .qtp-col-dur     { color: var(--ds-gray-400); }
+.qtp-row.active .qtp-col-title  { font-weight: bold; }
+
+/* ─── Desktop icon images ────────────────────────────────── */
+
+/* PNG 아이콘 — 32×32 (2x = 64×64 파일) */
+.icon-img {
+  display: block;
+  width: 32px;
+  height: 32px;
+  image-rendering: auto;
+  margin-bottom: 3px;
+}
+
+.desktop-icon .icon-image {
+  font-size: 34px;
+  line-height: 1;
+  margin-bottom: 5px;
+}
+
+.trash-icon { pointer-events: none; opacity: 0.9; }
+
+/* ═══════════════════════════════════════════════════════════
+   CU-SeeMe — 2개 독립 창 (Local + Remote)
+═══════════════════════════════════════════════════════════ */
+
+/* 공통 창 베이스: 고전 이중 입체 테두리 */
+.cu-window {
+  width: 250px;
+  min-height: 0;
+  background: #D6D6D6;
+  border: 2px solid #000;
+  box-shadow:
+    inset  3px  3px 0 0 #FFFFFF,
+    inset -3px -3px 0 0 #808080,
+    4px 4px 0 0 #000;
+  outline: none;
+  font-family: 'pix Chicago', 'Chicago', monospace;
+  -webkit-font-smoothing: none;
+  -moz-osx-font-smoothing: unset;
+  font-smooth: never;
+}
+
+/* 네이비 타이틀바 */
+.cu-window .window-titlebar {
+  background: #000080;
+  border-bottom: 2px solid #000;
+  box-shadow: none;
+  height: 22px;
+}
+.cu-window .window-title {
+  color: #FFF;
+  font-family: 'pix Chicago', monospace;
+  font-size: 8px;
+  letter-spacing: 0.05em;
+  -webkit-font-smoothing: none;
+}
+.cu-window .window-close-btn {
+  background: #8080C0;
+  border: 1px solid #000;
+  box-shadow: inset 1px 1px 0 #AAA, inset -1px -1px 0 #333;
+}
+.cu-window .close-icon { display: block; }
+
+/* 창 내부 */
+.cu-body {
+  padding: 5px;
+  background: #D6D6D6;
+  -webkit-font-smoothing: none;
+  font-smooth: never;
+}
+
+/* 이름 바 */
+.cu-name-bar {
+  font-family: 'pix Chicago', monospace;
+  font-size: 8px;
+  letter-spacing: 0.04em;
+  padding: 2px 5px;
+  background: #D6D6D6;
+  border: 1px solid #888;
+  border-bottom: 1px solid #000;
+  color: #000;
+  -webkit-font-smoothing: none;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+/* 비디오 래퍼 */
+.cu-video-wrap {
+  position: relative;
+  width: 100%;
+  aspect-ratio: 4/3;
+  background: #111;
+  overflow: hidden;
+  border: 2px solid #000;
+  box-shadow: inset 2px 2px 0 #333;
+}
+
+/* 비디오 / 캔버스 */
+.cu-vid {
+  display: block;
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  filter: grayscale(100%) contrast(160%) brightness(95%);
+  image-rendering: pixelated;
+}
+
+/* 스캔라인 */
+.cu-scanlines {
+  position: absolute;
+  inset: 0;
+  background: repeating-linear-gradient(
+    to bottom,
+    transparent 0px,
+    transparent 2px,
+    rgba(0,0,0,0.32) 2px,
+    rgba(0,0,0,0.32) 3px
+  );
+  pointer-events: none;
+  z-index: 2;
+}
+
+/* 카메라 없음 플레이스홀더 */
+.cu-no-cam {
+  position: absolute;
+  inset: 0;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+  background: #0a0a0a;
+  color: #666;
+  font-family: 'pix Chicago', monospace;
+  font-size: 7px;
+  -webkit-font-smoothing: none;
+  text-align: center;
+  z-index: 3;
+}
+.cu-no-cam-icon { font-size: 20px; }
+
+/* 그린 FPS 스탯 */
+.cu-vid-stats {
+  background: #000;
+  color: #00FF00;
+  font-family: 'pix Chicago', monospace;
+  font-size: 7px;
+  padding: 2px 5px;
+  letter-spacing: 0.03em;
+  -webkit-font-smoothing: none;
+}
+
+/* 상태 줄 */
+.cu-status-line {
+  font-family: 'pix Chicago', monospace;
+  font-size: 7px;
+  color: #000;
+  padding: 2px 5px;
+  background: #C8C8C8;
+  border-top: 1px solid #888;
+  margin-top: 3px;
+  -webkit-font-smoothing: none;
+}
+
+/* ── 픽셀 리액션 버튼 (Local 창 — Blair 영역) ─────────────── */
+.cu-reactions {
+  display: flex;
+  gap: 3px;
+  margin-top: 5px;
+}
+
+.cu-react-btn {
+  flex: 1;
+  height: 28px;
+  background: #D6D6D6;
+  border-top: 2px solid #FFFFFF;
+  border-left: 2px solid #FFFFFF;
+  border-right: 2px solid #808080;
+  border-bottom: 2px solid #808080;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  -webkit-font-smoothing: none;
+  transition: transform 0.05s;
+}
+.cu-react-btn:active {
+  border-top:    2px solid #808080;
+  border-left:   2px solid #808080;
+  border-right:  2px solid #FFFFFF;
+  border-bottom: 2px solid #FFFFFF;
+  transform: scale(0.95);
+}
+
+/* Pixel-art SVG icon inside reaction button */
+.cu-px-icon {
+  width: 14px;
+  height: 14px;
+  fill: #000000;
+  display: block;
+  image-rendering: pixelated;
+}
+
+/* ── Privacy buttons (Remote 창) ─────────────────────────── */
+.cu-priv-btns {
+  display: flex;
+  gap: 3px;
+  margin-top: 5px;
+}
+
+.cu-priv-btn {
+  flex: 1;
+  height: 22px;
+  background: #D6D6D6;
+  border-top: 2px solid #FFFFFF;
+  border-left: 2px solid #FFFFFF;
+  border-right: 2px solid #808080;
+  border-bottom: 2px solid #808080;
+  font-family: 'pix Chicago', monospace;
+  font-size: 7px;
+  letter-spacing: 0.04em;
+  color: #000;
+  -webkit-font-smoothing: none;
+  cursor: pointer;
+}
+.cu-priv-btn:active {
+  border-top:    2px solid #808080;
+  border-left:   2px solid #808080;
+  border-right:  2px solid #FFFFFF;
+  border-bottom: 2px solid #FFFFFF;
+}
+.cu-priv-btn.active {
+  background: #A0A0D0;
+  font-weight: bold;
+}
+
+/* ── CAM OFF overlay (hatching + label) ──────────────────── */
+.cu-camoff-overlay {
+  position: absolute;
+  inset: 0;
+  display: none;
+  align-items: center;
+  justify-content: center;
+  background:
+    repeating-linear-gradient(
+      45deg,
+      #1a1a1a 0px, #1a1a1a 3px,
+      #0a0a0a 3px, #0a0a0a 9px
+    );
+  z-index: 5;
+  pointer-events: none;
+}
+.cu-camoff-overlay.active { display: flex; }
+.cu-camoff-label {
+  font-family: 'pix Chicago', monospace;
+  font-size: 8px;
+  color: #888;
+  letter-spacing: 0.08em;
+  -webkit-font-smoothing: none;
+  background: rgba(0,0,0,0.6);
+  padding: 4px 8px;
+  border: 1px solid #555;
+}
+
+/* ── MASK FACE overlay (pixel cat) ──────────────────────── */
+.cu-mask-overlay {
+  position: absolute;
+  inset: 0;
+  display: none;
+  align-items: center;
+  justify-content: flex-start;
+  padding-top: 12%;
+  padding-left: 15%;
+  z-index: 4;
+  pointer-events: none;
+}
+.cu-mask-overlay.active { display: flex; }
+.cu-mask-svg {
+  width: 65%;
+  height: auto;
+  image-rendering: pixelated;
+  filter: drop-shadow(2px 2px 0 #000);
+}
+
+/* ── 파티클 컨테이너 ────────────────────────────────────── */
+.cu-particles {
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+  z-index: 10;
+  overflow: hidden;
+}
+
+/* 각 이모지 파티클 */
+@keyframes cuFloat {
+  0%   { transform: translateY(0)      scale(1);    opacity: 1; }
+  60%  { transform: translateY(-120px) scale(1.25); opacity: 0.9; }
+  100% { transform: translateY(-190px) scale(0.7);  opacity: 0; }
+}
+
+.cu-particle {
+  position: absolute;
+  bottom: 12px;
+  font-size: 20px;
+  animation: cuFloat 1.6s ease-out forwards;
+  pointer-events: none;
+  line-height: 1;
+  filter: drop-shadow(0 0 2px #000);
+  -webkit-font-smoothing: none;
+}
+
+/* ── KakaoTalk CTA — classic OS gray tone ───────────────── */
+.cu-cta-btn {
+  display: block;
+  margin-top: 6px;
+  width: 100%;
+  padding: 8px 6px;
+  background: #C8C8C8;
+  border-top:    3px solid #FFFFFF;
+  border-left:   3px solid #FFFFFF;
+  border-right:  3px solid #505050;
+  border-bottom: 3px solid #505050;
+  box-shadow: 1px 1px 0 0 #000;
+  font-family: 'pix Chicago', monospace;
+  font-size: 8px;
+  letter-spacing: 0.04em;
+  color: #000;
+  text-align: center;
+  text-decoration: none;
+  font-weight: bold;
+  -webkit-font-smoothing: none;
+  font-smooth: never;
+  box-sizing: border-box;
+}
+.cu-cta-btn:hover  { background: #D8D8D8; }
+.cu-cta-btn:active {
+  border-top:    3px solid #505050;
+  border-left:   3px solid #505050;
+  border-right:  3px solid #FFFFFF;
+  border-bottom: 3px solid #FFFFFF;
+  box-shadow: none;
+}
+
+/* ═══════════════════════════════════════════════════════════
+   RESIZE HANDLE — Mac OS 9 classic 3-line grip
+═══════════════════════════════════════════════════════════ */
+
+.resize-handle {
+  position: absolute;
+  bottom: 0;
+  right: 0;
+  width: 16px;
+  height: 16px;
+  cursor: nwse-resize;
+  z-index: 200;
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='16' height='16'%3E%3Cline x1='5' y1='14' x2='14' y2='5' stroke='%23999' stroke-width='1'/%3E%3Cline x1='9' y1='14' x2='14' y2='9' stroke='%23999' stroke-width='1'/%3E%3Cline x1='13' y1='14' x2='14' y2='13' stroke='%23999' stroke-width='1'/%3E%3C/svg%3E");
+  background-repeat: no-repeat;
+  background-position: center;
+  flex-shrink: 0;
+}
+/* CU-SeeMe 창은 resize 제외 (canvas/video 사이즈 고정) */
+.cu-window .resize-handle { display: none; }
+
+/* ═══════════════════════════════════════════════════════════
+   GET INFO WINDOW
+═══════════════════════════════════════════════════════════ */
+
+.gi-body {
+  display: flex;
+  flex-direction: column;
+  flex: 1;
+  min-height: 0;
+  background: var(--ds-white);
+}
+
+/* File header (icon + filename) */
+.gi-file-header {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 8px 10px;
+  background: var(--ds-gray-200);
+  border-bottom: 1px solid var(--ds-black);
+  flex-shrink: 0;
+}
+.gi-file-icon {
+  width: 24px;
+  height: 24px;
+  image-rendering: auto;
+  flex-shrink: 0;
+}
+.gi-file-name {
+  font-family: var(--font-body);
+  font-size: 10px;
+  color: var(--ds-black);
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+/* Tab bar */
+.gi-tabs {
+  display: flex;
+  border-bottom: 1px solid var(--ds-black);
+  background: var(--ds-gray-300);
+  flex-shrink: 0;
+}
+.gi-tab {
+  padding: 4px 12px;
+  font-family: var(--font-body);
+  font-size: 10px;
+  color: var(--ds-black);
+  background: var(--ds-gray-300);
+  border: none;
+  border-right: 1px solid var(--ds-black);
+  border-bottom: 1px solid var(--ds-black);
+  margin-bottom: -1px;
+  cursor: pointer;
+  -webkit-font-smoothing: none;
+}
+/* Active tab: white bg, no bottom border — "popping up" */
+.gi-tab-active {
+  background: var(--ds-white);
+  border-bottom-color: var(--ds-white);
+  font-weight: bold;
+}
+
+/* Panel container */
+.gi-panels {
+  flex: 1;
+  min-height: 0;
+  overflow-y: auto;
+  position: relative;
+}
+.gi-panel { display: none; padding: 10px; }
+.gi-panel-active { display: block; }
+
+/* Overview table */
+.gi-table {
+  width: 100%;
+  border-collapse: collapse;
+  font-family: var(--font-body);
+  font-size: 10px;
+}
+.gi-table tr { border-bottom: 1px solid var(--ds-gray-300); }
+.gi-table tr:last-child { border-bottom: none; }
+.gi-key {
+  padding: 5px 6px 5px 0;
+  width: 56px;
+  color: var(--ds-gray-700);
+  white-space: nowrap;
+  vertical-align: top;
+}
+.gi-val {
+  padding: 5px 0;
+  color: var(--ds-black);
+  line-height: 1.4;
+}
+
+/* Details panel */
+.gi-details-text {
+  font-family: var(--font-body);
+  font-size: 10px;
+  color: var(--ds-black);
+  line-height: 1.6;
+}
+
+/* ═══════════════════════════════════════════════════════════
+   MOBILE OVERLAY (background lock)
+═══════════════════════════════════════════════════════════ */
+
+#mobile-overlay {
+  display: none;
+  position: fixed;
+  inset: 21px 0 0 0;
+  background: rgba(0, 0, 0, 0.25);
+  z-index: 150;
+  pointer-events: none;
+}
+
+#mobile-overlay.active {
+  display: block;
+  pointer-events: all;
+}
+
+/* ═══════════════════════════════════════════════════════════
+   DRAGGING STATE (desktop)
+═══════════════════════════════════════════════════════════ */
+
+.mac-window.dragging {
+  box-shadow: 5px 6px 16px rgba(0,0,0,0.5);
+  opacity: 0.95;
+}
+
+.window-titlebar.drag-handle {
+  cursor: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='18' height='22' viewBox='0 0 18 22'%3E%3Cpath d='M3 2 L3 17 L6.5 13 L9 20 L11.5 19 L9 12 L14 12 Z' fill='white' stroke='white' stroke-width='2.5' stroke-linejoin='round' stroke-linecap='round'/%3E%3Cpath d='M3 2 L3 17 L6.5 13 L9 20 L11.5 19 L9 12 L14 12 Z' fill='black'/%3E%3C/svg%3E") 3 2, move;
+}
+
+/* ═══════════════════════════════════════════════════════════
+   RESPONSIVE — MOBILE (≤768px)
+═══════════════════════════════════════════════════════════ */
+
+@media (max-width: 768px) {
+
+  /* Icons: horizontal 3-column grid at top of desktop */
+  #icons-container {
+    position: static;
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 10px;
+    padding: 18px 14px;
+    width: 100%;
+  }
+
+  .desktop-icon {
+    width: auto;
+    padding: 12px 8px;
+    border-radius: 4px;
+  }
+
+  .icon-image {
+    font-size: 46px;
+  }
+
+  .icon-label {
+    font-size: 13px;
+  }
+
+  /* Windows: full-screen modal */
+  .mac-window {
+    position: fixed !important;
+    top: 21px !important;
+    left: 0 !important;
+    right: 0 !important;
+    bottom: 0 !important;
+    width: 100% !important;
+    max-width: 100% !important;
+    /* Cancel the desktop centering transform */
+    transform: none !important;
+    border: none !important;
+    outline: none !important;
+    border-top: 1px solid #555 !important;
+    box-shadow: none !important;
+    z-index: 200 !important;
+  }
+
+  /* Override desktop animations with slide-up for mobile */
+  .mac-window.opening {
+    animation: winOpenMobile 0.2s cubic-bezier(0.2, 0, 0.3, 1) forwards;
+  }
+
+  .mac-window.closing {
+    animation: winCloseMobile 0.16s cubic-bezier(0.5, 0, 0.8, 0.5) forwards;
+  }
+
+  @keyframes winOpenMobile {
+    from {
+      opacity: 0;
+      transform: translateY(24px) !important;
+    }
+    to {
+      opacity: 1;
+      transform: translateY(0) !important;
+    }
+  }
+
+  @keyframes winCloseMobile {
+    from {
+      opacity: 1;
+      transform: translateY(0) !important;
+    }
+    to {
+      opacity: 0;
+      transform: translateY(24px) !important;
+    }
+  }
+
+  /* Taller, touch-friendly title bar */
+  .window-titlebar {
+    height: 30px;
+  }
+
+  .window-close-btn {
+    width: 22px;
+    height: 22px;
+    --close-size: 22px;
+  }
+
+  .close-icon {
+    display: block; /* Always show X on mobile */
+    width: 11px;
+    height: 11px;
+  }
+
+  .titlebar-spacer {
+    width: 22px;
+  }
+
+  .window-title {
+    font-size: 13px;
+  }
+
+  .portfolio-grid {
+    grid-template-columns: repeat(2, 1fr);
+  }
+
+  .portfolio-item {
+    padding: 20px 10px;
+  }
+
+  /* Keep menu items but smaller on mobile */
+  .menu-item {
+    padding: 0 6px;
+    font-size: 10px;
+  }
+
+  .menu-item:nth-child(n+4) {
+    display: none;
+  }
+}
+
+/* Very small screens */
+@media (max-width: 360px) {
+  .menu-item:nth-child(n+3) {
+    display: none;
+  }
+}
+
+/* ═══════════════════════════════════════════════════════════
+   STARTUP SCREEN
+═══════════════════════════════════════════════════════════ */
+
+#startup-screen {
+  position: fixed;
+  inset: 0;
+  z-index: 99999;
+  background: var(--desktop-bg) url('src/images/wallpaper.png') center/cover no-repeat;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: opacity 0.4s ease;
+}
+
+#startup-screen.su-hidden {
+  opacity: 0;
+  pointer-events: none;
+}
+
+/* Outer gray dialog: 422×328 — scaled via JS for responsiveness */
+.su-dialog {
+  position: relative;
+  width: 422px;
+  height: 328px;
+  background: var(--ds-gray-300);
+  border: 1px solid var(--ds-black);
+  flex-shrink: 0;
+  transform-origin: center center;
+}
+
+/* Inner white panel: 350×221 at (36, 29) */
+.su-inner {
+  position: absolute;
+  left: 36px;
+  top: 29px;
+  width: 350px;
+  height: 221px;
+  background: var(--ds-white);
+  border: 1px solid var(--ds-black);
+  box-shadow:
+     1px  0px 0px 0px rgba(255,255,255,1),
+     0px  1px 0px 0px rgba(255,255,255,1),
+    -1px  0px 0px 0px rgba(128,128,128,1),
+     0px -1px 0px 0px rgba(128,128,128,1);
+}
+
+/* Finder icon: 109×114 at inner (121, 18) */
+.su-icon {
+  position: absolute;
+  left: 121px;
+  top: 18px;
+  width: 109px;
+  height: 114px;
+}
+.su-icon img { display: block; image-rendering: auto; }
+
+/* "Blair LEE": Apple Garamond Light 72px at inner (39, 128) — width 273 */
+.su-name {
+  position: absolute;
+  left: 39px;
+  top: 128px;
+  width: 273px;
+  font-family: var(--font-editorial);
+  font-size: 72px;
+  font-weight: 400;
+  letter-spacing: -0.04em;
+  line-height: 1;
+  text-align: center;
+  color: var(--ds-black);
+  white-space: nowrap;
+}
+
+/* ─── STATE 1: Enter button ──────────────────────────────── */
+
+#su-state-enter { position: absolute; inset: 0; pointer-events: none; }
+#su-state-enter > * { pointer-events: auto; }
+
+/* "Hello World..." at (82, 265) — Charcoal 12px, 100% lineHeight, 3.5% letterSpacing, CENTER */
+.su-hello {
+  position: absolute;
+  left: 67px;
+  top: 265px;
+  width: 287px;
+  font-family: var(--font-ui);
+  font-size: 12px;
+  font-weight: 400;
+  letter-spacing: 0.035em;
+  line-height: 1.0;
+  text-align: center;
+  color: var(--ds-black);
+  white-space: nowrap;
+}
+
+/* "Enter into..." button at (172, 286), 79×22 */
+.su-btn {
+  position: absolute;
+  left: 172px;
+  top: 286px;
+  width: 79px;
+  height: 22px;
+  background: #B5E040;
+  border: 1px solid #484848;
+  box-shadow:
+    inset  0px  2px 0px 0px rgba(255,255,255,1),
+    inset  2px  0px 0px 0px rgba(255,255,255,1),
+    inset  0px -2px 0px 0px rgba(128,128,128,1),
+    inset -2px  0px 0px 0px rgba(128,128,128,1);
+  padding: 3px 8px 4px;
+  font-family: var(--font-body);
+  font-size: 10px;
+  font-weight: 400;
+  color: var(--ds-black);
+  text-align: left;
+  line-height: 1;
+}
+
+.su-btn:active {
+  box-shadow:
+    inset  0px -2px 0px 0px rgba(255,255,255,1),
+    inset -2px  0px 0px 0px rgba(255,255,255,1),
+    inset  0px  2px 0px 0px rgba(128,128,128,1),
+    inset  2px  0px 0px 0px rgba(128,128,128,1);
+}
+
+/* ─── STATE 2: Loading ───────────────────────────────────── */
+
+#su-state-loading { position: absolute; inset: 0; }
+
+/* "Starting up..." at (170, 265), 83×12 — Charcoal 12px center */
+.su-startlabel {
+  position: absolute;
+  left: 170px;
+  top: 265px;
+  width: 83px;
+  font-family: var(--font-ui);
+  font-size: 12px;
+  font-weight: 400;
+  letter-spacing: 0.035em;
+  line-height: 1;
+  text-align: center;
+  color: var(--ds-black);
+  white-space: nowrap;
+}
+
+/* Progress bar: 160×12 at (131, 291) */
+.su-track {
+  position: absolute;
+  left: 131px;
+  top: 291px;
+  width: 160px;
+  height: 12px;
+  background: var(--ds-gray-500);
+  border: 1px solid var(--ds-black);
+  overflow: hidden;
+}
+
+/* Mac OS 9 blue progress fill */
+.su-bar {
+  height: 100%;
+  width: 0%;
+  background: linear-gradient(to bottom,
+    #8888D4 0%,
+    #7373CC 20%,
+    #5555BB 50%,
+    #3333A8 75%,
+    #2222A0 100%
+  );
+}
+
+/* ═══════════════════════════════════════════════════════════
+   FONTS  (모든 파일: src/fonts/)
+═══════════════════════════════════════════════════════════ */
+
+@font-face {
+  font-family: 'Charcoal';
+  src: url('src/fonts/CHARCOAL.TTF') format('truetype');
+  font-weight: 400;
+  font-style: normal;
+  font-display: swap;
+}
+
+@font-face {
+  font-family: 'Geneva';
+  src: url('src/fonts/geneva.TTF') format('truetype');
+  font-weight: 400;
+  font-style: normal;
+  font-display: swap;
+}
+
+/* Geneva 9.1 — Figma 폰트명 그대로 등록 (같은 파일) */
+@font-face {
+  font-family: 'Geneva 9.1';
+  src: url('src/fonts/geneva.TTF') format('truetype');
+  font-weight: 400;
+  font-style: normal;
+  font-display: swap;
+}
+
+@font-face {
+  font-family: 'pix Chicago';
+  src: url('src/fonts/pixChicago.ttf') format('truetype');
+  font-weight: 400;
+  font-style: normal;
+  font-display: swap;
+}
+
+@font-face {
+  font-family: 'Apple Garamond Light';
+  src: url('src/fonts/AppleGaramond-Light.ttf') format('truetype');
+  font-weight: 400;
+  font-style: normal;
+  font-display: swap;
+}
+
+@font-face {
+  font-family: 'Apple Garamond Light';
+  src: url('src/fonts/AppleGaramond-LightItalic.ttf') format('truetype');
+  font-weight: 400;
+  font-style: italic;
+  font-display: swap;
+}
+
+@font-face {
+  font-family: 'EB Garamond';
+  src: url('src/fonts/EBGaramond-Regular.ttf') format('truetype');
+  font-weight: 400;
+  font-style: normal;
+  font-display: swap;
+}
+
+@font-face {
+  font-family: 'CozetteVector';
+  src: url('src/fonts/CozetteVector.ttf') format('truetype');
+  font-weight: 400;
+  font-style: normal;
+  font-display: swap;
+}
+
+

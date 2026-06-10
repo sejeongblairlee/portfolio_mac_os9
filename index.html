@@ -1,0 +1,592 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+  <title>Blair Lee — Product Designer</title>
+  <link rel="stylesheet" href="style.css">
+</head>
+<body>
+
+  <!-- ▐▌ STARTUP SCREEN ▐▌ -->
+  <div id="startup-screen">
+    <div class="su-dialog">
+
+      <!-- Inner white panel: 350×221 at (36, 29) -->
+      <div class="su-inner">
+        <!-- Canvas: 눈 없는 PNG + 눈을 매 프레임 직접 렌더링 -->
+        <div class="su-icon" id="finder-icon-wrap">
+          <canvas id="finder-logo-canvas"
+                  width="218" height="228"
+                  style="width:109px;height:114px;cursor:pointer;display:block;image-rendering:pixelated;">
+          </canvas>
+        </div>
+        <div class="su-name">Sejeong Lee</div>
+      </div>
+
+      <!-- STATE 1: Hello World + Enter button (default) -->
+      <div id="su-state-enter">
+        <div class="su-hello">Hello World, welcome to my workspace 1992</div>
+        <button class="su-btn" id="su-btn">Enter into...</button>
+      </div>
+
+      <!-- STATE 2: Starting up + progress bar (hidden until button click) -->
+      <div id="su-state-loading" style="display:none">
+        <div class="su-startlabel">Starting up...</div>
+        <div class="su-track">
+          <div class="su-bar" id="startup-bar"></div>
+        </div>
+      </div>
+
+    </div>
+  </div>
+
+  <!-- ▐▌ TOP MENU BAR ▐▌ -->
+  <nav id="menu-bar">
+    <div class="menu-left">
+      <span class="apple-logo">&#xF8FF;</span>
+      <span class="menu-item" data-window="cuseme">About...</span>
+      <span class="menu-item" data-window="portfolio">Projects</span>
+      <span class="menu-item" data-window="cuseme">Contact ME!</span>
+    </div>
+    <div class="menu-right">
+      <span id="clock"></span>
+    </div>
+  </nav>
+
+  <!-- ▐▌ DESKTOP ▐▌ -->
+  <main id="desktop">
+
+    <!-- Desktop Icons -->
+    <div id="icons-container">
+      <div class="desktop-icon" data-window="portfolio">
+        <img src="src/images/icon-projects-32.png" class="icon-img" alt="">
+        <div class="icon-label">Projects</div>
+      </div>
+      <div class="desktop-icon" data-window="blairTunes">
+        <img src="src/images/icon-blairTunes-32.png" class="icon-img" alt="">
+        <div class="icon-label">Blair-Tunes</div>
+      </div>
+      <div class="desktop-icon" data-window="cuseme">
+        <img src="src/images/icon-cuseeme-32.png" class="icon-img" alt="">
+        <div class="icon-label">CU-SeeME</div>
+      </div>
+      <div class="desktop-icon" data-window="none">
+        <img src="src/images/icon-andmore-32.png" class="icon-img" alt="">
+        <div class="icon-label">and more?</div>
+      </div>
+      <div class="desktop-icon trash-icon" data-window="none">
+        <img src="src/images/icon-trash-32.png" class="icon-img" alt="">
+        <div class="icon-label">Trash</div>
+      </div>
+    </div>
+
+    <!-- ╔═══════════════════════════════════════╗ -->
+    <!-- ║  WINDOW: Projects                     ║ -->
+    <!-- ╚═══════════════════════════════════════╝ -->
+    <div class="mac-window hidden" id="window-portfolio">
+      <div class="window-titlebar">
+        <button class="window-close-btn" data-target="portfolio" aria-label="닫기">
+          <svg class="close-icon" viewBox="0 0 8 8" width="8" height="8">
+            <line x1="1.5" y1="1.5" x2="6.5" y2="6.5" stroke="#2a2a2a" stroke-width="1.5" stroke-linecap="round"/>
+            <line x1="6.5" y1="1.5" x2="1.5" y2="6.5" stroke="#2a2a2a" stroke-width="1.5" stroke-linecap="round"/>
+          </svg>
+        </button>
+        <div class="titlebar-inner">
+          <div class="titlebar-picker"></div>
+          <div class="titlebar-label">
+            <img src="src/images/icon-projects-32.png" class="titlebar-icon" alt="">
+            <span class="window-title">Projects</span>
+          </div>
+          <div class="titlebar-picker"></div>
+          <div class="titlebar-zoom"></div>
+        </div>
+        <div class="titlebar-collapse"></div>
+      </div>
+
+      <!-- Status bar -->
+      <div class="pj-statusbar">4 Categories · 10 Services</div>
+
+      <!-- Accordion + Mac OS 9 Finder list rows -->
+      <div class="pj-content pj-acc-wrap">
+
+        <!-- ① Finance (2) — DEFAULT OPEN -->
+        <div class="pj-acc-item" data-open="true">
+          <div class="pj-acc-header">
+            <span class="pj-acc-arrow">▶</span>
+            <span class="pj-acc-chip" style="background:#0000FF"></span>
+            <span class="pj-acc-name">Finance</span>
+            <span class="pj-acc-count">(2)</span>
+          </div>
+          <div class="pj-acc-files">
+            <div class="pj-finder-row" data-key="monimo_SAMSUNG CARD.dmg">
+              <span class="pj-fr-chevron">▶</span>
+              <img src="src/images/icon-projects-32.png" class="pj-fr-icon" alt="">
+              <span class="pj-fr-name">monimo_SAMSUNG CARD.dmg</span>
+            </div>
+            <div class="pj-finder-row" data-key="LOCA_LOTTE CARD.pkg">
+              <span class="pj-fr-chevron">▶</span>
+              <img src="src/images/icon-projects-32.png" class="pj-fr-icon" alt="">
+              <span class="pj-fr-name">LOCA_LOTTE CARD.pkg</span>
+            </div>
+          </div>
+        </div>
+
+        <!-- ② Commerce (3) -->
+        <div class="pj-acc-item" data-open="false">
+          <div class="pj-acc-header">
+            <span class="pj-acc-arrow">▶</span>
+            <span class="pj-acc-chip" style="background:#FF0000"></span>
+            <span class="pj-acc-name">Commerce</span>
+            <span class="pj-acc-count">(3)</span>
+          </div>
+          <div class="pj-acc-files">
+            <div class="pj-finder-row" data-key="MLB_SUPRA_F&F.app">
+              <span class="pj-fr-chevron">▶</span>
+              <img src="src/images/icon-projects-32.png" class="pj-fr-icon" alt="">
+              <span class="pj-fr-name">MLB_SUPRA_F&amp;F.app</span>
+            </div>
+            <div class="pj-finder-row" data-key="SI_Village_SHINSEGAE.dmg">
+              <span class="pj-fr-chevron">▶</span>
+              <img src="src/images/icon-projects-32.png" class="pj-fr-icon" alt="">
+              <span class="pj-fr-name">SI_Village_SHINSEGAE.dmg</span>
+            </div>
+            <div class="pj-finder-row" data-key="LOTTE_ON_LOTTE.pkg">
+              <span class="pj-fr-chevron">▶</span>
+              <img src="src/images/icon-projects-32.png" class="pj-fr-icon" alt="">
+              <span class="pj-fr-name">LOTTE_ON_LOTTE.pkg</span>
+            </div>
+          </div>
+        </div>
+
+        <!-- ③ O2O (2) -->
+        <div class="pj-acc-item" data-open="false">
+          <div class="pj-acc-header">
+            <span class="pj-acc-arrow">▶</span>
+            <span class="pj-acc-chip" style="background:#FF6600"></span>
+            <span class="pj-acc-name">O2O</span>
+            <span class="pj-acc-count">(2)</span>
+          </div>
+          <div class="pj-acc-files">
+            <div class="pj-finder-row" data-key="DaLock_Startup.dmg">
+              <span class="pj-fr-chevron">▶</span>
+              <img src="src/images/icon-projects-32.png" class="pj-fr-icon" alt="">
+              <span class="pj-fr-name">DaLock_Startup.dmg</span>
+            </div>
+            <div class="pj-finder-row" data-key="T_Factory_SKT.pkg">
+              <span class="pj-fr-chevron">▶</span>
+              <img src="src/images/icon-projects-32.png" class="pj-fr-icon" alt="">
+              <span class="pj-fr-name">T_Factory_SKT.pkg</span>
+            </div>
+          </div>
+        </div>
+
+        <!-- ④ Etc (3) — B2B + OTT 공존 -->
+        <div class="pj-acc-item" data-open="false">
+          <div class="pj-acc-header">
+            <span class="pj-acc-arrow">▶</span>
+            <span class="pj-acc-chip" style="background:#333399"></span>
+            <span class="pj-acc-name">Etc</span>
+            <span class="pj-acc-count">(3)</span>
+          </div>
+          <div class="pj-acc-files">
+            <div class="pj-finder-row" data-key="Addy_CJ ENM.sit">
+              <span class="pj-fr-chevron">▶</span>
+              <img src="src/images/icon-projects-32.png" class="pj-fr-icon" alt="">
+              <span class="pj-fr-name">Addy_CJ ENM.sit</span>
+            </div>
+            <div class="pj-finder-row" data-key="Tving_CJ ENM.dmg">
+              <span class="pj-fr-chevron">▶</span>
+              <img src="src/images/icon-projects-32.png" class="pj-fr-icon" alt="">
+              <span class="pj-fr-name">Tving_CJ ENM.dmg</span>
+            </div>
+            <div class="pj-finder-row" data-key="TMR_LINA.pkg">
+              <span class="pj-fr-chevron">▶</span>
+              <img src="src/images/icon-projects-32.png" class="pj-fr-icon" alt="">
+              <span class="pj-fr-name">TMR_LINA.pkg</span>
+            </div>
+          </div>
+        </div>
+
+      </div><!-- .pj-acc-wrap -->
+      <div class="resize-handle"></div>
+    </div>
+
+    <!-- ╔═══════════════════════════════════════╗ -->
+    <!-- ║  WINDOW: Get Info (Project Detail)    ║ -->
+    <!-- ╚═══════════════════════════════════════╝ -->
+    <div class="mac-window hidden" id="window-getinfo">
+      <div class="window-titlebar">
+        <button class="window-close-btn" data-target="getinfo" aria-label="닫기">
+          <svg class="close-icon" viewBox="0 0 8 8" width="8" height="8">
+            <line x1="1.5" y1="1.5" x2="6.5" y2="6.5" stroke="#2a2a2a" stroke-width="1.5" stroke-linecap="round"/>
+            <line x1="6.5" y1="1.5" x2="1.5" y2="6.5" stroke="#2a2a2a" stroke-width="1.5" stroke-linecap="round"/>
+          </svg>
+        </button>
+        <div class="titlebar-inner">
+          <div class="titlebar-picker"></div>
+          <div class="titlebar-label">
+            <img src="src/images/icon-projects-32.png" class="titlebar-icon" alt="">
+            <span class="window-title" id="gi-win-title">Get Info</span>
+          </div>
+          <div class="titlebar-picker"></div>
+          <div class="titlebar-zoom"></div>
+        </div>
+        <div class="titlebar-collapse"></div>
+      </div>
+      <div class="gi-body">
+        <!-- File header -->
+        <div class="gi-file-header">
+          <img src="src/images/icon-projects-32.png" class="gi-file-icon" alt="">
+          <div class="gi-file-name" id="gi-filename">—</div>
+        </div>
+        <!-- Tabs -->
+        <div class="gi-tabs">
+          <button class="gi-tab gi-tab-active" data-panel="overview">Overview</button>
+          <button class="gi-tab" data-panel="details">Details</button>
+        </div>
+        <!-- Panels -->
+        <div class="gi-panels">
+          <div class="gi-panel gi-panel-active" id="gi-panel-overview">
+            <table class="gi-table">
+              <tr><td class="gi-key">Service</td><td class="gi-val" id="gi-service">—</td></tr>
+              <tr><td class="gi-key">Client</td><td class="gi-val" id="gi-client">—</td></tr>
+              <tr><td class="gi-key">Role</td><td class="gi-val" id="gi-role">—</td></tr>
+              <tr><td class="gi-key">Domain</td><td class="gi-val" id="gi-domain">—</td></tr>
+              <tr><td class="gi-key">Period</td><td class="gi-val" id="gi-period">—</td></tr>
+            </table>
+          </div>
+          <div class="gi-panel" id="gi-panel-details">
+            <div class="gi-details-text" id="gi-details">—</div>
+          </div>
+        </div>
+      </div>
+      <div class="resize-handle"></div>
+    </div>
+
+    <!-- ╔═══════════════════════════════════════╗ -->
+    <!-- ║  WINDOW: CU-SeeMe                     ║ -->
+    <!-- ╚═══════════════════════════════════════╝ -->
+    <div class="mac-window hidden" id="window-cuseme">
+      <div class="window-titlebar">
+        <button class="window-close-btn" data-target="cuseme" aria-label="닫기">
+          <svg class="close-icon" viewBox="0 0 8 8" width="8" height="8">
+            <line x1="1.5" y1="1.5" x2="6.5" y2="6.5" stroke="#2a2a2a" stroke-width="1.5" stroke-linecap="round"/>
+            <line x1="6.5" y1="1.5" x2="1.5" y2="6.5" stroke="#2a2a2a" stroke-width="1.5" stroke-linecap="round"/>
+          </svg>
+        </button>
+        <div class="titlebar-inner">
+          <div class="titlebar-picker"></div>
+          <div class="titlebar-label">
+            <img src="src/images/icon-cuseeme-32.png" class="titlebar-icon" alt="">
+            <span class="window-title">CU-SeeMe</span>
+          </div>
+          <div class="titlebar-picker"></div>
+          <div class="titlebar-zoom"></div>
+        </div>
+        <div class="titlebar-collapse"></div>
+      </div>
+      <div class="window-content cuseme-content">
+        <div class="cuseme-header">
+          <div class="cuseme-avatar">👤</div>
+          <div class="cuseme-info">
+            <div class="cuseme-name">Blair Lee</div>
+            <div class="cuseme-status">
+              <span class="status-dot"></span> Blair Lee Studio
+            </div>
+          </div>
+        </div>
+        <hr class="cuseme-divider">
+        <div class="cuseme-rows">
+          <div class="cuseme-row">
+            <span class="cuseme-label">Email</span>
+            <span class="cuseme-value">hello@blairlee.studio</span>
+          </div>
+          <div class="cuseme-row">
+            <span class="cuseme-label">Web</span>
+            <span class="cuseme-value">blairlee.studio</span>
+          </div>
+          <div class="cuseme-row">
+            <span class="cuseme-label">LinkedIn</span>
+            <span class="cuseme-value">/in/blairlee</span>
+          </div>
+          <div class="cuseme-row">
+            <span class="cuseme-label">Instagram</span>
+            <span class="cuseme-value">@blairlee</span>
+          </div>
+        </div>
+        <hr class="cuseme-divider">
+        <p class="cuseme-bio">
+          서울 기반 프로덕트 디자이너 (1992–)<br>
+          사용자 중심의 디지털 경험을 설계합니다.
+        </p>
+      </div>
+      <div class="resize-handle"></div>
+    </div>
+
+    <!-- ╔═══════════════════════════════════════╗ -->
+    <!-- ║  WINDOW: CU-SeeMe Local (Blair)       ║ -->
+    <!-- ╚═══════════════════════════════════════╝ -->
+    <div class="mac-window cu-window hidden" id="window-cu-local">
+      <div class="window-titlebar cu-titlebar">
+        <button class="window-close-btn cu-close-pair" data-target="cu-local" aria-label="닫기">
+          <svg class="close-icon" viewBox="0 0 8 8" width="8" height="8">
+            <line x1="1.5" y1="1.5" x2="6.5" y2="6.5" stroke="#fff" stroke-width="1.5" stroke-linecap="round"/>
+            <line x1="6.5" y1="1.5" x2="1.5" y2="6.5" stroke="#fff" stroke-width="1.5" stroke-linecap="round"/>
+          </svg>
+        </button>
+        <span class="window-title">CU-SeeMe (Local)</span>
+        <div class="titlebar-spacer"></div>
+      </div>
+      <div class="cu-body">
+        <div class="cu-name-bar">BLAIR LEE &nbsp;·&nbsp; Local</div>
+
+        <!-- Noise canvas + particle target -->
+        <div class="cu-video-wrap">
+          <canvas id="cu-canvas" class="cu-vid"></canvas>
+          <div class="cu-scanlines"></div>
+          <div class="cu-particles" id="cu-particles"></div>
+        </div>
+        <div class="cu-vid-stats" id="cu-local-stats">15.2 fps&nbsp;&nbsp;24 Kbps</div>
+        <div class="cu-status-line">Transmitting · 24 Kbps (355 cap)</div>
+
+        <!-- Pixel-art reaction buttons (Blair receives reactions) -->
+        <div class="cu-reactions">
+
+          <!-- ❤ Pixel Heart -->
+          <button class="cu-react-btn" data-emoji="heart" title="Love">
+            <svg class="cu-px-icon" viewBox="0 0 12 10" shape-rendering="crispEdges" xmlns="http://www.w3.org/2000/svg">
+              <rect x="1" y="0" width="3" height="2"/>
+              <rect x="8" y="0" width="3" height="2"/>
+              <rect x="0" y="2" width="12" height="3"/>
+              <rect x="1" y="5" width="10" height="2"/>
+              <rect x="2" y="7" width="8" height="2"/>
+              <rect x="4" y="9" width="4" height="1"/>
+            </svg>
+          </button>
+
+          <!-- 👍 Pixel Thumb Up -->
+          <button class="cu-react-btn" data-emoji="thumb" title="Like">
+            <svg class="cu-px-icon" viewBox="0 0 10 12" shape-rendering="crispEdges" xmlns="http://www.w3.org/2000/svg">
+              <rect x="4" y="0" width="2" height="4"/>
+              <rect x="3" y="4" width="3" height="2"/>
+              <rect x="0" y="5" width="10" height="5"/>
+              <rect x="0" y="10" width="3" height="2"/>
+            </svg>
+          </button>
+
+          <!-- 😮 Pixel Wow Face -->
+          <button class="cu-react-btn" data-emoji="wow" title="Wow">
+            <svg class="cu-px-icon" viewBox="0 0 12 12" shape-rendering="crispEdges" xmlns="http://www.w3.org/2000/svg">
+              <rect x="2" y="0" width="8" height="2"/>
+              <rect x="0" y="2" width="2" height="8"/>
+              <rect x="10" y="2" width="2" height="8"/>
+              <rect x="2" y="10" width="8" height="2"/>
+              <rect x="2" y="3" width="3" height="2"/>
+              <rect x="7" y="3" width="3" height="2"/>
+              <rect x="4" y="7" width="4" height="1"/>
+              <rect x="3" y="8" width="1" height="2"/>
+              <rect x="8" y="8" width="1" height="2"/>
+              <rect x="4" y="10" width="4" height="1"/>
+            </svg>
+          </button>
+
+        </div><!-- .cu-reactions -->
+
+        <!-- KakaoTalk CTA — href에 오픈채팅 URL 입력 -->
+        <a class="cu-cta-btn" href="https://open.kakao.com/" target="_blank" rel="noopener">
+          &#9632; KakaoTalk 1:1 Chat
+        </a>
+      </div>
+    </div>
+
+    <!-- ╔═══════════════════════════════════════╗ -->
+    <!-- ║  WINDOW: CU-SeeMe Remote (Visitor)    ║ -->
+    <!-- ╚═══════════════════════════════════════╝ -->
+    <div class="mac-window cu-window hidden" id="window-cu-remote">
+      <div class="window-titlebar cu-titlebar">
+        <button class="window-close-btn cu-close-pair" data-target="cu-remote" aria-label="닫기">
+          <svg class="close-icon" viewBox="0 0 8 8" width="8" height="8">
+            <line x1="1.5" y1="1.5" x2="6.5" y2="6.5" stroke="#fff" stroke-width="1.5" stroke-linecap="round"/>
+            <line x1="6.5" y1="1.5" x2="1.5" y2="6.5" stroke="#fff" stroke-width="1.5" stroke-linecap="round"/>
+          </svg>
+        </button>
+        <span class="window-title">CU-SeeMe (Remote)</span>
+        <div class="titlebar-spacer"></div>
+      </div>
+      <div class="cu-body">
+        <div class="cu-name-bar" id="cu-remote-name">YOU &nbsp;·&nbsp; Remote</div>
+
+        <div class="cu-video-wrap" id="cu-remote-wrap">
+          <video id="cu-webcam" class="cu-vid" autoplay muted playsinline></video>
+
+          <!-- No-cam placeholder -->
+          <div class="cu-no-cam" id="cu-no-cam">
+            <div class="cu-no-cam-icon">&#9632;</div>
+            <div>Allow camera to connect</div>
+          </div>
+
+          <!-- CAM OFF overlay -->
+          <div class="cu-camoff-overlay" id="cu-camoff-overlay">
+            <div class="cu-camoff-label">CAMERA OFF</div>
+          </div>
+
+          <!-- MASK FACE overlay (pixel cat sunglasses) -->
+          <div class="cu-mask-overlay" id="cu-mask-overlay">
+            <svg class="cu-mask-svg" viewBox="0 0 42 28" shape-rendering="crispEdges" xmlns="http://www.w3.org/2000/svg">
+              <!-- Cat ears -->
+              <rect fill="#909090" x="2"  y="0" width="7" height="8"/>
+              <rect fill="#FFB0B0" x="4"  y="2" width="3" height="4"/>
+              <rect fill="#909090" x="33" y="0" width="7" height="8"/>
+              <rect fill="#FFB0B0" x="35" y="2" width="3" height="4"/>
+              <!-- Face -->
+              <rect fill="#C8C8C8" x="2"  y="6"  width="38" height="22"/>
+              <!-- Sunglasses left lens -->
+              <rect fill="#111"    x="2"  y="9"  width="17" height="11"/>
+              <rect fill="#333"    x="3"  y="10" width="15" height="9"/>
+              <!-- Sunglasses bridge -->
+              <rect fill="#111"    x="19" y="12" width="4"  height="5"/>
+              <!-- Sunglasses right lens -->
+              <rect fill="#111"    x="23" y="9"  width="17" height="11"/>
+              <rect fill="#333"    x="24" y="10" width="15" height="9"/>
+              <!-- Lens shine -->
+              <rect fill="#555"    x="4"  y="11" width="5" height="2"/>
+              <rect fill="#555"    x="25" y="11" width="5" height="2"/>
+              <!-- Nose -->
+              <rect fill="#FFB0B0" x="19" y="22" width="4" height="2"/>
+              <!-- Whiskers -->
+              <rect fill="#888"    x="2"  y="24" width="13" height="1"/>
+              <rect fill="#888"    x="27" y="24" width="13" height="1"/>
+              <rect fill="#888"    x="2"  y="26" width="11" height="1"/>
+              <rect fill="#888"    x="29" y="26" width="11" height="1"/>
+            </svg>
+          </div>
+
+          <div class="cu-scanlines"></div>
+        </div><!-- .cu-video-wrap -->
+
+        <div class="cu-vid-stats" id="cu-remote-stats">-- fps&nbsp;&nbsp;-- Kbps</div>
+        <div class="cu-status-line">Receiving: <span id="cu-recv-info">-- kbps</span></div>
+
+        <!-- Privacy controls -->
+        <div class="cu-priv-btns">
+          <button class="cu-priv-btn" id="cu-mask-btn">MASK FACE</button>
+          <button class="cu-priv-btn" id="cu-camoff-btn">CAM OFF</button>
+        </div>
+
+      </div>
+    </div>
+
+    <!-- ╔═══════════════════════════════════════╗ -->
+    <!-- ║  WINDOW 1: QuickTime Player           ║ -->
+    <!-- ╚═══════════════════════════════════════╝ -->
+    <div class="mac-window hidden" id="window-blairTunes">
+      <div class="window-titlebar">
+        <button class="window-close-btn" data-target="blairTunes" aria-label="닫기">
+          <svg class="close-icon" viewBox="0 0 8 8" width="8" height="8">
+            <line x1="1.5" y1="1.5" x2="6.5" y2="6.5" stroke="#2a2a2a" stroke-width="1.5" stroke-linecap="round"/>
+            <line x1="6.5" y1="1.5" x2="1.5" y2="6.5" stroke="#2a2a2a" stroke-width="1.5" stroke-linecap="round"/>
+          </svg>
+        </button>
+        <div class="titlebar-inner">
+          <div class="titlebar-picker"></div>
+          <div class="titlebar-label">
+            <img src="src/images/icon-blairTunes-32.png" class="titlebar-icon" alt="">
+            <span class="window-title">QuickTime Player</span>
+          </div>
+          <div class="titlebar-picker"></div>
+          <div class="titlebar-zoom"></div>
+        </div>
+        <div class="titlebar-collapse"></div>
+      </div>
+
+      <!-- 영상 영역 -->
+      <div class="qtp-video-area">
+        <!-- Click to Play 스플래시 (초기 대기화면) -->
+        <div class="qtp-splash" id="qtp-splash">
+          <div class="qtp-splash-logo">▶</div>
+          <div class="qtp-splash-track" id="qtp-splash-track">Blair-Tunes</div>
+          <div class="qtp-splash-hint">Press ▶ to play</div>
+        </div>
+        <iframe id="qt-iframe" src="about:blank"
+          frameborder="0"
+          allow="autoplay; encrypted-media; fullscreen; picture-in-picture"
+          allowfullscreen>
+        </iframe>
+      </div>
+
+      <!-- Mac OS 9 QuickTime 컨트롤바 -->
+      <div class="qtp-ctrl">
+        <div class="qtp-track-info">
+          <span class="qtp-track-title" id="qt-track-title">No Track</span>
+          <span class="qtp-track-artist" id="qt-track-artist">—</span>
+        </div>
+        <div class="qtp-ctrl-row">
+          <button class="qtp-btn" id="qt-prev" onclick="qtLoadPrev()">⏮</button>
+          <button class="qtp-btn qtp-play-btn" id="qt-play" onclick="qtTogglePlay()">▶</button>
+          <button class="qtp-btn" id="qt-next" onclick="qtLoadNext()">⏭</button>
+          <div class="qtp-progress">
+            <div class="qtp-progress-fill" id="qtp-fill"></div>
+          </div>
+          <span class="qtp-time" id="qt-time">0:00</span>
+          <span class="qtp-vol-icon">🔈</span>
+          <input class="qtp-vol" id="qt-vol" type="range" min="0" max="100" value="80">
+        </div>
+      </div>
+
+      <div class="resize-handle"></div>
+    </div>
+
+    <!-- ╔═══════════════════════════════════════╗ -->
+    <!-- ║  WINDOW 2: Playlist                   ║ -->
+    <!-- ╚═══════════════════════════════════════╝ -->
+    <div class="mac-window hidden" id="window-qt-playlist">
+      <div class="window-titlebar">
+        <button class="window-close-btn" data-target="qt-playlist" aria-label="닫기">
+          <svg class="close-icon" viewBox="0 0 8 8" width="8" height="8">
+            <line x1="1.5" y1="1.5" x2="6.5" y2="6.5" stroke="#2a2a2a" stroke-width="1.5" stroke-linecap="round"/>
+            <line x1="6.5" y1="1.5" x2="1.5" y2="6.5" stroke="#2a2a2a" stroke-width="1.5" stroke-linecap="round"/>
+          </svg>
+        </button>
+        <div class="titlebar-inner">
+          <div class="titlebar-picker"></div>
+          <div class="titlebar-label">
+            <img src="src/images/icon-blairTunes-32.png" class="titlebar-icon" alt="">
+            <span class="window-title">Playlist</span>
+          </div>
+          <div class="titlebar-picker"></div>
+          <div class="titlebar-zoom"></div>
+        </div>
+        <div class="titlebar-collapse"></div>
+      </div>
+
+      <!-- Finder 리스트 컬럼 헤더 -->
+      <div class="qtp-list-hdr">
+        <span class="qtp-col-num">#</span>
+        <span class="qtp-col-title">Title</span>
+        <span class="qtp-col-artist">Artist</span>
+        <span class="qtp-col-dur">Time</span>
+      </div>
+
+      <!-- 트랙 리스트 (JS 렌더) -->
+      <div class="qtp-list" id="qt-playlist"></div>
+
+      <div class="resize-handle"></div>
+    </div>
+
+    <!-- Mobile Backdrop Overlay -->
+    <div id="mobile-overlay"></div>
+
+  </main>
+
+  <!-- Sound preloads — DOM <audio> 방식이 file:// 에서도 안정적으로 동작 -->
+  <audio id="snd-click"   src="src/sounds/Click.wav"   preload="auto"></audio>
+  <audio id="snd-startup" src="src/sounds/Startup.wav" preload="auto"></audio>
+  <audio id="snd-quack"   src="src/sounds/Quack.wav"   preload="auto"></audio>
+  <audio id="snd-sosumi"  src="src/sounds/Sosumi.wav"  preload="auto"></audio>
+  <audio id="snd-droplet" src="src/sounds/Droplet.wav" preload="auto"></audio>
+  <audio id="snd-indigo"  src="src/sounds/Indigo.wav"  preload="auto"></audio>
+
+  <script src="script.js"></script>
+</body>
+</html>
