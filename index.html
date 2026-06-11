@@ -45,7 +45,16 @@
   <!-- ▐▌ TOP MENU BAR ▐▌ -->
   <nav id="menu-bar">
     <div class="menu-left">
-      <span class="apple-logo">&#xF8FF;</span>
+      <div class="apple-menu" id="apple-menu">
+        <span class="apple-logo">&#xF8FF;</span>
+        <div class="apple-dropdown hidden" id="apple-dropdown">
+          <div class="apple-dd-item" id="dd-about-mac">이 매킨토시 정보</div>
+          <div class="apple-dd-sep"></div>
+          <div class="apple-dd-item" id="dd-balloon-help">
+            <span id="dd-balloon-label">풍선 도움말 보기</span>
+          </div>
+        </div>
+      </div>
       <span class="menu-item" data-window="cuseme">About...</span>
       <span class="menu-item" data-window="portfolio">Projects</span>
       <span class="menu-item" data-window="cuseme">Contact ME!</span>
@@ -60,23 +69,23 @@
 
     <!-- Desktop Icons -->
     <div id="icons-container">
-      <div class="desktop-icon" data-window="portfolio">
+      <div class="desktop-icon" data-window="portfolio" data-balloon="더블클릭하면 제 프로젝트들을 볼 수 있어요! 📁">
         <img src="src/images/icon-projects-32.png" class="icon-img" alt="">
         <div class="icon-label">Projects</div>
       </div>
-      <div class="desktop-icon" data-window="blairTunes">
+      <div class="desktop-icon" data-window="blairTunes" data-balloon="제가 작업할 때 듣는 플레이리스트예요 🎧">
         <img src="src/images/icon-blairTunes-32.png" class="icon-img" alt="">
         <div class="icon-label">Blair-Tunes</div>
       </div>
-      <div class="desktop-icon" data-window="cuseme">
+      <div class="desktop-icon" data-window="cuseme" data-balloon="실시간으로 저랑 연결돼요 (사실은 화상캠이에요) 📹">
         <img src="src/images/icon-cuseeme-32.png" class="icon-img" alt="">
         <div class="icon-label">CU-SeeME</div>
       </div>
-      <div class="desktop-icon" data-window="none">
+      <div class="desktop-icon" data-window="none" data-balloon="음... 사실 별거 없어요 (아직은요 👀)">
         <img src="src/images/icon-andmore-32.png" class="icon-img" alt="">
         <div class="icon-label">and more?</div>
       </div>
-      <div class="desktop-icon trash-icon" data-window="none">
+      <div class="desktop-icon" data-window="trash" data-balloon="제 흑역사들이 잠들어 있는 곳이에요 🗑️">
         <img src="src/images/icon-trash-32.png" class="icon-img" alt="">
         <div class="icon-label">Trash</div>
       </div>
@@ -262,6 +271,158 @@
           </div>
         </div>
       </div>
+      <div class="resize-handle"></div>
+    </div>
+
+    <!-- ╔═══════════════════════════════════════╗ -->
+    <!-- ║  WINDOW: About This Macintosh         ║ -->
+    <!-- ╚═══════════════════════════════════════╝ -->
+    <div class="mac-window hidden" id="window-about-mac">
+      <div class="window-titlebar">
+        <button class="window-close-btn" data-target="about-mac" aria-label="닫기">
+          <svg class="close-icon" viewBox="0 0 8 8" width="8" height="8">
+            <line x1="1.5" y1="1.5" x2="6.5" y2="6.5" stroke="#2a2a2a" stroke-width="1.5" stroke-linecap="round"/>
+            <line x1="6.5" y1="1.5" x2="1.5" y2="6.5" stroke="#2a2a2a" stroke-width="1.5" stroke-linecap="round"/>
+          </svg>
+        </button>
+        <div class="titlebar-inner">
+          <div class="titlebar-picker"></div>
+          <div class="titlebar-label">
+            <span class="titlebar-emoji">💻</span>
+            <span class="window-title">About This Macintosh</span>
+          </div>
+          <div class="titlebar-picker"></div>
+          <div class="titlebar-zoom"></div>
+        </div>
+        <div class="titlebar-collapse"></div>
+      </div>
+
+      <div class="abm-body">
+        <div class="abm-header">
+          <div class="abm-icon">💻</div>
+          <div class="abm-meta">
+            <div class="abm-os">Blair OS</div>
+            <div class="abm-ver">Version 9.6.10 — Product Designer Edition</div>
+            <div class="abm-row-sm">Built-in Memory&nbsp;: 8 Years Experience</div>
+            <div class="abm-row-sm">Virtual Memory&nbsp;: Unlimited Curiosity</div>
+          </div>
+        </div>
+
+        <div class="abm-divider"></div>
+
+        <div class="abm-memlist-hdr">
+          <span>Skill / Application</span>
+          <span>Allocation</span>
+        </div>
+        <div class="abm-memlist" id="abm-memlist">
+          <div class="abm-row">
+            <span class="abm-row-name">Product Design.app</span>
+            <div class="abm-bar"><div class="abm-bar-fill" style="width:95%; background:#3366FF"></div></div>
+            <span class="abm-row-pct">95%</span>
+          </div>
+          <div class="abm-row">
+            <span class="abm-row-name">UX Research.app</span>
+            <div class="abm-bar"><div class="abm-bar-fill" style="width:88%; background:#9933CC"></div></div>
+            <span class="abm-row-pct">88%</span>
+          </div>
+          <div class="abm-row">
+            <span class="abm-row-name">Prototyping (Figma).app</span>
+            <div class="abm-bar"><div class="abm-bar-fill" style="width:92%; background:#33AA55"></div></div>
+            <span class="abm-row-pct">92%</span>
+          </div>
+          <div class="abm-row">
+            <span class="abm-row-name">Frontend (HTML/CSS/JS).app</span>
+            <div class="abm-bar"><div class="abm-bar-fill" style="width:78%; background:#FF9900"></div></div>
+            <span class="abm-row-pct">78%</span>
+          </div>
+          <div class="abm-row">
+            <span class="abm-row-name">야근 모드.app</span>
+            <div class="abm-bar"><div class="abm-bar-fill" style="width:60%; background:#CC3333"></div></div>
+            <span class="abm-row-pct">60%</span>
+          </div>
+          <div class="abm-row">
+            <span class="abm-row-name">커피.app</span>
+            <div class="abm-bar"><div class="abm-bar-fill" style="width:100%; background:#996633"></div></div>
+            <span class="abm-row-pct">∞%</span>
+          </div>
+        </div>
+
+        <div class="abm-divider"></div>
+
+        <div class="abm-footer">
+          <span class="abm-footer-icon">ⓘ</span>
+          <span class="abm-footer-text">Largest Unused Block: "퇴근 후 시간" — 매우 적음</span>
+        </div>
+      </div>
+    </div>
+
+    <!-- ╔═══════════════════════════════════════╗ -->
+    <!-- ║  WINDOW: Trash                        ║ -->
+    <!-- ╚═══════════════════════════════════════╝ -->
+    <div class="mac-window hidden" id="window-trash">
+      <div class="window-titlebar">
+        <button class="window-close-btn" data-target="trash" aria-label="닫기">
+          <svg class="close-icon" viewBox="0 0 8 8" width="8" height="8">
+            <line x1="1.5" y1="1.5" x2="6.5" y2="6.5" stroke="#2a2a2a" stroke-width="1.5" stroke-linecap="round"/>
+            <line x1="6.5" y1="1.5" x2="1.5" y2="6.5" stroke="#2a2a2a" stroke-width="1.5" stroke-linecap="round"/>
+          </svg>
+        </button>
+        <div class="titlebar-inner">
+          <div class="titlebar-picker"></div>
+          <div class="titlebar-label">
+            <img src="src/images/icon-trash-32.png" class="titlebar-icon" alt="">
+            <span class="window-title">Trash</span>
+          </div>
+          <div class="titlebar-picker"></div>
+          <div class="titlebar-zoom"></div>
+        </div>
+        <div class="titlebar-collapse"></div>
+      </div>
+
+      <div class="trash-statusbar" id="trash-statusbar">5 items, 흑역사 한가득</div>
+
+      <div class="trash-list">
+        <div class="trash-row">
+          <span class="trash-row-icon">📐</span>
+          <div class="trash-row-info">
+            <span class="trash-row-name">완벽한_시안_final_진짜최종.fig</span>
+            <span class="trash-row-kind">Figma 파일 — v47</span>
+          </div>
+        </div>
+        <div class="trash-row">
+          <span class="trash-row-icon">📊</span>
+          <div class="trash-row-info">
+            <span class="trash-row-name">카페인_의존도_분석.xlsx</span>
+            <span class="trash-row-kind">스프레드시트 — ∞</span>
+          </div>
+        </div>
+        <div class="trash-row">
+          <span class="trash-row-icon">📝</span>
+          <div class="trash-row-info">
+            <span class="trash-row-name">팀장님_죄송합니다_초안3.txt</span>
+            <span class="trash-row-kind">텍스트 문서 — 3 bytes</span>
+          </div>
+        </div>
+        <div class="trash-row">
+          <span class="trash-row-icon">🐛</span>
+          <div class="trash-row-info">
+            <span class="trash-row-name">프로덕션_버그_재현안됨.zip</span>
+            <span class="trash-row-kind">압축 파일 — 재현 불가</span>
+          </div>
+        </div>
+        <div class="trash-row">
+          <span class="trash-row-icon">⏰</span>
+          <div class="trash-row-info">
+            <span class="trash-row-name">야근_금지_다짐.txt</span>
+            <span class="trash-row-kind">텍스트 문서 — 지켜지지 않음</span>
+          </div>
+        </div>
+      </div>
+
+      <div class="trash-footer">
+        <button class="trash-empty-btn" id="trash-empty-btn">휴지통 비우기…</button>
+      </div>
+
       <div class="resize-handle"></div>
     </div>
 
@@ -624,6 +785,22 @@
 
     <!-- Mobile Backdrop Overlay -->
     <div id="mobile-overlay"></div>
+
+    <!-- 풍선 도움말 (Balloon Help) -->
+    <div class="balloon-help hidden" id="balloon-help">
+      <div class="balloon-text" id="balloon-text"></div>
+    </div>
+
+    <!-- Mac OS 9 스타일 경고/확인 대화상자 -->
+    <div class="os9-alert-overlay hidden" id="os9-alert-overlay">
+      <div class="os9-alert">
+        <div class="os9-alert-body">
+          <div class="os9-alert-icon" id="os9-alert-icon">💣</div>
+          <div class="os9-alert-text" id="os9-alert-text"></div>
+        </div>
+        <div class="os9-alert-actions" id="os9-alert-actions"></div>
+      </div>
+    </div>
 
   </main>
 

@@ -1319,3 +1319,152 @@ document.querySelectorAll('.mac-window').forEach(win => {
     titlebar.classList.remove('drag-handle');
   });
 });
+
+// ═══════════════════════════════════════════════════════════
+// Apple 메뉴 드롭다운
+// ═══════════════════════════════════════════════════════════
+(function () {
+  const menu     = document.getElementById('apple-menu');
+  const logo     = menu?.querySelector('.apple-logo');
+  const dropdown = document.getElementById('apple-dropdown');
+  if (!menu || !logo || !dropdown) return;
+
+  const closeMenu = () => {
+    dropdown.classList.add('hidden');
+    logo.classList.remove('pressed');
+  };
+
+  logo.addEventListener('click', e => {
+    e.stopPropagation();
+    const willOpen = dropdown.classList.contains('hidden');
+    closeMenu();
+    if (willOpen) {
+      dropdown.classList.remove('hidden');
+      logo.classList.add('pressed');
+      playSound('click');
+    }
+  });
+
+  document.addEventListener('click', e => {
+    if (!menu.contains(e.target)) closeMenu();
+  });
+
+  // ── 이 매킨토시 정보 ──
+  document.getElementById('dd-about-mac')?.addEventListener('click', () => {
+    closeMenu();
+    playSound('click');
+    openWindow('about-mac');
+  });
+
+  // ── 풍선 도움말 토글 ──
+  document.getElementById('dd-balloon-help')?.addEventListener('click', () => {
+    closeMenu();
+    playSound('click');
+    const on = document.body.classList.toggle('balloon-help-on');
+    const label = document.getElementById('dd-balloon-label');
+    if (label) label.textContent = on ? '풍선 도움말 숨기기' : '풍선 도움말 보기';
+    if (!on) hideBalloon();
+  });
+})();
+
+// ═══════════════════════════════════════════════════════════
+// 풍선 도움말 (Balloon Help)
+// ═══════════════════════════════════════════════════════════
+const balloonEl  = document.getElementById('balloon-help');
+const balloonTxt = document.getElementById('balloon-text');
+
+function showBalloon(target) {
+  if (!balloonEl || !balloonTxt) return;
+  const text = target.dataset.balloon;
+  if (!text) return;
+
+  balloonTxt.textContent = text;
+  balloonEl.classList.remove('hidden');
+
+  const rect = target.getBoundingClientRect();
+  // 아이콘 바로 아래, 살짝 오른쪽으로 배치 (꼬리가 아이콘을 가리키도록)
+  let left = rect.left;
+  let top  = rect.bottom + 10;
+
+  // 화면 밖으로 나가지 않도록 보정
+  const balloonW = balloonEl.offsetWidth || 220;
+  if (left + balloonW > window.innerWidth - 8) {
+    left = window.innerWidth - balloonW - 8;
+  }
+  balloonEl.style.left = Math.max(8, left) + 'px';
+  balloonEl.style.top  = top + 'px';
+}
+
+function hideBalloon() {
+  balloonEl?.classList.add('hidden');
+}
+
+document.querySelectorAll('[data-balloon]').forEach(el => {
+  el.addEventListener('mouseenter', () => {
+    if (!document.body.classList.contains('balloon-help-on')) return;
+    showBalloon(el);
+  });
+  el.addEventListener('mouseleave', hideBalloon);
+});
+
+// ═══════════════════════════════════════════════════════════
+// Mac OS 9 경고/확인 대화상자 (재사용 가능)
+// ═══════════════════════════════════════════════════════════
+function showOs9Alert({ icon = '💣', text, buttons = [] }) {
+  const overlay = document.getElementById('os9-alert-overlay');
+  const iconEl  = document.getElementById('os9-alert-icon');
+  const textEl  = document.getElementById('os9-alert-text');
+  const actsEl  = document.getElementById('os9-alert-actions');
+  if (!overlay || !iconEl || !textEl || !actsEl) return;
+
+  iconEl.textContent = icon;
+  textEl.innerHTML   = text;
+  actsEl.innerHTML   = '';
+
+  buttons.forEach(b => {
+    const btn = document.createElement('button');
+    btn.className = 'os9-alert-btn' + (b.primary ? ' os9-alert-btn-default' : '');
+    btn.textContent = b.label;
+    btn.addEventListener('click', () => {
+      overlay.classList.add('hidden');
+      b.onClick?.();
+    });
+    actsEl.appendChild(btn);
+  });
+
+  overlay.classList.remove('hidden');
+}
+
+// ═══════════════════════════════════════════════════════════
+// Trash — 휴지통 비우기
+// ═══════════════════════════════════════════════════════════
+document.getElementById('trash-empty-btn')?.addEventListener('click', () => {
+  playSound('sosumi');
+  const itemCount = document.querySelectorAll('.trash-row').length;
+
+  showOs9Alert({
+    icon: '💣',
+    text: `휴지통에 있는 항목 ${itemCount}개를 영구적으로 삭제하시겠습니까?<br>이 작업은 취소할 수 없습니다.`,
+    buttons: [
+      { label: '취소', primary: false },
+      {
+        label: '비우기',
+        primary: true,
+        onClick: () => {
+          playSound('droplet');
+          const win = document.getElementById('window-trash');
+          win?.classList.add('shake');
+          win?.addEventListener('animationend', () => win.classList.remove('shake'), { once: true });
+
+          setTimeout(() => {
+            showOs9Alert({
+              icon: '🎉',
+              text: '사실 이 항목들은 지워지지 않아요.<br>제 흑역사는 영구 보존됩니다.',
+              buttons: [{ label: '확인', primary: true }],
+            });
+          }, 450);
+        },
+      },
+    ],
+  });
+});
