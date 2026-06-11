@@ -992,48 +992,6 @@ document.querySelectorAll('.titlebar-zoom').forEach(btn => {
     const win = btn.closest('.mac-window');
     if (!win || win.classList.contains('shaded')) return;
 
-    // ── QuickTime Player: Zoom = Player 확장 + Playlist 토글 ──
-    if (win.id === 'window-blairTunes') {
-      const desk = document.getElementById('desktop').getBoundingClientRect();
-      const listW = 320; // playlist 폭
-
-      if (win.classList.contains('zoomed')) {
-        // 원복: 저장해둔 크기/위치로 복귀
-        win.classList.remove('zoomed');
-        win.style.left      = win.dataset.zoomPrevL || '';
-        win.style.top       = win.dataset.zoomPrevT || '';
-        win.style.width     = win.dataset.zoomPrevW || '';
-        win.style.height    = win.dataset.zoomPrevH || '';
-        win.style.transform = win.dataset.zoomPrevL ? 'none' : 'translateX(-50%)';
-        qtHidePlaylist();
-      } else {
-        // 현재 상태 저장
-        win.dataset.zoomPrevL = win.style.left;
-        win.dataset.zoomPrevT = win.style.top;
-        win.dataset.zoomPrevW = win.style.width;
-        win.dataset.zoomPrevH = win.style.height;
-
-        win.classList.add('zoomed');
-
-        // Player: list 오른쪽에 딱 붙어서 화면 꽉 채움
-        win.style.left      = listW + 'px';
-        win.style.top       = '0px';
-        win.style.width     = (desk.width - listW) + 'px';
-        win.style.height    = desk.height + 'px';
-        win.style.transform = 'none';
-
-        // Playlist: player와 동일한 top·height, 바로 왼쪽에 딱 붙임
-        // (player 크기 반영을 위해 한 프레임 뒤에 실행)
-        requestAnimationFrame(() => {
-          const pH = win.offsetHeight;
-          const pT = parseInt(win.style.top) || 0;
-          qtShowPlaylist(listW, pH, pT);
-        });
-      }
-      bringToFront(win);
-      return;
-    }
-
     // ── 다른 창: 기존 최대화/원복 동작 ────────────────────────
     const deskRect = document.getElementById('desktop').getBoundingClientRect();
 
@@ -1126,11 +1084,16 @@ function qtRenderList() {
   if (!el) return;
   el.innerHTML = QT_PLAYLIST.map((t, i) => `
     <div class="qtp-row${i===qtIdx?' active':''}" data-i="${i}">
-      <span class="qtp-col-num">${String(i+1).padStart(2,'0')}</span>
-      <span class="qtp-col-title">${t.title}</span>
-      <span class="qtp-col-artist">${t.artist}</span>
-      <span class="qtp-col-dur">${t.duration}</span>
+      <span class="qtp-row-num">${i+1}</span>
+      <span class="qtp-row-info">
+        <span class="qtp-row-title">${t.title}</span>
+        <span class="qtp-row-artist">${t.artist}</span>
+      </span>
+      <span class="qtp-row-dur">${t.duration}</span>
     </div>`).join('');
+
+  const count = document.getElementById('qtp-track-count');
+  if (count) count.textContent = `${QT_PLAYLIST.length} songs`;
 }
 
 function qtHighlight(i) {
@@ -1245,10 +1208,9 @@ function qtSetVolume(v) {
     `{"event":"command","func":"setVolume","args":[${v}]}`, '*');
 }
 
-// ── 양창 함께 닫기 ──────────────────────────────────────────
-function qtCloseBoth() {
+// ── Blair-Tunes 닫기 ──────────────────────────────────────────
+function qtClose() {
   closeWindow('blairTunes');
-  closeWindow('qt-playlist');
   // iframe 초기화
   const iframe = document.getElementById('qt-iframe');
   if (iframe) { iframe.src = 'about:blank'; iframe.style.display = 'none'; }
@@ -1260,62 +1222,16 @@ function qtCloseBoth() {
   if (fill) fill.style.width = '0%';
 }
 
-// ── Blair-Tunes 열기 (Player만, Playlist는 Zoom 시 등장) ─────
+// ── Blair-Tunes 열기 (좌: 플레이리스트 / 우: 영상, 한 창) ────
 function openBlairTunes() {
   if (!document.getElementById('qt-playlist')?.children.length) {
     qtRenderList();
   }
 
-  // Player 창만 오픈 — Playlist는 숨긴 상태 유지
   openWindow('blairTunes');
-
-  if (!isMobile()) {
-    const pad = 12;
-    const playerEl = document.getElementById('window-blairTunes');
-    const pw = playerEl?.offsetWidth  || 400;
-    const ph = playerEl?.offsetHeight || 280;
-
-    if (playerEl) {
-      playerEl.style.left      = (window.innerWidth  - pw - pad) + 'px';
-      playerEl.style.top       = (window.innerHeight - ph - pad) + 'px';
-      playerEl.style.transform = 'none';
-    }
-  }
 
   // 자동재생
   setTimeout(() => qtLoad(0), 300);
-}
-
-// ── Playlist 노출 (Player 왼쪽 전체 높이로 고정) ─────────────
-function qtShowPlaylist(w, h, top) {
-  const player   = document.getElementById('window-blairTunes');
-  const playlist = document.getElementById('window-qt-playlist');
-  if (!player || !playlist) return;
-
-  const listW = w   || 300;
-  const listH = h   || player.offsetHeight;
-  const listT = top || parseInt(player.style.top) || 0;
-
-  // Player 바로 왼쪽, 같은 top, 같은 height
-  playlist.style.left      = '0px';
-  playlist.style.top       = listT + 'px';
-  playlist.style.width     = listW + 'px';
-  playlist.style.height    = listH + 'px';
-  playlist.style.maxHeight = listH + 'px';
-  playlist.style.transform = 'none';
-
-  openWindow('qt-playlist');
-  bringToFront(player);
-}
-
-// ── Playlist 숨기기 ───────────────────────────────────────────
-function qtHidePlaylist() {
-  const playlist = document.getElementById('window-qt-playlist');
-  if (playlist) {
-    playlist.style.height    = '';
-    playlist.style.maxHeight = '';
-  }
-  closeWindow('qt-playlist');
 }
 
 // ── 플레이리스트 클릭 이벤트 ────────────────────────────────
@@ -1329,13 +1245,13 @@ document.addEventListener('click', e => {
     return;
   }
 
-  // 두 창 닫기 버튼 연동
+  // 닫기 버튼 연동
   const closeBtn = e.target.closest('.window-close-btn');
   if (closeBtn) {
     const tgt = closeBtn.dataset.target;
-    if (tgt === 'blairTunes' || tgt === 'qt-playlist') {
+    if (tgt === 'blairTunes') {
       e.stopPropagation();
-      qtCloseBoth();
+      qtClose();
     }
   }
 });

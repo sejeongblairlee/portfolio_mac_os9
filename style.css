@@ -980,14 +980,66 @@ button {
 }
 
 /* ═══════════════════════════════════════════════════════════
-   QUICKTIME PLAYER (2창 분리)
+   BLAIR-TUNES — QuickTime Player UI + Spotify UX
+   (좌: 플레이리스트 사이드바 / 우: 영상 + 컨트롤바)
 ═══════════════════════════════════════════════════════════ */
 
-/* ── Window 1: Player ───────────────────────────────────── */
 #window-blairTunes {
-  width: 400px;
-  min-width: 280px;
-  min-height: 260px;
+  width: 760px;
+  min-width: 480px;
+  min-height: 380px;
+}
+
+/* 본문 레이아웃: 좌측 사이드바 + 우측 메인 */
+.qtp-body {
+  display: flex;
+  flex: 1;
+  min-height: 0;
+  overflow: hidden;
+}
+
+/* ── 좌측: 플레이리스트 사이드바 (Spotify 스타일) ─────────── */
+.qtp-sidebar {
+  width: 240px;
+  flex-shrink: 0;
+  display: flex;
+  flex-direction: column;
+  background: var(--ds-white);
+  border-right: 1px solid var(--ds-black);
+  overflow: hidden;
+}
+
+.qtp-sidebar-hdr {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  height: 22px;
+  flex-shrink: 0;
+  padding: 0 8px;
+  background: var(--ds-gray-600);
+  border-bottom: 1px solid var(--ds-black);
+  box-shadow:
+    inset 0 2px 0 rgba(38,38,38,0.5),
+    inset 0 -2px 0 rgba(255,255,255,0.15);
+  color: var(--ds-white);
+  font-family: var(--font-ui);
+  font-size: 9px;
+  letter-spacing: 0.04em;
+  -webkit-font-smoothing: none;
+  user-select: none;
+}
+.qtp-sidebar-count {
+  font-family: var(--font-body);
+  font-size: 9px;
+  color: rgba(255,255,255,0.65);
+}
+
+/* ── 우측: 영상 + 컨트롤바 ───────────────────────────────── */
+.qtp-main {
+  flex: 1;
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
 }
 
 /* 영상 영역 */
@@ -1186,47 +1238,10 @@ button {
   cursor: pointer;
 }
 
-/* ── Window 2: Playlist ─────────────────────────────────── */
-#window-qt-playlist {
-  width: 300px;
-  min-width: 200px;
-  min-height: 200px;
-  /* height는 JS가 Player와 동일하게 동적 설정 */
-}
-
-/* 리스트 내부 스크롤 보장 */
-#window-qt-playlist .qtp-list {
-  flex: 1;
-  min-height: 0;      /* flex 자식 스크롤 필수 */
-  overflow-y: auto;
-  overflow-x: hidden;
-}
-
-/* Finder 컬럼 헤더 */
-.qtp-list-hdr {
-  display: flex;
-  align-items: center;
-  height: 20px;
-  background: var(--ds-gray-600);
-  border-bottom: 1px solid var(--ds-black);
-  flex-shrink: 0;
-  box-shadow:
-    inset 0 2px 0 rgba(38,38,38,0.5),
-    inset 0 -2px 0 rgba(255,255,255,0.15);
-  color: var(--ds-white);
-  font-family: var(--font-body);
-  font-size: 9px;
-  -webkit-font-smoothing: none;
-  user-select: none;
-}
-.qtp-col-num    { width: 28px; padding: 0 4px; text-align: right; flex-shrink: 0; }
-.qtp-col-title  { flex: 1; padding: 0 4px; min-width: 0; }
-.qtp-col-artist { width: 90px; padding: 0 4px; flex-shrink: 0; overflow: hidden; }
-.qtp-col-dur    { width: 36px; padding: 0 6px 0 0; text-align: right; flex-shrink: 0; }
-
-/* 트랙 리스트 */
+/* ── 트랙 리스트 (Spotify 스타일 2줄 행) ──────────────────── */
 .qtp-list {
   flex: 1;
+  min-height: 0;
   overflow-y: auto;
   overflow-x: hidden;
   background: var(--ds-white);
@@ -1236,11 +1251,48 @@ button {
 .qtp-row {
   display: flex;
   align-items: center;
-  height: 22px;
+  gap: 8px;
+  padding: 5px 10px;
   border-bottom: 1px solid var(--ds-gray-300);
   cursor: default;
   user-select: none;
   -webkit-font-smoothing: none;
+}
+.qtp-row-num {
+  flex-shrink: 0;
+  width: 16px;
+  text-align: right;
+  font-family: var(--font-body);
+  font-size: 9px;
+  color: var(--ds-gray-600);
+}
+.qtp-row-info {
+  flex: 1;
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 1px;
+}
+.qtp-row-title {
+  font-family: var(--font-body);
+  font-size: 10px;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+.qtp-row-artist {
+  font-family: var(--font-body);
+  font-size: 9px;
+  color: var(--ds-gray-700);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+.qtp-row-dur {
+  flex-shrink: 0;
+  font-family: var(--font-body);
+  font-size: 9px;
+  color: var(--ds-gray-600);
 }
 .qtp-row:hover {
   background: var(--ds-black);
@@ -1250,17 +1302,17 @@ button {
   background: var(--ds-azul);
   color: var(--ds-white);
 }
-.qtp-row .qtp-col-num    { color: var(--ds-gray-600); font-family: var(--font-body); font-size: 9px; }
-.qtp-row .qtp-col-title  { font-family: var(--font-body); font-size: 10px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
-.qtp-row .qtp-col-artist { font-family: var(--font-body); font-size: 9px; color: var(--ds-gray-700); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
-.qtp-row .qtp-col-dur    { font-family: var(--font-body); font-size: 9px; color: var(--ds-gray-600); }
-.qtp-row.active .qtp-col-num,
-.qtp-row.active .qtp-col-artist,
-.qtp-row.active .qtp-col-dur    { color: rgba(255,255,255,0.7); }
-.qtp-row:hover .qtp-col-num,
-.qtp-row:hover .qtp-col-artist,
-.qtp-row:hover .qtp-col-dur     { color: var(--ds-gray-400); }
-.qtp-row.active .qtp-col-title  { font-weight: bold; }
+.qtp-row.active .qtp-row-num,
+.qtp-row.active .qtp-row-artist,
+.qtp-row.active .qtp-row-dur {
+  color: rgba(255,255,255,0.7);
+}
+.qtp-row:hover .qtp-row-num,
+.qtp-row:hover .qtp-row-artist,
+.qtp-row:hover .qtp-row-dur {
+  color: var(--ds-gray-400);
+}
+.qtp-row.active .qtp-row-title { font-weight: bold; }
 
 /* ─── Desktop icon images ────────────────────────────────── */
 
@@ -1879,6 +1931,26 @@ button {
 
   .menu-item:nth-child(n+4) {
     display: none;
+  }
+
+  /* Blair-Tunes: 좌/우 분할 → 상/하 분할 */
+  #window-blairTunes { min-width: 0; min-height: 0; }
+
+  .qtp-body {
+    flex-direction: column;
+  }
+
+  .qtp-sidebar {
+    width: auto;
+    height: 38vh;
+    flex-shrink: 0;
+    border-right: none;
+    border-bottom: 1px solid var(--ds-black);
+  }
+
+  .qtp-main {
+    flex: 1;
+    min-height: 0;
   }
 }
 

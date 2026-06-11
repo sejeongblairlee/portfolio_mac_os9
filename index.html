@@ -543,7 +543,8 @@
     </div>
 
     <!-- ╔═══════════════════════════════════════╗ -->
-    <!-- ║  WINDOW 1: QuickTime Player           ║ -->
+    <!-- ║  WINDOW: Blair-Tunes (QuickTime UI    ║ -->
+    <!-- ║  + Spotify-style 좌:플레이리스트/우:영상) ║ -->
     <!-- ╚═══════════════════════════════════════╝ -->
     <div class="mac-window hidden" id="window-blairTunes">
       <div class="window-titlebar">
@@ -565,79 +566,58 @@
         <div class="titlebar-collapse"></div>
       </div>
 
-      <!-- 영상 영역 -->
-      <div class="qtp-video-area">
-        <!-- Click to Play 스플래시 (초기 대기화면) -->
-        <div class="qtp-splash" id="qtp-splash">
-          <div class="qtp-splash-logo" id="qtp-splash-logo">▶</div>
-          <div class="qtp-splash-track" id="qtp-splash-track">Blair-Tunes</div>
-          <div class="qtp-splash-hint" id="qtp-splash-hint">Press ▶ to play</div>
-        </div>
-        <iframe id="qt-iframe" src="about:blank"
-          frameborder="0"
-          allow="autoplay; encrypted-media; fullscreen; picture-in-picture"
-          allowfullscreen>
-        </iframe>
-        <!-- YouTube 제목 카드(상단) / 로고(우하단) 가리기용 오버레이 -->
-        <div class="qtp-yt-mask qtp-yt-mask-top"></div>
-        <div class="qtp-yt-mask qtp-yt-mask-logo"></div>
-      </div>
+      <!-- Spotify 스타일 본문: 좌측 플레이리스트 + 우측 영상 -->
+      <div class="qtp-body">
 
-      <!-- Mac OS 9 QuickTime 컨트롤바 -->
-      <div class="qtp-ctrl">
-        <div class="qtp-track-info">
-          <span class="qtp-track-title" id="qt-track-title">No Track</span>
-          <span class="qtp-track-artist" id="qt-track-artist">—</span>
-        </div>
-        <div class="qtp-ctrl-row">
-          <button class="qtp-btn" id="qt-prev" onclick="qtLoadPrev()">⏮</button>
-          <button class="qtp-btn qtp-play-btn" id="qt-play" onclick="qtTogglePlay()">▶</button>
-          <button class="qtp-btn" id="qt-next" onclick="qtLoadNext()">⏭</button>
-          <div class="qtp-progress">
-            <div class="qtp-progress-fill" id="qtp-fill"></div>
+        <!-- 좌측: 플레이리스트 사이드바 -->
+        <div class="qtp-sidebar">
+          <div class="qtp-sidebar-hdr">
+            <span class="qtp-sidebar-title">♪ Blair-Tunes</span>
+            <span class="qtp-sidebar-count" id="qtp-track-count"></span>
           </div>
-          <span class="qtp-time" id="qt-time">0:00</span>
-          <span class="qtp-vol-icon">🔈</span>
-          <input class="qtp-vol" id="qt-vol" type="range" min="0" max="100" value="80">
+          <div class="qtp-list" id="qt-playlist"></div>
         </div>
-      </div>
 
-      <div class="resize-handle"></div>
-    </div>
-
-    <!-- ╔═══════════════════════════════════════╗ -->
-    <!-- ║  WINDOW 2: Playlist                   ║ -->
-    <!-- ╚═══════════════════════════════════════╝ -->
-    <div class="mac-window hidden" id="window-qt-playlist">
-      <div class="window-titlebar">
-        <button class="window-close-btn" data-target="qt-playlist" aria-label="닫기">
-          <svg class="close-icon" viewBox="0 0 8 8" width="8" height="8">
-            <line x1="1.5" y1="1.5" x2="6.5" y2="6.5" stroke="#2a2a2a" stroke-width="1.5" stroke-linecap="round"/>
-            <line x1="6.5" y1="1.5" x2="1.5" y2="6.5" stroke="#2a2a2a" stroke-width="1.5" stroke-linecap="round"/>
-          </svg>
-        </button>
-        <div class="titlebar-inner">
-          <div class="titlebar-picker"></div>
-          <div class="titlebar-label">
-            <img src="src/images/icon-blairTunes-32.png" class="titlebar-icon" alt="">
-            <span class="window-title">Playlist</span>
+        <!-- 우측: 영상 + 컨트롤바 -->
+        <div class="qtp-main">
+          <!-- 영상 영역 -->
+          <div class="qtp-video-area">
+            <!-- Click to Play 스플래시 (초기 대기화면) -->
+            <div class="qtp-splash" id="qtp-splash">
+              <div class="qtp-splash-logo" id="qtp-splash-logo">▶</div>
+              <div class="qtp-splash-track" id="qtp-splash-track">Blair-Tunes</div>
+              <div class="qtp-splash-hint" id="qtp-splash-hint">Press ▶ to play</div>
+            </div>
+            <iframe id="qt-iframe" src="about:blank"
+              frameborder="0"
+              allow="autoplay; encrypted-media; fullscreen; picture-in-picture"
+              allowfullscreen>
+            </iframe>
+            <!-- YouTube 제목 카드(상단) / 로고(우하단) 가리기용 오버레이 -->
+            <div class="qtp-yt-mask qtp-yt-mask-top"></div>
+            <div class="qtp-yt-mask qtp-yt-mask-logo"></div>
           </div>
-          <div class="titlebar-picker"></div>
-          <div class="titlebar-zoom"></div>
+
+          <!-- Mac OS 9 QuickTime 컨트롤바 -->
+          <div class="qtp-ctrl">
+            <div class="qtp-track-info">
+              <span class="qtp-track-title" id="qt-track-title">No Track</span>
+              <span class="qtp-track-artist" id="qt-track-artist">—</span>
+            </div>
+            <div class="qtp-ctrl-row">
+              <button class="qtp-btn" id="qt-prev" onclick="qtLoadPrev()">⏮</button>
+              <button class="qtp-btn qtp-play-btn" id="qt-play" onclick="qtTogglePlay()">▶</button>
+              <button class="qtp-btn" id="qt-next" onclick="qtLoadNext()">⏭</button>
+              <div class="qtp-progress">
+                <div class="qtp-progress-fill" id="qtp-fill"></div>
+              </div>
+              <span class="qtp-time" id="qt-time">0:00</span>
+              <span class="qtp-vol-icon">🔈</span>
+              <input class="qtp-vol" id="qt-vol" type="range" min="0" max="100" value="80">
+            </div>
+          </div>
         </div>
-        <div class="titlebar-collapse"></div>
       </div>
-
-      <!-- Finder 리스트 컬럼 헤더 -->
-      <div class="qtp-list-hdr">
-        <span class="qtp-col-num">#</span>
-        <span class="qtp-col-title">Title</span>
-        <span class="qtp-col-artist">Artist</span>
-        <span class="qtp-col-dur">Time</span>
-      </div>
-
-      <!-- 트랙 리스트 (JS 렌더) -->
-      <div class="qtp-list" id="qt-playlist"></div>
 
       <div class="resize-handle"></div>
     </div>
