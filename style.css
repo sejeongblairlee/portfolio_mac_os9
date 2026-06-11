@@ -1047,6 +1047,26 @@ button {
   z-index: 1;
 }
 
+/* YouTube 제목 카드(상단) / 워터마크 로고(우하단) 가리기 */
+.qtp-yt-mask {
+  position: absolute;
+  background: #000;
+  pointer-events: none;
+  z-index: 3;
+}
+.qtp-yt-mask-top {
+  top: 0;
+  left: 0;
+  right: 0;
+  height: 22%;
+}
+.qtp-yt-mask-logo {
+  right: 0;
+  bottom: 0;
+  width: 76px;
+  height: 36px;
+}
+
 /* ── 컨트롤바 ───────────────────────────────────────────── */
 .qtp-ctrl {
   flex-shrink: 0;
@@ -2105,6 +2125,373 @@ button {
   font-weight: 400;
   font-style: normal;
   font-display: swap;
+}
+
+/* ═══════════════════════════════════════════════════════════
+   PROJECT CASE STUDY (MAGAZINE) WINDOW
+═══════════════════════════════════════════════════════════ */
+
+#window-magazine {
+  width: 860px;
+  min-width: 480px;
+  min-height: 360px;
+  max-height: 680px;
+}
+
+.mag-body {
+  display: flex;
+  flex-direction: column;
+  flex: 1;
+  min-height: 0;
+  overflow-y: auto;
+  background: #FAFAF8;
+}
+
+/* ─── ① System Metadata Header (Get Info 변형) ───────────── */
+.mag-header {
+  position: sticky;
+  top: 0;
+  z-index: 5;
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 12px;
+  padding: 10px 14px;
+  background: var(--ds-gray-200);
+  border-bottom: 1px solid var(--ds-black);
+}
+
+.mag-header-icon img {
+  width: 36px;
+  height: 36px;
+  object-fit: cover;
+  border: 1px solid var(--ds-black);
+  box-shadow: 1px 1px 0 0 rgba(38,38,38,0.4);
+  background: var(--ds-white);
+  flex-shrink: 0;
+}
+
+.mag-header-text {
+  flex: 1;
+  min-width: 160px;
+}
+
+.mag-title {
+  font-family: var(--font-editorial), serif;
+  font-size: 22px;
+  font-weight: 400;
+  line-height: 1.2;
+  color: var(--ds-black);
+}
+
+.mag-subtitle {
+  font-family: var(--font-body);
+  font-size: 11px;
+  color: var(--ds-gray-800);
+  margin-top: 2px;
+}
+
+.mag-meta-table {
+  border-collapse: collapse;
+  font-family: var(--font-ui);
+  font-size: 9px;
+  background: var(--ds-white);
+  border: 1px solid var(--ds-black);
+  box-shadow: inset 1px 1px 0 0 rgba(38,38,38,0.25);
+  flex-shrink: 0;
+}
+
+.mag-meta-table td {
+  padding: 2px 8px;
+  border-bottom: 1px solid var(--ds-gray-300);
+  white-space: nowrap;
+}
+
+.mag-meta-table tr:last-child td {
+  border-bottom: none;
+}
+
+.mag-meta-key {
+  color: var(--ds-gray-800);
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+  text-align: right;
+  padding-right: 8px;
+}
+
+.mag-meta-val {
+  color: var(--ds-black);
+  font-weight: bold;
+  text-align: left;
+}
+
+.mag-nav {
+  display: flex;
+  gap: 4px;
+  flex-shrink: 0;
+}
+
+.mag-nav-btn {
+  font-family: var(--font-ui);
+  font-size: 11px;
+  width: 24px;
+  height: 24px;
+  border: 1px solid var(--ds-black);
+  background: var(--ds-gray-300);
+  box-shadow: 1px 1px 0 0 rgba(38,38,38,0.4);
+  cursor: pointer;
+}
+
+.mag-nav-btn:active {
+  box-shadow: inset 1px 1px 0 0 rgba(38,38,38,0.4);
+  transform: translate(1px, 1px);
+}
+
+.mag-nav-btn:disabled {
+  opacity: 0.35;
+  cursor: default;
+}
+.mag-nav-btn:disabled:active {
+  box-shadow: 1px 1px 0 0 rgba(38,38,38,0.4);
+  transform: none;
+}
+
+/* ─── ② System Alert Metric Strip ────────────────────────── */
+.mag-metrics {
+  display: flex;
+  gap: 10px;
+  padding: 12px 14px;
+  overflow-x: auto;
+  border-bottom: 1px solid var(--ds-gray-400);
+  background: var(--ds-gray-200);
+  flex-shrink: 0;
+}
+
+.mag-metric-card {
+  flex-shrink: 0;
+  min-width: 150px;
+  padding: 8px 10px;
+  background: var(--ds-white);
+  border: 1px solid var(--ds-black);
+  box-shadow: 1px 1px 0 0 rgba(38,38,38,0.4);
+}
+
+.mag-metric-card.is-highlight {
+  min-width: 170px;
+  background: var(--ds-white);
+  border-width: 1px;
+  box-shadow: 2px 2px 0 0 rgba(38,38,38,0.5);
+}
+
+.mag-metric-label {
+  font-family: var(--font-ui);
+  font-size: 9px;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+  color: var(--ds-gray-800);
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  margin-bottom: 4px;
+}
+
+.mag-metric-values {
+  font-family: var(--font-editorial), serif;
+  font-size: 16px;
+  display: flex;
+  align-items: baseline;
+  gap: 6px;
+  color: var(--ds-black);
+  white-space: nowrap;
+}
+
+.mag-metric-card.is-highlight .mag-metric-values {
+  font-size: 19px;
+}
+
+.mag-metric-before {
+  font-size: 11px;
+  color: var(--ds-gray-700);
+  text-decoration: line-through;
+}
+
+.mag-metric-arrow {
+  font-size: 11px;
+}
+
+.mag-metric-after {
+  font-weight: bold;
+}
+
+.mag-trend-up   .mag-metric-after,
+.mag-trend-up   .mag-metric-arrow   { color: #2E7D32; }
+.mag-trend-down .mag-metric-after,
+.mag-trend-down .mag-metric-arrow   { color: #C62828; }
+.mag-trend-neutral .mag-metric-after,
+.mag-trend-neutral .mag-metric-arrow { color: var(--ds-black); }
+
+/* ─── ③ Split-Screen Storyteller ─────────────────────────── */
+.mag-story {
+  display: flex;
+  align-items: flex-start;
+  gap: 0;
+}
+
+.mag-story-col {
+  flex: 1 1 56%;
+  min-width: 0;
+  padding: 18px 22px;
+  display: flex;
+  flex-direction: column;
+  gap: 36px;
+}
+
+.mag-section {
+  scroll-margin-top: 16px;
+}
+
+.mag-section-type {
+  font-family: var(--font-ui);
+  font-size: 9px;
+  font-weight: bold;
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+  color: var(--ds-azul);
+  margin-bottom: 6px;
+}
+
+.mag-section-title {
+  font-family: var(--font-editorial), serif;
+  font-size: 18px;
+  font-weight: 400;
+  line-height: 1.35;
+  margin-bottom: 10px;
+  color: var(--ds-black);
+}
+
+.mag-section-content {
+  font-family: var(--font-body);
+  font-size: 12px;
+  line-height: 1.8;
+  color: var(--ds-black);
+  white-space: pre-line;
+}
+
+/* Visual Stage (우측 고정 패널) */
+.mag-visual-stage {
+  flex: 1 1 44%;
+  min-width: 0;
+  position: sticky;
+  top: 0;
+  align-self: flex-start;
+  height: 100%;
+  min-height: 320px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 22px;
+  border-left: 1px solid var(--ds-gray-300);
+  background: var(--ds-gray-200);
+}
+
+.mag-visual-media {
+  display: none;
+  width: 100%;
+}
+
+.mag-visual-media.is-active {
+  display: block;
+  animation: magVisualFadeIn 0.32s ease-out;
+}
+
+@keyframes magVisualFadeIn {
+  from { opacity: 0; transform: translateY(8px); }
+  to   { opacity: 1; transform: translateY(0); }
+}
+
+.mag-media-img {
+  display: block;
+  width: 100%;
+  height: auto;
+  object-fit: cover;
+  border: 1px solid var(--ds-black);
+  box-shadow: 2px 2px 0 0 rgba(38,38,38,0.35);
+  background: var(--ds-white);
+}
+
+.mag-media-placeholder {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  width: 100%;
+  border: 1px dashed var(--ds-gray-600);
+  background: var(--ds-gray-300);
+  color: var(--ds-gray-800);
+  text-align: center;
+  padding: 24px 12px;
+  box-sizing: border-box;
+}
+
+.mag-media-placeholder-icon {
+  font-size: 28px;
+  opacity: 0.6;
+}
+
+.mag-media-placeholder-text {
+  font-family: var(--font-ui);
+  font-size: 10px;
+  line-height: 1.5;
+  max-width: 200px;
+}
+
+/* aspect ratio boxes for placeholders / images */
+.mag-aspect-16-9 { aspect-ratio: 16 / 9; }
+.mag-aspect-4-5  { aspect-ratio: 4 / 5; }
+.mag-aspect-3-2  { aspect-ratio: 3 / 2; }
+.mag-aspect-1-1  { aspect-ratio: 1 / 1; }
+
+.mag-media-caption {
+  font-family: var(--font-ui);
+  font-size: 9px;
+  color: var(--ds-gray-800);
+  text-align: center;
+  margin-top: 8px;
+}
+
+/* 섹션 내 인라인 미디어 — 모바일 전용(데스크톱에서는 visual-stage로 대체) */
+.mag-section-media {
+  display: none;
+  margin-top: 14px;
+}
+.mag-section-media .mag-media-img,
+.mag-section-media .mag-media-placeholder {
+  margin-bottom: 4px;
+}
+
+/* ─── Mobile: stack storyteller, drop sticky/visual-stage ── */
+@media (max-width: 760px) {
+  .mag-story {
+    flex-direction: column;
+  }
+  .mag-story-col {
+    flex: 1 1 auto;
+    padding: 14px 16px;
+    gap: 28px;
+  }
+  .mag-visual-stage {
+    display: none;
+  }
+  .mag-section-media {
+    display: block;
+  }
+  .mag-header {
+    position: static;
+  }
+  .mag-meta-table {
+    display: none;
+  }
 }
 
 

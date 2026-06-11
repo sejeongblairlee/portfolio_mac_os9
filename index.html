@@ -265,6 +265,64 @@
     </div>
 
     <!-- ╔═══════════════════════════════════════╗ -->
+    <!-- ║  WINDOW: Project Case Study (Magazine)║ -->
+    <!-- ╚═══════════════════════════════════════╝ -->
+    <div class="mac-window hidden mag-window" id="window-magazine">
+      <div class="window-titlebar">
+        <button class="window-close-btn" data-target="magazine" aria-label="닫기">
+          <svg class="close-icon" viewBox="0 0 8 8" width="8" height="8">
+            <line x1="1.5" y1="1.5" x2="6.5" y2="6.5" stroke="#2a2a2a" stroke-width="1.5" stroke-linecap="round"/>
+            <line x1="6.5" y1="1.5" x2="1.5" y2="6.5" stroke="#2a2a2a" stroke-width="1.5" stroke-linecap="round"/>
+          </svg>
+        </button>
+        <div class="titlebar-inner">
+          <div class="titlebar-picker"></div>
+          <div class="titlebar-label">
+            <img src="src/images/icon-projects-32.png" class="titlebar-icon" id="mag-titlebar-icon" alt="">
+            <span class="window-title" id="mag-win-title">Project</span>
+          </div>
+          <div class="titlebar-picker"></div>
+          <div class="titlebar-zoom"></div>
+        </div>
+        <div class="titlebar-collapse"></div>
+      </div>
+
+      <div class="mag-body" id="mag-body">
+        <!-- System Metadata Header (Get Info 변형) -->
+        <div class="mag-header" id="mag-header">
+          <div class="mag-header-icon">
+            <img id="mag-icon" src="" alt="">
+          </div>
+          <div class="mag-header-text">
+            <h2 class="mag-title" id="mag-title"></h2>
+            <p class="mag-subtitle" id="mag-subtitle"></p>
+          </div>
+          <table class="mag-meta-table">
+            <tr><td class="mag-meta-key">기간</td><td class="mag-meta-val" id="mag-meta-period"></td></tr>
+            <tr><td class="mag-meta-key">도메인</td><td class="mag-meta-val" id="mag-meta-domain"></td></tr>
+            <tr><td class="mag-meta-key">역할</td><td class="mag-meta-val" id="mag-meta-role"></td></tr>
+            <tr><td class="mag-meta-key">기여도</td><td class="mag-meta-val" id="mag-meta-contribution"></td></tr>
+          </table>
+          <div class="mag-nav">
+            <button class="mag-nav-btn" id="mag-prev" aria-label="이전 프로젝트">◀</button>
+            <button class="mag-nav-btn" id="mag-next" aria-label="다음 프로젝트">▶</button>
+          </div>
+        </div>
+
+        <!-- System Alert Metric Strip -->
+        <div class="mag-metrics" id="mag-metrics"></div>
+
+        <!-- Split-Screen Storyteller -->
+        <div class="mag-story" id="mag-story">
+          <div class="mag-story-col" id="mag-story-col"></div>
+          <div class="mag-visual-stage" id="mag-visual-stage"></div>
+        </div>
+      </div>
+
+      <div class="resize-handle"></div>
+    </div>
+
+    <!-- ╔═══════════════════════════════════════╗ -->
     <!-- ║  WINDOW: CU-SeeMe                     ║ -->
     <!-- ╚═══════════════════════════════════════╝ -->
     <div class="mac-window hidden" id="window-cuseme">
@@ -516,6 +574,9 @@
           allow="autoplay; encrypted-media; fullscreen; picture-in-picture"
           allowfullscreen>
         </iframe>
+        <!-- YouTube 제목 카드(상단) / 로고(우하단) 가리기용 오버레이 -->
+        <div class="qtp-yt-mask qtp-yt-mask-top"></div>
+        <div class="qtp-yt-mask qtp-yt-mask-logo"></div>
       </div>
 
       <!-- Mac OS 9 QuickTime 컨트롤바 -->
@@ -590,6 +651,7 @@
   <audio id="snd-droplet" src="src/sounds/Droplet.wav" preload="auto"></audio>
   <audio id="snd-indigo"  src="src/sounds/Indigo.wav"  preload="auto"></audio>
 
+  <script src="data/projects-data.js"></script>
   <script src="script.js"></script>
 </body>
 </html>

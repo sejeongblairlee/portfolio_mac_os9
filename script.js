@@ -556,13 +556,193 @@ document.querySelectorAll('.gi-tab').forEach(tab => {
   });
 });
 
-// 프로젝트 파일 클릭 → Get Info 오픈 (Mac OS 9 Finder row)
+// 프로젝트 파일 클릭 → 매거진 케이스 스터디 또는 Get Info 오픈
 document.querySelectorAll('.pj-finder-row').forEach(row => {
   row.addEventListener('click', () => {
     const key = row.dataset.key;
-    if (key) openGetInfo(key);
+    if (!key) return;
+    const projectId = (window.PROJECT_KEY_TO_ID || {})[key];
+    if (projectId) {
+      openMagazine(projectId);
+    } else {
+      openGetInfo(key);
+    }
   });
 });
+
+// ═══════════════════════════════════════════════════════════
+// Project Case Study (Magazine) Window
+// ═══════════════════════════════════════════════════════════
+
+const ASPECT_CLASS = {
+  '16:9': 'mag-aspect-16-9',
+  '4:5':  'mag-aspect-4-5',
+  '3:2':  'mag-aspect-3-2',
+  '1:1':  'mag-aspect-1-1',
+};
+
+const SECTION_TYPE_LABEL = {
+  PROBLEM_DEFINITION:    'Problem',
+  STRATEGY_PLANNING:     'Strategy',
+  DESIGN_SYSTEM_OR_FLOW: 'Design',
+  BUSINESS_IMPACT:       'Impact',
+};
+
+const TREND_ARROW = { up: '▲', down: '▼', neutral: '–' };
+
+let _magObserver = null;
+
+// 단일 미디어(이미지/플레이스홀더 + 캡션) DOM 생성
+function buildMediaEl(media) {
+  const wrap = document.createElement('div');
+  const aspect = ASPECT_CLASS[media.aspectRatio] || 'mag-aspect-4-5';
+
+  const img = document.createElement('img');
+  img.className = `mag-media-img ${aspect}`;
+  img.src = media.src;
+  img.alt = media.alt || '';
+  img.loading = 'lazy';
+  img.addEventListener('error', () => {
+    const placeholder = document.createElement('div');
+    placeholder.className = `mag-media-placeholder ${aspect}`;
+    placeholder.innerHTML =
+      `<span class="mag-media-placeholder-icon">🖼</span>` +
+      `<span class="mag-media-placeholder-text">${media.alt || ''}</span>`;
+    img.replaceWith(placeholder);
+  }, { once: true });
+  wrap.appendChild(img);
+
+  if (media.caption) {
+    const cap = document.createElement('div');
+    cap.className = 'mag-media-caption';
+    cap.textContent = media.caption;
+    wrap.appendChild(cap);
+  }
+
+  return wrap;
+}
+
+// 메트릭 카드 1장 생성
+function buildMetricCard(metric) {
+  const card = document.createElement('div');
+  card.className = `mag-metric-card mag-trend-${metric.trend}` + (metric.highlight ? ' is-highlight' : '');
+
+  const label = document.createElement('div');
+  label.className = 'mag-metric-label';
+  label.textContent = metric.label;
+  card.appendChild(label);
+
+  const values = document.createElement('div');
+  values.className = 'mag-metric-values';
+  values.innerHTML =
+    `<span class="mag-metric-before">${metric.before}</span>` +
+    `<span class="mag-metric-arrow">${TREND_ARROW[metric.trend] || '→'}</span>` +
+    `<span class="mag-metric-after">${metric.after}</span>`;
+  card.appendChild(values);
+
+  return card;
+}
+
+// 프로젝트 데이터를 #window-magazine 에 렌더링하고 오픈
+function openMagazine(projectId) {
+  const list = window.PROJECTS_DATA || [];
+  const project = list.find(p => p.id === projectId);
+  if (!project) return;
+
+  // ── 헤더 ──
+  document.getElementById('mag-win-title').textContent = project.title;
+  document.getElementById('mag-titlebar-icon').src = project.icon || 'src/images/icon-projects-32.png';
+  document.getElementById('mag-icon').src = project.icon || 'src/images/icon-projects-32.png';
+  document.getElementById('mag-title').textContent = project.title;
+  document.getElementById('mag-subtitle').textContent = project.subtitle || '';
+  document.getElementById('mag-meta-period').textContent = project.period || '—';
+  document.getElementById('mag-meta-domain').textContent = project.clientDomain || '—';
+  document.getElementById('mag-meta-role').textContent = project.role || '—';
+  document.getElementById('mag-meta-contribution').textContent = project.contributionRate || '—';
+
+  // ── 메트릭 스트립 ──
+  const metricsEl = document.getElementById('mag-metrics');
+  metricsEl.innerHTML = '';
+  (project.keyMetrics || []).forEach(m => metricsEl.appendChild(buildMetricCard(m)));
+
+  // ── 본문 (Split-Screen Storyteller) ──
+  const storyCol = document.getElementById('mag-story-col');
+  const visualStage = document.getElementById('mag-visual-stage');
+  storyCol.innerHTML = '';
+  visualStage.innerHTML = '';
+
+  (project.sections || []).forEach((section, i) => {
+    // 좌측: 텍스트 섹션
+    const sec = document.createElement('div');
+    sec.className = 'mag-section';
+    sec.dataset.index = String(i);
+
+    const typeEl = document.createElement('div');
+    typeEl.className = 'mag-section-type';
+    typeEl.textContent = SECTION_TYPE_LABEL[section.type] || section.type;
+    sec.appendChild(typeEl);
+
+    const titleEl = document.createElement('h3');
+    titleEl.className = 'mag-section-title';
+    titleEl.textContent = section.title;
+    sec.appendChild(titleEl);
+
+    const contentEl = document.createElement('p');
+    contentEl.className = 'mag-section-content';
+    contentEl.textContent = section.content;
+    sec.appendChild(contentEl);
+
+    // 모바일용 인라인 미디어
+    if (section.media && section.media.length) {
+      const mediaWrap = document.createElement('div');
+      mediaWrap.className = 'mag-section-media';
+      section.media.forEach(m => mediaWrap.appendChild(buildMediaEl(m)));
+      sec.appendChild(mediaWrap);
+    }
+
+    storyCol.appendChild(sec);
+
+    // 우측: 비주얼 스테이지 (데스크톱 sync 전용, 섹션의 첫 번째 미디어)
+    const stageItem = document.createElement('div');
+    stageItem.className = 'mag-visual-media' + (i === 0 ? ' is-active' : '');
+    stageItem.dataset.index = String(i);
+    const firstMedia = (section.media && section.media[0]) || null;
+    if (firstMedia) {
+      stageItem.appendChild(buildMediaEl(firstMedia));
+    }
+    visualStage.appendChild(stageItem);
+  });
+
+  // ── 스크롤 동기화 (IntersectionObserver) ──
+  if (_magObserver) _magObserver.disconnect();
+  const magBody = document.getElementById('mag-body');
+  _magObserver = new IntersectionObserver((entries) => {
+    entries.forEach(entry => {
+      if (!entry.isIntersecting) return;
+      const idx = entry.target.dataset.index;
+      visualStage.querySelectorAll('.mag-visual-media').forEach(el => {
+        el.classList.toggle('is-active', el.dataset.index === idx);
+      });
+    });
+  }, { root: magBody, threshold: 0, rootMargin: '-40% 0px -40% 0px' });
+
+  storyCol.querySelectorAll('.mag-section').forEach(sec => _magObserver.observe(sec));
+
+  // ── 이전/다음 프로젝트 내비게이션 ──
+  const sorted = [...list].sort((a, b) => a.order - b.order);
+  const idx = sorted.findIndex(p => p.id === projectId);
+  const prevBtn = document.getElementById('mag-prev');
+  const nextBtn = document.getElementById('mag-next');
+  prevBtn.disabled = idx <= 0;
+  nextBtn.disabled = idx >= sorted.length - 1;
+  prevBtn.onclick = () => { if (idx > 0) openMagazine(sorted[idx - 1].id); };
+  nextBtn.onclick = () => { if (idx < sorted.length - 1) openMagazine(sorted[idx + 1].id); };
+
+  // 본문 스크롤 위치 초기화
+  magBody.scrollTop = 0;
+
+  openWindow('magazine');
+}
 
 // ═══════════════════════════════════════════════════════════
 // Window Resize (drag bottom-right handle)
@@ -957,15 +1137,13 @@ function qtLoad(i) {
   const iframe = document.getElementById('qt-iframe');
   if (!iframe) { console.warn('qt-iframe not found'); return; }
   const origin = encodeURIComponent(location.origin || 'http://localhost:8080');
-  iframe.src = `https://www.youtube.com/embed/${t.ytId}?autoplay=1&rel=0&origin=${origin}`;
+  iframe.src = `https://www.youtube.com/embed/${t.ytId}?autoplay=1&rel=0&modestbranding=1&controls=0&disablekb=1&fs=0&iv_load_policy=3&cc_load_policy=0&origin=${origin}`;
   iframe.style.cssText = 'display:block; position:absolute; inset:0; width:100%; height:100%; border:none; z-index:1;';
 
-  // 2) 스플래시는 그대로 유지 — YouTube 로고/영상/제목 카드를 가려서
-  //    오디오만 재생되는 것처럼 보이게 함 (z-index로 iframe을 덮음)
-  const splashLogo = document.getElementById('qtp-splash-logo');
-  const splashHint = document.getElementById('qtp-splash-hint');
-  if (splashLogo) splashLogo.textContent = '♪';
-  if (splashHint) splashHint.textContent = 'Now Playing';
+  // 2) 스플래시 숨기기 — 영상은 보이되, YouTube 로고/제목 카드는
+  //    .qtp-yt-mask-* 오버레이(z-index 3)로 가림
+  const splash = document.getElementById('qtp-splash');
+  if (splash) splash.style.display = 'none';
 
   // 3) 상태 업데이트
   qtLoaded  = true;
@@ -1016,8 +1194,6 @@ function qtTogglePlay() {
   const iframe = document.getElementById('qt-iframe');
   if (!iframe) return;
 
-  const splashHint = document.getElementById('qtp-splash-hint');
-
   if (qtPlaying) {
     // 일시정지
     iframe.contentWindow?.postMessage(
@@ -1025,7 +1201,6 @@ function qtTogglePlay() {
     qtPlaying = false;
     const btn = document.getElementById('qt-play');
     if (btn) btn.textContent = '▶';
-    if (splashHint) splashHint.textContent = 'Paused';
   } else {
     // 재생 재개
     iframe.contentWindow?.postMessage(
@@ -1033,7 +1208,6 @@ function qtTogglePlay() {
     qtPlaying = true;
     const btn = document.getElementById('qt-play');
     if (btn) btn.textContent = '⏸';
-    if (splashHint) splashHint.textContent = 'Now Playing';
   }
 }
 
@@ -1053,10 +1227,6 @@ function qtCloseBoth() {
   if (iframe) { iframe.src = 'about:blank'; iframe.style.display = 'none'; }
   const splash = document.getElementById('qtp-splash');
   if (splash) splash.style.display = 'flex';
-  const splashLogo = document.getElementById('qtp-splash-logo');
-  const splashHint = document.getElementById('qtp-splash-hint');
-  if (splashLogo) splashLogo.textContent = '▶';
-  if (splashHint) splashHint.textContent = 'Press ▶ to play';
   qtLoaded = false; qtPlaying = false;
   clearInterval(qtTimer);
   const fill = document.getElementById('qtp-fill');
