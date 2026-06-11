@@ -234,9 +234,10 @@ function playSound(name) {
           screen.addEventListener('transitionend', () => {
             screen.remove();
             window.removeEventListener('resize', _resizeHandler);
-            // 초기 상태: Projects 폴더 + CU-SeeMe 오픈
+            // 초기 상태: Projects 폴더 + 매거진(모니모 기본) + CU-SeeMe 오픈
             // QuickTime Player는 CU-SeeMe 닫은 후 등장
             openWindow('portfolio');
+            openMagazine('monimo');
             setTimeout(openCuSeeMe, 1500);
           }, { once: true });
         }, 300);
@@ -586,11 +587,30 @@ const SECTION_TYPE_LABEL = {
   STRATEGY_PLANNING:     'Strategy',
   DESIGN_SYSTEM_OR_FLOW: 'Design',
   BUSINESS_IMPACT:       'Impact',
+  OVERVIEW:              'Overview',
 };
 
 const TREND_ARROW = { up: '▲', down: '▼', neutral: '–' };
 
 let _magObserver = null;
+let _magTabBarBuilt = false;
+
+// 가로 sticky 탭바 빌드 (최초 1회)
+function buildMagTabBar() {
+  if (_magTabBarBuilt) return;
+  const tabbar = document.getElementById('mag-tabbar');
+  if (!tabbar) return;
+  const sorted = [...(window.PROJECTS_DATA || [])].sort((a, b) => a.order - b.order);
+  sorted.forEach(p => {
+    const tab = document.createElement('button');
+    tab.className = 'mag-tab';
+    tab.dataset.id = p.id;
+    tab.innerHTML = `<img src="${p.icon || 'src/images/icon-projects-32.png'}" alt=""><span>${p.title}</span>`;
+    tab.addEventListener('click', () => openMagazine(p.id));
+    tabbar.appendChild(tab);
+  });
+  _magTabBarBuilt = true;
+}
 
 // 단일 미디어(이미지/플레이스홀더 + 캡션) DOM 생성
 function buildMediaEl(media) {
@@ -649,6 +669,12 @@ function openMagazine(projectId) {
   const project = list.find(p => p.id === projectId);
   if (!project) return;
 
+  // ── 탭바 ──
+  buildMagTabBar();
+  document.querySelectorAll('#mag-tabbar .mag-tab').forEach(tab => {
+    tab.classList.toggle('is-active', tab.dataset.id === projectId);
+  });
+
   // ── 헤더 ──
   document.getElementById('mag-win-title').textContent = project.title;
   document.getElementById('mag-titlebar-icon').src = project.icon || 'src/images/icon-projects-32.png';
@@ -663,6 +689,7 @@ function openMagazine(projectId) {
   // ── 메트릭 스트립 ──
   const metricsEl = document.getElementById('mag-metrics');
   metricsEl.innerHTML = '';
+  metricsEl.style.display = (project.keyMetrics && project.keyMetrics.length) ? 'flex' : 'none';
   (project.keyMetrics || []).forEach(m => metricsEl.appendChild(buildMetricCard(m)));
 
   // ── 본문 (Split-Screen Storyteller) ──

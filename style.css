@@ -30,6 +30,7 @@
   --font-body:      'Geneva', 'Helvetica Neue', sans-serif;
   --font-editorial: 'Apple Garamond Light', 'EB Garamond', Georgia, serif;
   --font-mono:      'Monaco', 'Courier New', monospace;
+  --font-magazine:  'Pretendard', -apple-system, 'Helvetica Neue', 'Apple SD Gothic Neo', sans-serif;
 
   /* Window shadow (per Figma design tokens) */
   --win-shadow:
@@ -2145,12 +2146,70 @@ button {
   min-height: 0;
   overflow-y: auto;
   background: #FAFAF8;
+  font-family: var(--font-magazine);
+}
+
+/* ─── ⓪ Project Tabs (가로 sticky 탭) ─────────────────────── */
+.mag-tabbar {
+  position: sticky;
+  top: 0;
+  z-index: 6;
+  display: flex;
+  gap: 2px;
+  height: 48px;
+  box-sizing: border-box;
+  padding: 6px 8px;
+  overflow-x: auto;
+  background: var(--ds-gray-300);
+  border-bottom: 1px solid var(--ds-black);
+  flex-shrink: 0;
+}
+
+.mag-tab {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 2px;
+  padding: 3px 6px;
+  min-width: 52px;
+  border: 1px solid transparent;
+  background: transparent;
+  cursor: pointer;
+  font-family: var(--font-ui);
+  font-size: 8px;
+  color: var(--ds-gray-800);
+  flex-shrink: 0;
+}
+
+.mag-tab img {
+  width: 22px;
+  height: 22px;
+  object-fit: cover;
+  border: 1px solid var(--ds-black);
+  box-shadow: 1px 1px 0 0 rgba(38,38,38,0.4);
+  background: var(--ds-white);
+}
+
+.mag-tab span {
+  white-space: nowrap;
+  max-width: 64px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.mag-tab.is-active {
+  background: var(--ds-white);
+  border: 1px solid var(--ds-black);
+  box-shadow: inset 1px 1px 0 0 rgba(38,38,38,0.15);
+  color: var(--ds-black);
+  font-weight: bold;
 }
 
 /* ─── ① System Metadata Header (Get Info 변형) ───────────── */
 .mag-header {
   position: sticky;
-  top: 0;
+  top: 48px;
   z-index: 5;
   display: flex;
   align-items: center;
@@ -2177,15 +2236,15 @@ button {
 }
 
 .mag-title {
-  font-family: var(--font-editorial), serif;
+  font-family: var(--font-magazine);
   font-size: 22px;
-  font-weight: 400;
+  font-weight: 700;
   line-height: 1.2;
   color: var(--ds-black);
 }
 
 .mag-subtitle {
-  font-family: var(--font-body);
+  font-family: var(--font-magazine);
   font-size: 11px;
   color: var(--ds-gray-800);
   margin-top: 2px;
@@ -2296,7 +2355,8 @@ button {
 }
 
 .mag-metric-values {
-  font-family: var(--font-editorial), serif;
+  font-family: var(--font-magazine);
+  font-weight: 700;
   font-size: 16px;
   display: flex;
   align-items: baseline;
@@ -2361,16 +2421,17 @@ button {
 }
 
 .mag-section-title {
-  font-family: var(--font-editorial), serif;
+  font-family: var(--font-magazine);
   font-size: 18px;
-  font-weight: 400;
+  font-weight: 700;
   line-height: 1.35;
   margin-bottom: 10px;
   color: var(--ds-black);
 }
 
 .mag-section-content {
-  font-family: var(--font-body);
+  font-family: var(--font-magazine);
+  font-weight: 400;
   font-size: 12px;
   line-height: 1.8;
   color: var(--ds-black);

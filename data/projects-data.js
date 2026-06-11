@@ -284,12 +284,192 @@ window.PROJECTS_DATA = [
       },
     ],
   },
+
+  // ────────────────────────────────────────────
+  // 5. LOCA (LOTTE CARD)
+  // ────────────────────────────────────────────
+  {
+    id: 'loca',
+    order: 5,
+    title: 'LOCA',
+    subtitle: '롯데카드 리워드 · 로열티 플랫폼 UX/UI',
+    period: '—',
+    clientDomain: 'Finance / Loyalty',
+    role: 'UX Planning, UI Design',
+    contributionRate: 'UX Planning · UI Design',
+    icon: 'src/logo/loca.png',
+    heroImage: { type: 'screenshot', src: 'src/images/projects/loca/hero.png', alt: 'LOCA 메인 화면', caption: 'LOCA 메인 화면', aspectRatio: '16:9' },
+    keyMetrics: [],
+    sections: [
+      {
+        id: 'loca-overview',
+        type: 'OVERVIEW',
+        title: '카드 리워드 & 로열티 플랫폼 UX/UI',
+        content:
+          '롯데카드의 리워드·로열티 플랫폼 UX/UI를 담당했습니다.\n\n사용자 여정을 단계별로 매핑(Journey Mapping)하여 혜택 탐색부터 적립·사용까지의 흐름을 정리하고, 재사용 가능한 디자인 시스템 컴포넌트를 구축했습니다.',
+        media: [
+          { type: 'screenshot', src: 'src/images/projects/loca/hero.png', alt: 'LOCA 메인 화면', caption: 'LOCA 메인 화면', aspectRatio: '16:9' },
+        ],
+      },
+    ],
+  },
+
+  // ────────────────────────────────────────────
+  // 6. LOTTE ON (LOTTE e-commerce)
+  // ────────────────────────────────────────────
+  {
+    id: 'lotteon',
+    order: 6,
+    title: 'LOTTE ON',
+    subtitle: '롯데 이커머스 슈퍼앱 UX 개편',
+    period: '—',
+    clientDomain: 'Commerce / Super App',
+    role: 'User Research, UX Strategy, UI Design',
+    contributionRate: 'User Research · UX Strategy · UI Design',
+    icon: 'src/logo/lotte on.jpg',
+    heroImage: { type: 'screenshot', src: 'src/images/projects/lotteon/hero.png', alt: 'LOTTE ON 메인 화면', caption: 'LOTTE ON 메인 화면', aspectRatio: '16:9' },
+    keyMetrics: [],
+    sections: [
+      {
+        id: 'lotteon-overview',
+        type: 'OVERVIEW',
+        title: '슈퍼앱 이커머스 UX 전면 개편',
+        content:
+          '롯데 이커머스 슈퍼앱 LOTTE ON의 UX 전면 개편에 참여했습니다.\n\n사용자 리서치를 기반으로 멀티 플랫폼(앱/웹) 디자인 일관성을 정리하고, 개인화 추천 기반의 탐색 경험을 위한 UX 전략을 수립했습니다.',
+        media: [
+          { type: 'screenshot', src: 'src/images/projects/lotteon/hero.png', alt: 'LOTTE ON 메인 화면', caption: 'LOTTE ON 메인 화면', aspectRatio: '16:9' },
+        ],
+      },
+    ],
+  },
+
+  // ────────────────────────────────────────────
+  // 7. T Factory (SKT)
+  // ────────────────────────────────────────────
+  {
+    id: 'tfactory',
+    order: 7,
+    title: 'T Factory',
+    subtitle: 'SKT 오프라인-온라인 리테일 경험 디자인',
+    period: '—',
+    clientDomain: 'O2O / Retail',
+    role: 'UI Design',
+    contributionRate: 'UI Design',
+    icon: 'src/images/icon-projects.png',
+    heroImage: { type: 'screenshot', src: 'src/images/projects/tfactory/hero.png', alt: 'T Factory 매장 인터페이스', caption: 'T Factory 매장 인터페이스', aspectRatio: '16:9' },
+    keyMetrics: [],
+    sections: [
+      {
+        id: 'tfactory-overview',
+        type: 'OVERVIEW',
+        title: '오프라인 리테일 경험을 잇는 UI 디자인',
+        content:
+          'SKT의 체험형 매장 T Factory의 리테일 경험 디자인을 담당했습니다.\n\n오프라인 매장 경험과 온라인 채널을 잇는 UX 브릿지를 설계하고, 매장 내 디스플레이 및 인터랙션 UI 컴포넌트를 디자인했습니다.',
+        media: [
+          { type: 'screenshot', src: 'src/images/projects/tfactory/hero.png', alt: 'T Factory 매장 인터페이스', caption: 'T Factory 매장 인터페이스', aspectRatio: '16:9' },
+        ],
+      },
+    ],
+  },
+
+  // ────────────────────────────────────────────
+  // 8. Addy (CJ ENM)
+  // ────────────────────────────────────────────
+  {
+    id: 'addy',
+    order: 8,
+    title: 'Addy',
+    subtitle: 'CJ ENM 크리에이터 광고 B2B SaaS 플랫폼',
+    period: '—',
+    clientDomain: 'B2B SaaS',
+    role: 'UX Strategy, UX Planning, UI Design',
+    contributionRate: 'End-to-End UX 디자인 · 디자인 시스템 구축',
+    icon: 'src/images/icon-projects.png',
+    heroImage: { type: 'screenshot', src: 'src/images/projects/addy/hero.png', alt: 'Addy 대시보드', caption: 'Addy 대시보드', aspectRatio: '16:9' },
+    keyMetrics: [],
+    sections: [
+      {
+        id: 'addy-overview',
+        type: 'OVERVIEW',
+        title: '크리에이터 광고 B2B SaaS 플랫폼 설계',
+        content:
+          'CJ ENM의 크리에이터 광고 B2B SaaS 플랫폼 Addy의 End-to-End UX를 설계했습니다.\n\n광고주와 크리에이터 양쪽의 워크플로우를 분석하여 정보 구조를 정의하고, 운영 효율을 높이기 위한 디자인 시스템을 구축했습니다.',
+        media: [
+          { type: 'screenshot', src: 'src/images/projects/addy/hero.png', alt: 'Addy 대시보드', caption: 'Addy 대시보드', aspectRatio: '16:9' },
+        ],
+      },
+    ],
+  },
+
+  // ────────────────────────────────────────────
+  // 9. Tving (CJ ENM)
+  // ────────────────────────────────────────────
+  {
+    id: 'tving',
+    order: 9,
+    title: 'Tving',
+    subtitle: 'OTT 스트리밍 플랫폼 UI',
+    period: '—',
+    clientDomain: 'OTT',
+    role: 'UI Design',
+    contributionRate: 'UI Design',
+    icon: 'src/images/icon-projects.png',
+    heroImage: { type: 'screenshot', src: 'src/images/projects/tving/hero.png', alt: 'Tving 콘텐츠 탐색 화면', caption: 'Tving 콘텐츠 탐색 화면', aspectRatio: '16:9' },
+    keyMetrics: [],
+    sections: [
+      {
+        id: 'tving-overview',
+        type: 'OVERVIEW',
+        title: '콘텐츠 탐색 & 라이브 채널 UI',
+        content:
+          'CJ ENM의 OTT 스트리밍 플랫폼 Tving의 UI 디자인을 담당했습니다.\n\n콘텐츠 탐색 화면과 라이브 채널 UX를 중심으로, 다양한 콘텐츠 카테고리를 빠르게 탐색할 수 있는 인터페이스를 디자인했습니다.',
+        media: [
+          { type: 'screenshot', src: 'src/images/projects/tving/hero.png', alt: 'Tving 콘텐츠 탐색 화면', caption: 'Tving 콘텐츠 탐색 화면', aspectRatio: '16:9' },
+        ],
+      },
+    ],
+  },
+
+  // ────────────────────────────────────────────
+  // 10. TMR Assistant (LINA)
+  // ────────────────────────────────────────────
+  {
+    id: 'tmr',
+    order: 10,
+    title: 'TMR Assistant',
+    subtitle: 'LINA 보험설계사 CRM 워크플로우 도구',
+    period: '—',
+    clientDomain: 'B2B CRM',
+    role: 'User Research, UX Strategy, UI Design',
+    contributionRate: 'User Research · UX Strategy · UI Design',
+    icon: 'src/logo/lina.png',
+    heroImage: { type: 'screenshot', src: 'src/images/projects/tmr/hero.png', alt: 'TMR Assistant 워크플로우 화면', caption: 'TMR Assistant 워크플로우 화면', aspectRatio: '16:9' },
+    keyMetrics: [],
+    sections: [
+      {
+        id: 'tmr-overview',
+        type: 'OVERVIEW',
+        title: '보험설계사 CRM 워크플로우 최적화',
+        content:
+          'LINA의 보험설계사용 CRM 도구 TMR Assistant의 UX를 담당했습니다.\n\n사용자 리서치를 통해 설계사의 업무 흐름을 분석하고, 반복 작업을 줄이는 방향으로 워크플로우와 UI 컴포넌트를 재설계했습니다.',
+        media: [
+          { type: 'screenshot', src: 'src/images/projects/tmr/hero.png', alt: 'TMR Assistant 워크플로우 화면', caption: 'TMR Assistant 워크플로우 화면', aspectRatio: '16:9' },
+        ],
+      },
+    ],
+  },
 ];
 
 // data-key → project id 매핑 (Finder row 클릭 시 어떤 프로젝트를 열지 결정)
 window.PROJECT_KEY_TO_ID = {
   'monimo_SAMSUNG CARD.dmg': 'monimo',
+  'LOCA_LOTTE CARD.pkg': 'loca',
   'MLB_SUPRA_F&F.app': 'fnf',
   'SI_Village_SHINSEGAE.dmg': 'sivillage',
+  'LOTTE_ON_LOTTE.pkg': 'lotteon',
   'DaLock_Startup.dmg': 'darak',
+  'T_Factory_SKT.pkg': 'tfactory',
+  'Addy_CJ ENM.sit': 'addy',
+  'Tving_CJ ENM.dmg': 'tving',
+  'TMR_LINA.pkg': 'tmr',
 };
