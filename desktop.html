@@ -43,7 +43,7 @@ body {
 #icons-left  { left:30px;  bottom:40px; }
 .dt-icon { display:flex; flex-direction:column; gap:8px; align-items:center; width:100%; cursor:default; }
 .dt-icon img { width:48px; height:48px; object-fit:contain; image-rendering:auto; display:block; }
-.dt-icon.big img { width:80px; height:80px; }
+.dt-icon.big img { width:80px; height:80px; object-fit:cover; }  /* Figma 81:357 — 80×80 cover 크롭 */
 .dt-label {
   background:rgba(0,0,0,0.1); width:100%; text-align:center;
   font-family:'VT323',monospace; font-size:16px; line-height:0.98;

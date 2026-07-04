@@ -502,12 +502,59 @@ function renderList() {
   });
 }
 
+// ═══ 창 드래그 — CU-SeeMe와 동일 패턴 (타이틀바만, 포인터 캡처, 경계 클램프) ═
+
+function makeDraggable(win) {
+  const header = win.querySelector('.bt-header');
+  let dragging = false, pid = null, sx = 0, sy = 0, ox = 0, oy = 0;
+
+  header.addEventListener('pointerdown', (e) => {
+    if (e.target.closest('.bt-hbtn')) return;   // 닫기/미니마이즈 버튼은 드래그 시작 안 함
+    const r = win.getBoundingClientRect();
+    // 센터(transform)/우하단(right·bottom) 배치 → 픽셀 배치로 전환 (점프 없음)
+    win.style.left = r.left + 'px';
+    win.style.top = r.top + 'px';
+    win.style.right = 'auto';
+    win.style.bottom = 'auto';
+    win.style.transform = 'none';
+    dragging = true;
+    pid = e.pointerId;
+    header.setPointerCapture(pid);   // iframe 위를 지나도 이벤트 유지
+    sx = e.clientX; sy = e.clientY;
+    ox = r.left; oy = r.top;
+    win.classList.add('dragging');
+    e.preventDefault();
+  });
+
+  header.addEventListener('pointermove', (e) => {
+    if (!dragging || e.pointerId !== pid) return;
+    let nx = ox + (e.clientX - sx);
+    let ny = oy + (e.clientY - sy);
+    // 타이틀바는 항상 잡을 수 있게 클램프 (design.md)
+    nx = Math.max(-win.offsetWidth + 60, Math.min(nx, window.innerWidth - 60));
+    ny = Math.max(0, Math.min(ny, window.innerHeight - 24));
+    win.style.left = nx + 'px';
+    win.style.top = ny + 'px';
+  });
+
+  const endDrag = (e) => {
+    if (!dragging || e.pointerId !== pid) return;
+    dragging = false;
+    win.classList.remove('dragging');
+  };
+  header.addEventListener('pointerup', endDrag);
+  header.addEventListener('pointercancel', endDrag);
+}
+
 // ═══ 초기화 ════════════════════════════════════════════════════════════════
 
 async function initBlairTunes() {
   const mount = document.createElement('div');
   mount.innerHTML = windowHTML();
   document.body.append(...mount.children);
+
+  makeDraggable(document.getElementById('bt-win'));
+  makeDraggable(document.getElementById('bt-mini'));
 
   document.getElementById('bt-close').addEventListener('click', () => {
     document.getElementById('bt-win').hidden = true;

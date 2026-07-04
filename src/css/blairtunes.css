@@ -37,7 +37,9 @@
   height: 24px; width: 100%;
   display: flex; align-items: center; justify-content: center;
   flex-shrink: 0;
+  cursor: grab; touch-action: none; user-select: none; -webkit-user-select: none;
 }
+.bt-win.dragging .bt-header, .bt-mini.dragging .bt-header { cursor: grabbing; }
 .bt-header .bt-hbtn {
   width: 24px; height: 24px; flex-shrink: 0;
   border: none; padding: 0; background: transparent; cursor: pointer;
