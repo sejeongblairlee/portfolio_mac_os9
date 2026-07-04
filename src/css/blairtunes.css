@@ -1,0 +1,223 @@
+/* ═══════════════════════════════════════════════════════════════════
+   Blair-tunes 플레이어 — Figma가 single source of truth
+   frames: 6:748(desktop) / 115:2964(mobile) / 107:2745(minimized)
+   브레이크포인트: 768px (design.md와 동일)
+   ═══════════════════════════════════════════════════════════════════ */
+
+@font-face {
+  font-family: 'EB Garamond';
+  src: url('../fonts/EBGaramond-Regular.ttf') format('truetype');
+  font-weight: 400;
+  font-display: swap;
+}
+
+/* ── 윈도우 셸 ── */
+.bt-win {
+  position: absolute;
+  left: 50%;
+  top: 50%;
+  transform: translate(-50%, -50%);
+  width: min(1282px, calc(100vw - 40px));   /* 1280 콘텐츠 + 보더, 세이프 에어리어 준수 */
+  background: #2B2318;                       /* Figma 기본값 — JS가 theme_color로 교체 */
+  transition: background-color 300ms ease;
+  border: 1px solid #000;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  z-index: 500;
+  box-shadow: 4px 4px 0 rgba(0,0,0,0.28), 8px 8px 0 rgba(0,0,0,0.08);
+  color: #fff;
+}
+.bt-win[hidden] { display: none; }
+
+/* ── 헤더 (24px) ── */
+.bt-header {
+  height: 24px; width: 100%;
+  display: flex; align-items: center; justify-content: center;
+  flex-shrink: 0;
+}
+.bt-header .bt-hbtn {
+  width: 24px; height: 24px; flex-shrink: 0;
+  border: none; padding: 0; background: transparent; cursor: pointer;
+}
+.bt-header .bt-hbtn img { width: 24px; height: 24px; display: block; }
+.bt-title {
+  flex: 1; min-width: 1px; text-align: center;
+  font-family: 'VT323', monospace; font-size: 16px; line-height: 16px;
+  letter-spacing: -1.6px; color: #fff;
+}
+
+/* ── 본문: 좌 플레이리스트 / 중앙 플레이어 / 우 큐레이션 ── */
+.bt-body {
+  display: flex; gap: 4px; align-items: stretch; justify-content: center;
+  width: 100%;
+}
+
+/* 01 — 플레이리스트 (좌) */
+.bt-col-list {
+  display: flex; gap: 4px; align-items: stretch;
+  width: 216px; max-width: 240px; flex-shrink: 0;
+}
+.bt-list {
+  flex: 1; min-width: 1px; border-radius: 4px;
+  display: flex; flex-direction: column; align-items: stretch;
+  overflow-y: auto; scrollbar-width: none;
+}
+.bt-list::-webkit-scrollbar { display: none; }
+.bt-row {
+  display: flex; gap: 4px; align-items: center;
+  padding: 6px 8px; width: 100%;
+  background: transparent; border: none; text-align: left; cursor: pointer;
+  color: #fff; flex-shrink: 0;
+}
+.bt-row .bt-row-txt {
+  flex: 1; min-width: 1px; display: flex; flex-direction: column;
+  font-family: 'Pretendard', sans-serif; font-weight: 200;  /* ExtraLight (미재생) */
+  font-size: 12px; line-height: 18px; letter-spacing: -0.36px;
+  white-space: nowrap; overflow: hidden;
+}
+.bt-row .bt-row-txt p { overflow: hidden; text-overflow: ellipsis; }
+.bt-row.playing .bt-row-txt { font-weight: 300; }          /* Light (재생 중) */
+.bt-row .bt-np { width: 12px; height: 12px; flex-shrink: 0; display: none; }
+.bt-row.playing .bt-np { display: block; }
+.bt-row .bt-dur {
+  font-family: 'Pretendard', sans-serif; font-weight: 100;  /* Thin */
+  font-size: 12px; line-height: 18px; letter-spacing: -0.36px; white-space: nowrap;
+}
+
+/* 픽셀 스크롤바 슬라이더 (장식) — 8px 트랙, 6px 도트 핸들 */
+.bt-slider {
+  width: 8px; padding: 4px 1px; flex-shrink: 0; align-self: stretch;
+  position: relative;
+}
+.bt-slider .bt-slider-handle {
+  width: 6px; height: 86px;
+  background-image:
+    repeating-linear-gradient(to bottom,
+      #fff 0, #fff 2px, transparent 2px, transparent 4px);
+  -webkit-mask-image: repeating-linear-gradient(to right,
+      #000 0, #000 2px, transparent 2px, transparent 4px);
+  mask-image: repeating-linear-gradient(to right,
+      #000 0, #000 2px, transparent 2px, transparent 4px);
+}
+
+/* 02 — 중앙 플레이어 */
+.bt-col-center {
+  flex: 1; min-width: 1px;
+  display: flex; flex-direction: column; align-items: center;
+}
+.bt-video {
+  width: 100%; aspect-ratio: 840 / 472.5;
+  border: 1px solid #000; border-radius: 4px;
+  overflow: hidden; position: relative; background: #000;
+}
+.bt-video img.bt-thumb {
+  position: absolute; inset: 0; width: 100%; height: 100%;
+  object-fit: cover;
+}
+.bt-controls {
+  width: 100%; display: flex; align-items: flex-start; justify-content: center;
+  padding: 16px 0 24px 8px;
+}
+.bt-controls-inner {
+  flex: 1; min-width: 1px; display: flex; align-items: center;
+  justify-content: space-between;
+}
+.bt-btns { display: flex; gap: 4px; align-items: center; }
+.bt-btn {
+  width: 36px; height: 36px; background: #fff; border: 1px solid #000;
+  position: relative; cursor: pointer; padding: 0; flex-shrink: 0;
+}
+.bt-btn img {
+  width: 24px; height: 24px; position: absolute;
+  left: 50%; top: 50%; transform: translate(-50%, -50%);
+}
+.bt-btn:active { filter: brightness(0.85); }
+
+/* 볼륨 (240px) — 정적 UI, 로직 없음 */
+.bt-volume { width: 240px; display: flex; flex-direction: column; gap: 6px; flex-shrink: 0; }
+.bt-vol-track {
+  height: 16px; padding: 0 20px; display: flex; gap: 10px; align-items: center;
+  position: relative; overflow: hidden; width: 100%;
+}
+.bt-vol-fill { flex: 1; min-width: 1px; height: 4px; background: #0037FF; border: 1px solid #000; }
+.bt-vol-rest { flex: 1; min-width: 1px; height: 4px; border: 1px solid #000; }
+.bt-vol-handle {
+  position: absolute; left: 112px; top: 0; width: 16px; height: 16px;
+  background: #fff; border: 1px solid #000;
+}
+.bt-vol-labels { display: flex; justify-content: space-between; width: 100%; }
+.bt-vol-step { width: 40px; display: flex; flex-direction: column; gap: 2px; align-items: center; }
+.bt-vol-step i { display: block; width: 1px; height: 6px; background: #fff; }
+.bt-vol-step span {
+  font-family: 'VT323', monospace; font-size: 14px; line-height: 14px;
+  letter-spacing: -1.4px; color: #fff; text-align: center;
+}
+
+/* 03 — 큐레이션 (우) */
+.bt-col-cur {
+  flex: 1; min-width: 1px; max-width: 216px; flex-shrink: 0;
+  display: flex; gap: 8px; align-items: stretch;
+  padding: 0 8px; border-radius: 4px;
+}
+.bt-cur-inner { flex: 1; min-width: 1px; display: flex; flex-direction: column; gap: 16px; }
+.bt-cur-tit { display: flex; flex-direction: column; gap: 8px; width: 100%; }
+.bt-cur-tit .bt-t1, .bt-cur-tit .bt-t2 {
+  font-family: 'EB Garamond', Georgia, serif; font-weight: 400;
+  font-size: 40px; line-height: 40px; letter-spacing: -3.2px; color: #fff;
+  width: 100%;
+}
+.bt-cur-tit .bt-t2 { white-space: nowrap; }
+.bt-cur-tit .bt-live {
+  font-family: 'EB Garamond', Georgia, serif; font-size: 14px; line-height: 20px;
+  letter-spacing: -1.12px; color: #fff; width: 100%;
+}
+.bt-cur-des {
+  display: flex; flex-direction: column; gap: 8px; width: 100%;
+  font-family: 'Pretendard', sans-serif; font-weight: 200;   /* ExtraLight */
+  font-size: 12px; line-height: 18px; letter-spacing: -0.36px; color: #fff;
+}
+.bt-col-cur .bt-slider { opacity: 0; }   /* Figma: 우측 슬라이더는 투명 자리맞춤 */
+
+/* ═══ 모바일 (<768px) — Figma 115:2964: 플레이리스트 없음, 세로 스택 ═══ */
+@media (max-width: 768px) {
+  .bt-win { width: min(440px, calc(100vw - 40px)); }
+  .bt-body { flex-direction: column; align-items: center; gap: 0; }
+  .bt-col-list { display: none; }
+  .bt-col-center { width: 100%; flex: none; }
+  .bt-controls { padding: 16px 8px 24px 8px; }
+  .bt-volume { width: 200px; }
+  .bt-col-cur {
+    max-width: none; width: 100%; flex: none;
+  }
+  /* 모바일 타이틀: "Smooth operator /Sade" 한 줄 */
+  .bt-cur-tit .bt-t1 { display: inline; }
+  .bt-cur-titline { display: flex; align-items: flex-start; width: 100%; white-space: nowrap; overflow: hidden; }
+  .bt-col-cur .bt-slider { opacity: 1; }
+}
+@media (min-width: 769px) {
+  .bt-cur-titline { display: contents; }
+}
+
+/* ═══ 미니마이즈드 — Figma 107:2745: 320px, 오버레이 버튼 + 단일 리스트 행 ═══ */
+.bt-mini {
+  position: absolute;
+  right: 40px; bottom: 40px;
+  width: 320px;
+  background: #2B2318;
+  transition: background-color 300ms ease;
+  border: 1px solid #000;
+  display: flex; flex-direction: column; align-items: center;
+  z-index: 510;
+  box-shadow: 4px 4px 0 rgba(0,0,0,0.28), 8px 8px 0 rgba(0,0,0,0.08);
+  color: #fff;
+}
+.bt-mini[hidden] { display: none; }
+.bt-mini-body { width: 100%; display: flex; flex-direction: column; gap: 4px; align-items: center; }
+.bt-mini .bt-video { border-radius: 4px; }
+.bt-mini-overlay {
+  position: absolute; inset: 0; background: rgba(0,0,0,0.49);
+  display: flex; gap: 4px; align-items: center; justify-content: center;
+}
+.bt-mini-overlay .bt-btn.side { background: rgba(255,255,255,0.8); }
+.bt-mini .bt-row { cursor: default; }

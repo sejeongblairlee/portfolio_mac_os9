@@ -5,6 +5,7 @@
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>Sejeong Lee — Workspace</title>
 <link rel="stylesheet" as="style" crossorigin href="https://cdn.jsdelivr.net/gh/orioncactus/pretendard@v1.3.9/dist/web/static/pretendard.css">
+<link rel="stylesheet" href="src/css/blairtunes.css">
 <style>
 @font-face {
   font-family: 'VT323';
@@ -183,7 +184,7 @@ body {
     <img src="src/images/desktop/icon-zoom.png" alt="">
     <div class="dt-label">If you want to<br>...SEE ME?</div>
   </div>
-  <div class="dt-icon big">
+  <div class="dt-icon big clickable" id="icon-tunes">
     <img src="src/images/desktop/music-ipod.png" alt="">
     <div class="dt-label">Enjoy Music!</div>
   </div>
@@ -564,5 +565,6 @@ document.getElementById('icon-seeme').addEventListener('click', () => {
   if (!camStream) initCamera();
 });
 </script>
+<script src="src/js/blairtunes.js" defer></script>
 </body>
 </html>

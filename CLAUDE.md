@@ -14,6 +14,11 @@ https://www.figma.com/design/nOOniYoXTbhuQ0FxO4ifAV/Untitled
   - "You (Remote)": `getUserMedia` 웹캠 (권한 요청 → 미러 표시), FILTER = 실시간 소프트 디더
   - SHOW LOVE/FREE BIRDS/GIMME LOVE = Photo Booth 스타일 픽셀 하트/새 이펙트
   - "...SEE ME?" 아이콘 클릭 = 닫힌 CU-SeeMe 창 재오픈
+  - "Enjoy Music!" 아이콘 클릭 = **Blair-tunes 플레이어** 열기
+    (`src/css/blairtunes.css` + `src/js/blairtunes.js`, Figma 6:748 데스크탑 /
+    115:2964 모바일 / 107:2745 미니마이즈드. 데이터는 Supabase `tracks` —
+    스키마/파이프라인은 `src/lib/*.ts`, 브라우저 포트는 blairtunes.js에 인라인.
+    아직 미구현: iframe 재생/진행바/볼륨 로직/미니 전환/드래그)
 - `blair-os.html` — 레거시 데스크탑 (구 index.html, 참조용 보존. 플로우에서 미사용)
 - `design.md` — **반응형 팝업 레이아웃 규칙의 source of truth** (브레이크포인트 768px,
   세이프 에어리어 20px, CU-SeeMe 320px max / 비디오 3:2, 스태거 배치, 레트로 섀도).

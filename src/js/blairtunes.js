@@ -1,0 +1,273 @@
+/**
+ * Blair-tunes 플레이어 — UI 연결 단계.
+ * Figma frames: 6:748(desktop) / 115:2964(mobile) / 107:2745(minimized)
+ *
+ * 이 파일은 빌드 없는 정적 사이트용 브라우저 ESM.
+ * 데이터 로직은 src/lib/*.ts(fetchTracks 파이프라인)와 동일한 규칙의 포트:
+ *  - is_published=true, sort_order asc → created_at asc
+ *  - youtube_video_id / thumbnail 파생 (src/lib/youtube.ts와 동일 규칙)
+ *  - color_source='fallback'이면 /api/theme-color로 테마 파생
+ * 값 변경 시 src/lib/supabase-config.ts와 동기화할 것.
+ *
+ * 아직 구현하지 않음(스펙): YouTube iframe/재생/진행바/볼륨 로직/미니마이즈 전환/드래그
+ */
+
+(function () {
+'use strict';
+
+const SUPABASE_URL = 'https://nmivopvhiwzaifpzlskf.supabase.co';
+const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Im5taXZvcHZoaXd6YWlmcHpsc2tmIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODMxNjIxMjEsImV4cCI6MjA5ODczODEyMX0.vPaEwNSHlD-Zscr2FXtP1d5qgWTGyPymLUrKYbyDazY';
+
+const ICONS = 'src/images/tunes';
+const VIDEO_ID_RE = /^[A-Za-z0-9_-]{11}$/;
+
+// ── 데이터 (src/lib 파이프라인의 브라우저 포트) ─────────────────────────────
+function extractYouTubeVideoId(url) {
+  if (!url) return null;
+  let u;
+  try { u = new URL(url.trim()); } catch { return null; }
+  const host = u.hostname.replace(/^(www|m|music)\./, '');
+  let c = null;
+  if (host === 'youtu.be') {
+    c = u.pathname.split('/').filter(Boolean)[0] ?? null;
+  } else if (host === 'youtube.com' || host === 'youtube-nocookie.com') {
+    const seg = u.pathname.split('/').filter(Boolean);
+    if (seg[0] === 'watch' || u.pathname === '/watch') c = u.searchParams.get('v');
+    else if (['embed', 'shorts', 'live', 'v'].includes(seg[0])) c = seg[1] ?? null;
+  }
+  return c && VIDEO_ID_RE.test(c) ? c : null;
+}
+
+function enrichTrack(t) {
+  const videoId = t.youtube_video_id || extractYouTubeVideoId(t.youtube_url);
+  return {
+    ...t,
+    youtube_video_id: videoId,
+    thumbnail_url: t.thumbnail_url || (videoId ? `https://img.youtube.com/vi/${videoId}/maxresdefault.jpg` : null),
+    thumbnail_fallback_url: videoId ? `https://img.youtube.com/vi/${videoId}/hqdefault.jpg` : (t.thumbnail_url ?? null),
+    theme_color: t.theme_color || '#2A2118',
+    text_color: t.text_color || '#FFFFFF',
+  };
+}
+
+async function applyDerivedThemeColors(tracks) {
+  return Promise.all(tracks.map(async (t) => {
+    if (t.color_source !== 'fallback' || !t.youtube_video_id) return t;
+    try {
+      const res = await fetch(`/api/theme-color?videoId=${encodeURIComponent(t.youtube_video_id)}`);
+      if (!res.ok) return t;
+      const body = await res.json();
+      if (body.color_source === 'thumbnail' && typeof body.theme_color === 'string') {
+        return { ...t, theme_color: body.theme_color, text_color: body.text_color ?? '#FFFFFF', color_source: 'thumbnail' };
+      }
+    } catch { /* 로컬 file:// 등 API 불가 → fallback 유지 */ }
+    return t;
+  }));
+}
+
+async function fetchTracks() {
+  try {
+    const qs = 'select=*&is_published=eq.true&order=sort_order.asc,created_at.asc';
+    const res = await fetch(`${SUPABASE_URL}/rest/v1/tracks?${qs}`, {
+      headers: { apikey: SUPABASE_ANON_KEY, Authorization: `Bearer ${SUPABASE_ANON_KEY}` },
+    });
+    if (!res.ok) return { tracks: [], error: `HTTP ${res.status}` };
+    const rows = await res.json();
+    const tracks = await applyDerivedThemeColors(rows.map(enrichTrack));
+    return { tracks, error: null };
+  } catch (e) {
+    return { tracks: [], error: e instanceof Error ? e.message : 'fetch failed' };
+  }
+}
+
+// ── 렌더링 ──────────────────────────────────────────────────────────────────
+const esc = (s) => String(s ?? '').replace(/[&<>"']/g, (c) =>
+  ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
+
+function liveLine(t) {
+  if (!t.performance_location && !t.performance_year) return '';
+  const parts = [t.performance_location, t.performance_year].filter(Boolean).join(', ');
+  return `Live Video from ${parts}`;
+}
+
+function controlsHTML() {
+  return `
+    <div class="bt-controls">
+      <div class="bt-controls-inner">
+        <div class="bt-btns">
+          <button class="bt-btn" aria-label="previous"><img src="${ICONS}/icon-playback.svg" alt=""></button>
+          <button class="bt-btn" aria-label="play"><img src="${ICONS}/icon-play.svg" alt=""></button>
+          <button class="bt-btn" aria-label="next"><img src="${ICONS}/icon-playforward.svg" alt=""></button>
+        </div>
+        <div class="bt-volume">
+          <div class="bt-vol-track">
+            <div class="bt-vol-fill"></div>
+            <div class="bt-vol-rest"></div>
+            <div class="bt-vol-handle"></div>
+          </div>
+          <div class="bt-vol-labels">
+            ${['mute', 'low', 'medium', 'high', 'party!'].map((l) =>
+              `<div class="bt-vol-step"><i></i><span>${l}</span></div>`).join('')}
+          </div>
+        </div>
+      </div>
+    </div>`;
+}
+
+function windowHTML() {
+  return `
+  <div class="bt-win" id="bt-win" hidden>
+    <div class="bt-header">
+      <button class="bt-hbtn" id="bt-minimize" aria-label="minimize"><img src="${ICONS}/icon-minimize.svg" alt=""></button>
+      <span class="bt-title">Blair-tunes</span>
+      <button class="bt-hbtn" id="bt-close" aria-label="close"><img src="${ICONS}/icon-close.svg" alt=""></button>
+    </div>
+    <div class="bt-body">
+      <div class="bt-col-list">
+        <div class="bt-list" id="bt-list"></div>
+        <div class="bt-slider"><div class="bt-slider-handle"></div></div>
+      </div>
+      <div class="bt-col-center">
+        <div class="bt-video"><img class="bt-thumb" id="bt-thumb" src="" alt=""></div>
+        ${controlsHTML()}
+      </div>
+      <div class="bt-col-cur">
+        <div class="bt-cur-inner">
+          <div class="bt-cur-tit">
+            <div class="bt-cur-titline">
+              <p class="bt-t1" id="bt-cur-title"></p>
+              <p class="bt-t2" id="bt-cur-artist"></p>
+            </div>
+            <p class="bt-live" id="bt-cur-live"></p>
+          </div>
+          <div class="bt-cur-des" id="bt-cur-des"></div>
+        </div>
+        <div class="bt-slider"><div class="bt-slider-handle"></div></div>
+      </div>
+    </div>
+  </div>
+
+  <div class="bt-mini" id="bt-mini" hidden>
+    <div class="bt-header">
+      <button class="bt-hbtn" aria-label="maximize"><img src="${ICONS}/icon-maximize.svg" alt=""></button>
+      <span class="bt-title">Blair-tunes</span>
+      <button class="bt-hbtn" id="bt-mini-close" aria-label="close"><img src="${ICONS}/icon-close.svg" alt=""></button>
+    </div>
+    <div class="bt-mini-body">
+      <div class="bt-video">
+        <img class="bt-thumb" id="bt-mini-thumb" src="" alt="">
+        <div class="bt-mini-overlay">
+          <button class="bt-btn side" aria-label="previous"><img src="${ICONS}/icon-playback.svg" alt=""></button>
+          <button class="bt-btn" aria-label="play"><img src="${ICONS}/icon-play.svg" alt=""></button>
+          <button class="bt-btn side" aria-label="next"><img src="${ICONS}/icon-playforward.svg" alt=""></button>
+        </div>
+      </div>
+      <div class="bt-row playing">
+        <div class="bt-row-txt">
+          <p id="bt-mini-title"></p>
+          <p id="bt-mini-artist"></p>
+        </div>
+        <img class="bt-np" src="${ICONS}/icon-nowplaying.svg" alt="" style="display:block">
+        <span class="bt-dur" id="bt-mini-dur"></span>
+      </div>
+    </div>
+  </div>`;
+}
+
+let tracks = [];
+let currentIndex = 0;
+
+function setThumb(img, track) {
+  img.src = track.thumbnail_url ?? '';
+  img.onerror = () => {
+    if (track.thumbnail_fallback_url && img.src !== track.thumbnail_fallback_url) {
+      img.src = track.thumbnail_fallback_url;
+    }
+  };
+}
+
+function renderCurrent() {
+  const t = tracks[currentIndex];
+  if (!t) return;
+
+  // 테마 — transition: background-color 300ms ease (CSS)
+  document.getElementById('bt-win').style.backgroundColor = t.theme_color;
+  document.getElementById('bt-mini').style.backgroundColor = t.theme_color;
+
+  setThumb(document.getElementById('bt-thumb'), t);
+  setThumb(document.getElementById('bt-mini-thumb'), t);
+
+  document.getElementById('bt-cur-title').textContent = t.title;
+  document.getElementById('bt-cur-artist').textContent = `/${t.artist}`;
+  const live = document.getElementById('bt-cur-live');
+  live.textContent = liveLine(t);
+  live.style.display = liveLine(t) ? '' : 'none';
+
+  const des = document.getElementById('bt-cur-des');
+  des.innerHTML = (t.curation ?? '')
+    .split(/\n+/).map((p) => p.trim()).filter(Boolean)
+    .map((p) => `<p>${esc(p)}</p>`).join('');
+
+  document.getElementById('bt-mini-title').textContent = t.title;
+  document.getElementById('bt-mini-artist').textContent = t.artist;
+  document.getElementById('bt-mini-dur').textContent = t.duration_label ?? 'mm:hh';
+
+  document.querySelectorAll('#bt-list .bt-row').forEach((row, i) => {
+    row.classList.toggle('playing', i === currentIndex);
+  });
+}
+
+function renderList() {
+  const list = document.getElementById('bt-list');
+  list.innerHTML = tracks.map((t, i) => `
+    <button class="bt-row${i === currentIndex ? ' playing' : ''}" data-index="${i}">
+      <div class="bt-row-txt">
+        <p>${esc(t.title)}</p>
+        <p>${esc(t.artist)}</p>
+      </div>
+      <img class="bt-np" src="${ICONS}/icon-nowplaying.svg" alt="">
+      <span class="bt-dur">${esc(t.duration_label ?? 'mm:hh')}</span>
+    </button>`).join('');
+  list.querySelectorAll('.bt-row').forEach((row) => {
+    row.addEventListener('click', () => {
+      currentIndex = Number(row.dataset.index);
+      renderCurrent();
+    });
+  });
+}
+
+async function initBlairTunes() {
+  const mount = document.createElement('div');
+  mount.innerHTML = windowHTML();
+  document.body.append(...mount.children);
+
+  document.getElementById('bt-close').addEventListener('click', () => {
+    document.getElementById('bt-win').hidden = true;
+  });
+  document.getElementById('bt-mini-close').addEventListener('click', () => {
+    document.getElementById('bt-mini').hidden = true;
+  });
+  // 미니마이즈 전환 인터랙션은 스펙상 아직 미구현 (버튼은 비주얼만)
+
+  const { tracks: fetched, error } = await fetchTracks();
+  if (error || !fetched.length) {
+    console.warn('[blair-tunes] tracks fetch:', error ?? 'empty');
+    return;
+  }
+  tracks = fetched;
+  currentIndex = 0;          // 첫 published 트랙 기본 선택
+  renderList();
+  renderCurrent();
+
+  // "Enjoy Music!" 아이콘 → 플레이어 열기
+  const icon = document.getElementById('icon-tunes');
+  if (icon) {
+    icon.addEventListener('click', () => {
+      document.getElementById('bt-win').hidden = false;
+    });
+  }
+}
+
+initBlairTunes();
+
+})();
