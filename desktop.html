@@ -1,0 +1,568 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Sejeong Lee — Workspace</title>
+<link rel="stylesheet" as="style" crossorigin href="https://cdn.jsdelivr.net/gh/orioncactus/pretendard@v1.3.9/dist/web/static/pretendard.css">
+<style>
+@font-face {
+  font-family: 'VT323';
+  src: url('src/fonts/VT323-Regular.ttf') format('truetype');
+  font-display: block;
+}
+* { margin:0; padding:0; box-sizing:border-box; }
+body {
+  background:#FFFFFF; width:100vw; height:100vh; overflow:hidden;
+  font-family:'Pretendard',-apple-system,sans-serif;
+}
+
+/* ══ Menu Bar — Figma 99:2397: px 8 / py 4 ══ */
+#menu-bar {
+  position:absolute; top:0; left:0; right:0; z-index:9999;
+  display:flex; align-items:center; justify-content:space-between;
+  padding:4px 8px;
+}
+.mb-lead { display:flex; align-items:center; }
+.mb-tiger { width:64px; height:28px; display:block; }
+.mb-item {
+  padding:4px 12px; border-radius:4px;
+  font-weight:700; font-size:14px; line-height:20px; color:#000;
+  cursor:default; user-select:none;
+}
+.mb-item:hover { background:rgba(0,0,0,0.06); }
+
+/* ══ Desktop Icons — 우측 상단 / 좌측 하단 ══ */
+.icon-col {
+  position:absolute; width:80px; display:flex; flex-direction:column;
+  gap:32px; align-items:center;
+}
+#icons-right { right:30px; top:56px; }
+#icons-left  { left:30px;  bottom:40px; }
+.dt-icon { display:flex; flex-direction:column; gap:8px; align-items:center; width:100%; cursor:default; }
+.dt-icon img { width:48px; height:48px; object-fit:contain; image-rendering:auto; display:block; }
+.dt-icon.big img { width:80px; height:80px; }
+.dt-label {
+  background:rgba(0,0,0,0.1); width:100%; text-align:center;
+  font-family:'VT323',monospace; font-size:16px; line-height:0.98;
+  letter-spacing:-0.8px; color:#000; padding:1px 0;
+}
+/* 호버 — 클래식 맥 아이콘 선택 반전 */
+.dt-icon:hover .dt-label { background:#000; color:#fff; }
+.dt-icon:hover img { filter:brightness(0.78) contrast(1.05); }
+.dt-icon:active img { filter:brightness(0.6); }
+.dt-icon.clickable { cursor:pointer; }
+
+/* ══ CU-SeeMe Window — Figma 65:796 / 77:501 ══ */
+.cu-win {
+  /* design.md: CU-SeeMe 팝업 자체 사이징 — 최대 320px, 좁으면 세이프 에어리어만큼 축소 */
+  position:absolute; width:min(320px, calc(100vw - 40px)); max-width:320px;
+  background:#000; border:1px solid #000;
+  display:flex; flex-direction:column; align-items:center;
+  /* design.md: 레트로 OS 하드 픽셀 오프셋 섀도 — 비포커스(약) */
+  box-shadow: 3px 3px 0 rgba(0,0,0,0.20), 6px 6px 0 rgba(0,0,0,0.06);
+}
+.cu-win.focused {
+  /* design.md: 포커스 창 — 강한 섀도 + 상위 z-index */
+  box-shadow: 4px 4px 0 rgba(0,0,0,0.28), 8px 8px 0 rgba(0,0,0,0.08);
+}
+.cu-header {
+  height:24px; width:100%; display:flex; align-items:center; justify-content:center;
+  cursor:grab; touch-action:none; user-select:none; -webkit-user-select:none;
+}
+.cu-win.dragging .cu-header { cursor:grabbing; }
+.cu-title {
+  flex:1; min-width:1px; text-align:center;
+  font-family:'VT323',monospace; font-size:16px; line-height:16px;
+  letter-spacing:-1.6px; color:#fff;
+}
+.cu-close {
+  width:24px; height:24px; flex-shrink:0; background:#000CEE; border:none;
+  cursor:pointer; display:flex; align-items:center; justify-content:center; padding:0;
+}
+.cu-close svg { display:block; }
+.cu-video {
+  /* design.md: 비디오 비율 3:2 고정 — 팝업 폭에 따라 함께 스케일, 왜곡 금지 */
+  width:100%; aspect-ratio:3/2; background:#fff;
+  border:1px solid #000; border-radius:4px; overflow:hidden; position:relative;
+}
+.cu-video video, .cu-video canvas {
+  position:absolute; inset:0; width:100%; height:100%;
+  object-fit:cover; image-rendering:pixelated;
+}
+.cu-msg {
+  position:absolute; inset:0; display:flex; align-items:center; justify-content:center;
+  font-family:'VT323',monospace; font-size:20px; color:#000; text-align:center;
+  background:#fff; text-transform:uppercase;
+}
+.cu-btns {
+  height:48px; width:100%; display:flex; align-items:flex-start;
+  justify-content:space-between; padding:8px;
+}
+.cu-btn-group { display:flex; gap:4px; align-items:center; }
+.cu-btn {
+  background:#fff; border:1px solid #000; padding:4px 8px; cursor:pointer;
+  font-family:'VT323',monospace; font-size:20px; line-height:24px;
+  color:#000; text-transform:uppercase; white-space:nowrap;
+}
+.cu-btn:active { background:#000; color:#fff; }
+.cu-btn.primary { background:#000CEE; color:#fff; padding:4px 10px; }
+.cu-btn.primary:active { background:#0008a8; }
+
+/* ── 이펙트: Photo Booth 스타일 하트/새 (픽셀 스프라이트) ── */
+.fx { position:absolute; pointer-events:none; z-index:5; }
+
+/* 하트 — 아래에서 좌우로 흔들리며 떠오르고 상단에서 페이드 */
+.fx-heart {
+  bottom:-24px; opacity:0;
+  animation:heart-rise var(--dur,2.6s) ease-out both;
+}
+@keyframes heart-rise {
+  0%   { transform:translateY(0) scale(0.6); opacity:0; }
+  10%  { opacity:1; transform:translateY(calc(var(--rise) * 0.1)) scale(1); }
+  80%  { opacity:1; }
+  100% { transform:translateY(var(--rise,-200px)) scale(1.1); opacity:0; }
+}
+.fx-heart .sway {
+  display:inline-block;
+  animation:heart-sway var(--swaydur,0.8s) ease-in-out infinite alternate;
+}
+@keyframes heart-sway {
+  from { transform:translateX(calc(var(--amp,8px) * -1)) rotate(-7deg); }
+  to   { transform:translateX(var(--amp,8px)) rotate(7deg); }
+}
+
+/* 새 — 날개 퍼덕이며 화면을 가로질러 비행 */
+.fx-bird { animation:bird-fly var(--dur,2.6s) linear both; }
+@keyframes bird-fly {
+  0%   { transform:translateX(0); }
+  100% { transform:translateX(var(--dist,500px)); }
+}
+.fx-bird .bob {
+  display:inline-block;
+  animation:bird-bob 0.45s ease-in-out infinite alternate;
+}
+@keyframes bird-bob {
+  from { transform:translateY(-3px); }
+  to   { transform:translateY(3px); }
+}
+.fx-bird .fr1 { animation:flap-a 0.26s steps(1, end) infinite; }
+.fx-bird .fr2 { animation:flap-b 0.26s steps(1, end) infinite; }
+@keyframes flap-a { 0%, 100% { opacity:1; } 50% { opacity:0; } }
+@keyframes flap-b { 0%, 100% { opacity:0; } 50% { opacity:1; } }
+</style>
+</head>
+<body>
+
+<!-- ▐▌ MENU BAR ▐▌ -->
+<nav id="menu-bar">
+  <div class="mb-lead">
+    <img class="mb-tiger" src="src/images/desktop/menubar-tiger.svg" alt="tiger">
+    <span class="mb-item">About ME</span>
+    <span class="mb-item">Works</span>
+    <span class="mb-item">Contact</span>
+  </div>
+  <span class="mb-item" id="clock">Mon Jun 10&nbsp;&nbsp;9:41 AM</span>
+</nav>
+
+<!-- ▐▌ DESKTOP ICONS — 우측 ▐▌ -->
+<div class="icon-col" id="icons-right">
+  <div class="dt-icon">
+    <img src="src/images/desktop/folder-default.png" alt="">
+    <div class="dt-label">Works</div>
+  </div>
+  <div class="dt-icon">
+    <img src="src/images/desktop/adobe-photoshop.png" alt="">
+    <div class="dt-label">AI Images</div>
+  </div>
+  <div class="dt-icon">
+    <img src="src/images/desktop/adobe-photoshop.png" alt="">
+    <div class="dt-label">and my film</div>
+  </div>
+  <div class="dt-icon clickable" id="icon-seeme">
+    <img src="src/images/desktop/icon-zoom.png" alt="">
+    <div class="dt-label">If you want to<br>...SEE ME?</div>
+  </div>
+  <div class="dt-icon big">
+    <img src="src/images/desktop/music-ipod.png" alt="">
+    <div class="dt-label">Enjoy Music!</div>
+  </div>
+</div>
+
+<!-- ▐▌ DESKTOP ICONS — 좌측 하단 ▐▌ -->
+<div class="icon-col" id="icons-left">
+  <div class="dt-icon">
+    <img src="src/images/desktop/file-sharing.png" alt="">
+    <div class="dt-label">Guestbook</div>
+  </div>
+  <div class="dt-icon">
+    <img src="src/images/desktop/file-sharing.png" alt="">
+    <div class="dt-label">Glider 4.0</div>
+  </div>
+</div>
+
+<!-- ▐▌ WINDOW: SEJEONG LEE (Local) — hello 하프톤 영상 ▐▌ -->
+<div class="cu-win" id="win-local" style="left:625px; top:384px;">
+  <div class="cu-header">
+    <span class="cu-title">SEJEONG LEE (Local)</span>
+    <button class="cu-close" data-win="win-local" aria-label="닫기">
+      <svg width="24" height="24" viewBox="0 0 24 24" fill="none">
+        <path d="M7 7L17 17M7 17L17 7" stroke="#fff" stroke-linecap="square"/>
+      </svg>
+    </button>
+  </div>
+  <div class="cu-video" id="local-video-wrap">
+    <video id="local-video" autoplay muted loop playsinline
+           src="src/CU-SeeME/hello-halftone.mp4"></video>
+  </div>
+  <div class="cu-btns">
+    <div class="cu-btn-group">
+      <button class="cu-btn" id="btn-love">SHOW LOVE</button>
+      <button class="cu-btn" id="btn-birds">FREE BIRDS</button>
+    </div>
+    <button class="cu-btn primary" id="btn-sayhi">SAY HI!</button>
+  </div>
+</div>
+
+<!-- ▐▌ WINDOW: You (Remote) — 웹캠 (브라우저 권한 요청) ▐▌ -->
+<div class="cu-win" id="win-you" style="left:975px; top:384px;">
+  <div class="cu-header">
+    <span class="cu-title">You (Remote)</span>
+    <button class="cu-close" data-win="win-you" aria-label="닫기">
+      <svg width="24" height="24" viewBox="0 0 24 24" fill="none">
+        <path d="M7 7L17 17M7 17L17 7" stroke="#fff" stroke-linecap="square"/>
+      </svg>
+    </button>
+  </div>
+  <div class="cu-video" id="you-video-wrap">
+    <video id="you-video" autoplay muted playsinline style="display:none; transform:scaleX(-1);"></video>
+    <canvas id="you-canvas" width="160" height="120" style="display:none;"></canvas>
+    <div class="cu-msg" id="you-msg">Allow camera<br>to connect...</div>
+  </div>
+  <div class="cu-btns">
+    <div class="cu-btn-group">
+      <button class="cu-btn" id="btn-gimme">GIMME LOVE</button>
+      <button class="cu-btn" id="btn-filter">FILTER</button>
+    </div>
+    <button class="cu-btn primary" id="btn-mute">MUTE CAM</button>
+  </div>
+</div>
+
+<script>
+'use strict';
+
+// ── 메뉴바 시계 — "Mon Jun 10  9:41 AM" 포맷 ──────────────────────────────
+function tickClock() {
+  const d = new Date();
+  const days = ['Sun','Mon','Tue','Wed','Thu','Fri','Sat'];
+  const mons = ['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'];
+  let h = d.getHours();
+  const ap = h >= 12 ? 'PM' : 'AM';
+  h = h % 12 || 12;
+  const m = String(d.getMinutes()).padStart(2, '0');
+  document.getElementById('clock').textContent =
+    days[d.getDay()] + ' ' + mons[d.getMonth()] + ' ' + d.getDate() +
+    '  ' + h + ':' + m + ' ' + ap;
+}
+tickClock();
+setInterval(tickClock, 10000);
+
+// ── 창 닫기 ────────────────────────────────────────────────────────────────
+document.querySelectorAll('.cu-close').forEach((btn) => {
+  btn.addEventListener('click', () => {
+    document.getElementById(btn.dataset.win).style.display = 'none';
+  });
+});
+
+// ── 반응형 초기 배치 + 세이프 에어리어 — 규칙은 design.md 참조 ─────────────
+const SAFE = 20;
+
+function clampToSafeArea(x, y, winW, winH, vw, vh) {
+  const maxX = Math.max(vw - winW - SAFE, SAFE);
+  const maxY = Math.max(vh - winH - SAFE, SAFE);
+  return [
+    Math.min(Math.max(x, SAFE), maxX),
+    Math.min(Math.max(y, SAFE), maxY),
+  ];
+}
+
+function layoutWindows() {
+  const vw = window.innerWidth, vh = window.innerHeight;
+  const mobile = vw <= 768;   // 단일 브레이크포인트 — design.md와 동일 값
+  const local = document.getElementById('win-local');
+  const you = document.getElementById('win-you');
+  const wins = [local, you].filter((w) => w.style.display !== 'none');
+  if (!wins.length) return;
+
+  // 폭/비디오 높이는 CSS가 결정 (min(320px, 100vw - 40px) + aspect-ratio 3/2)
+  // JS는 위치만 계산 → 리사이즈 시 좌우 흔들림 없음 (결정적 포지션)
+  const winW = wins[0].offsetWidth;
+
+  // 위치: 사용자가 드래그한 창은 리셋하지 않고 세이프 에어리어로 클램프만
+  const place = (w, x, y) => {
+    if (w.dataset.dragged) {
+      const [cx, cy] = clampToSafeArea(w.offsetLeft, w.offsetTop, w.offsetWidth, w.offsetHeight, vw, vh);
+      w.style.left = cx + 'px';
+      w.style.top = cy + 'px';
+      return;
+    }
+    const [cx, cy] = clampToSafeArea(x, y, w.offsetWidth, w.offsetHeight, vw, vh);
+    w.style.left = cx + 'px';
+    w.style.top = cy + 'px';
+  };
+
+  if (mobile) {
+    // 수직 스택, 중앙 정렬 — ±8px 오프셋은 장식용, 세이프 에어리어 우선
+    const centerX = (vw - winW) / 2;
+    const off = Math.min(8, Math.max(0, centerX - SAFE));
+    place(local, centerX - off, 120);
+    const belowY = local.style.display !== 'none'
+      ? local.offsetTop + local.offsetHeight + 18
+      : 120;
+    place(you, centerX + off, belowY);
+  } else {
+    // 중앙 근처, 어긋난 스태거 배치 (일렬 정렬 금지) — 폭은 320px 고정
+    const lh = local.offsetHeight, yh = you.offsetHeight;
+    place(local, vw / 2 - winW - 24, vh / 2 - lh / 2 - 24);
+    place(you, vw / 2 + 24, vh / 2 - yh / 2 + 24);
+  }
+}
+layoutWindows();
+window.addEventListener('resize', layoutWindows);
+// 초기 포커스: Local 창 (클래식 OS — 항상 하나는 활성)
+requestAnimationFrame(() => focusWin(document.getElementById('win-local')));
+
+// ── 창 드래그 + 포커스 z-index (포인터 이벤트 — 마우스/터치 공용) ──────────
+let topZ = 100;
+function focusWin(win) {
+  document.querySelectorAll('.cu-win').forEach((w) => w.classList.remove('focused'));
+  win.classList.add('focused');
+  win.style.zIndex = ++topZ;
+}
+document.querySelectorAll('.cu-win').forEach((win) => {
+  // 창 아무 곳이나 클릭/탭 → 맨 앞으로 + 포커스 섀도
+  win.addEventListener('pointerdown', () => focusWin(win));
+
+  const header = win.querySelector('.cu-header');
+  let dragging = false, pid = null, startX = 0, startY = 0, origX = 0, origY = 0;
+
+  header.addEventListener('pointerdown', (e) => {
+    if (e.target.closest('.cu-close')) return;   // 닫기 버튼은 드래그 시작 안 함
+    dragging = true;
+    pid = e.pointerId;
+    header.setPointerCapture(pid);
+    startX = e.clientX;
+    startY = e.clientY;
+    origX = win.offsetLeft;
+    origY = win.offsetTop;
+    win.classList.add('dragging');
+    win.dataset.dragged = '1';   // 리사이즈 시 위치 리셋 안 함 (design.md)
+    e.preventDefault();
+  });
+
+  header.addEventListener('pointermove', (e) => {
+    if (!dragging || e.pointerId !== pid) return;
+    let nx = origX + (e.clientX - startX);
+    let ny = origY + (e.clientY - startY);
+    // 뷰포트 경계: 살짝은 나가되 타이틀바(24px)는 항상 잡을 수 있게
+    const minVisible = 60;
+    nx = Math.max(-win.offsetWidth + minVisible, Math.min(nx, window.innerWidth - minVisible));
+    ny = Math.max(0, Math.min(ny, window.innerHeight - 24));
+    win.style.left = nx + 'px';
+    win.style.top = ny + 'px';
+  });
+
+  const endDrag = (e) => {
+    if (!dragging || e.pointerId !== pid) return;
+    dragging = false;
+    win.classList.remove('dragging');
+  };
+  header.addEventListener('pointerup', endDrag);
+  header.addEventListener('pointercancel', endDrag);
+});
+
+// ── You (Remote): 웹캠 — 브라우저 카메라 권한 요청 후 표시 ─────────────────
+const youVideo = document.getElementById('you-video');
+const youCanvas = document.getElementById('you-canvas');
+const youMsg = document.getElementById('you-msg');
+let camStream = null;
+let camMuted = false;
+let filterOn = false;
+
+async function initCamera() {
+  if (!navigator.mediaDevices || !navigator.mediaDevices.getUserMedia) {
+    youMsg.innerHTML = 'Camera not<br>available';
+    return;
+  }
+  try {
+    camStream = await navigator.mediaDevices.getUserMedia({
+      video: { width: 640, height: 480 }, audio: false,
+    });
+    youVideo.srcObject = camStream;
+    youMsg.style.display = 'none';
+    youVideo.style.display = 'block';
+  } catch (e) {
+    youMsg.innerHTML = 'Camera blocked<br>allow &amp; reload';
+  }
+}
+initCamera();
+
+// ── FILTER: 소프트 흑백 + 은은한 하프톤 (hello 영상과 동일한 룩) ───────────
+// 그레이스케일 → 대비 0.9·밝기 1.05 → 파인 Bayer 도트를 multiply 18%로만 블렌드
+const BAYER4 = [
+  [ 0,  8,  2, 10],
+  [12,  4, 14,  6],
+  [ 3, 11,  1,  9],
+  [15,  7, 13,  5],
+];
+function ditherLoop() {
+  if (!filterOn || !camStream) return;
+  const ctx = youCanvas.getContext('2d');
+  const w = youCanvas.width, h = youCanvas.height;
+  // 미러링 상태로 캔버스에 그리기
+  ctx.save();
+  ctx.scale(-1, 1);
+  ctx.drawImage(youVideo, -w, 0, w, h);
+  ctx.restore();
+  const img = ctx.getImageData(0, 0, w, h);
+  const d = img.data;
+  for (let y = 0; y < h; y++) {
+    for (let x = 0; x < w; x++) {
+      const i = (y * w + x) * 4;
+      const lum = d[i] * 0.299 + d[i+1] * 0.587 + d[i+2] * 0.114;
+      let base = ((lum - 128) * 0.9 + 128) * 1.05;          // 대비↓ 밝기↑, 클리핑 방지
+      base = base < 0 ? 0 : (base > 255 ? 255 : base);
+      const dot = base / 255 > (BAYER4[y % 4][x % 4] + 0.5) / 16;
+      const v = dot ? base : base * 0.82;                   // multiply 18% 도트만
+      d[i] = d[i+1] = d[i+2] = v;
+    }
+  }
+  ctx.putImageData(img, 0, 0);
+  requestAnimationFrame(ditherLoop);
+}
+
+document.getElementById('btn-filter').addEventListener('click', () => {
+  if (!camStream) return;
+  filterOn = !filterOn;
+  youVideo.style.display = filterOn ? 'none' : 'block';
+  youCanvas.style.display = filterOn ? 'block' : 'none';
+  if (filterOn) ditherLoop();
+});
+
+// ── MUTE CAM ───────────────────────────────────────────────────────────────
+document.getElementById('btn-mute').addEventListener('click', (e) => {
+  if (!camStream) return;
+  camMuted = !camMuted;
+  camStream.getVideoTracks().forEach((t) => { t.enabled = !camMuted; });
+  if (camMuted) {
+    youVideo.style.display = 'none';
+    youCanvas.style.display = 'none';
+    youMsg.innerHTML = 'Cam off';
+    youMsg.style.display = 'flex';
+    e.target.textContent = 'CAM ON';
+  } else {
+    youMsg.style.display = 'none';
+    (filterOn ? youCanvas : youVideo).style.display = 'block';
+    if (filterOn) ditherLoop();
+    e.target.textContent = 'MUTE CAM';
+  }
+});
+
+// ── 이펙트: Photo Booth 스타일 (픽셀 스프라이트) ───────────────────────────
+// SHOW LOVE / GIMME LOVE — 빨간 픽셀 하트가 흔들리며 떠오름
+// FREE BIRDS — 파랑새가 날개를 퍼덕이며 화면을 가로질러 비행
+
+function heartSVG(size) {
+  // 하이라이트 픽셀이 있는 빨간 하트 (Photo Booth 레드)
+  return '<svg width="' + size + '" height="' + Math.round(size * 10 / 12) + '" viewBox="0 0 12 10" shape-rendering="crispEdges">' +
+    '<g fill="#FF2D55">' +
+    '<rect x="1" y="0" width="3" height="2"/><rect x="8" y="0" width="3" height="2"/>' +
+    '<rect x="0" y="2" width="12" height="3"/><rect x="1" y="5" width="10" height="2"/>' +
+    '<rect x="2" y="7" width="8" height="2"/><rect x="4" y="9" width="4" height="1"/></g>' +
+    '<rect x="2" y="1" width="2" height="1" fill="#FF8FAB"/>' +
+    '<rect x="1" y="2" width="1" height="2" fill="#FF8FAB"/>' +
+    '<rect x="8" y="6" width="2" height="1" fill="#C2183E"/></svg>';
+}
+
+function birdSVG(size, flip) {
+  // 파랑새 2프레임(날개 위/아래) — CSS steps로 퍼덕임
+  const body =
+    '<rect x="3" y="5" width="8" height="4" fill="#3E7BFA"/>' +          // 몸통
+    '<rect x="10" y="3" width="3" height="4" fill="#3E7BFA"/>' +         // 머리
+    '<rect x="13" y="4" width="2" height="2" fill="#F5A623"/>' +         // 부리
+    '<rect x="11" y="4" width="1" height="1" fill="#000"/>' +            // 눈
+    '<rect x="4" y="8" width="6" height="2" fill="#FFF"/>' +             // 배
+    '<rect x="0" y="4" width="3" height="2" fill="#2456C4"/>';           // 꼬리
+  const wingUp = '<g class="fr1">' +
+    '<rect x="5" y="0" width="4" height="2" fill="#2456C4"/>' +
+    '<rect x="4" y="2" width="5" height="3" fill="#2E63D9"/></g>';
+  const wingDown = '<g class="fr2">' +
+    '<rect x="4" y="9" width="5" height="2" fill="#2E63D9"/>' +
+    '<rect x="5" y="11" width="4" height="1" fill="#2456C4"/></g>';
+  return '<svg width="' + size + '" height="' + Math.round(size * 12 / 15) + '" viewBox="0 0 15 12" ' +
+    'shape-rendering="crispEdges" style="transform:scaleX(' + (flip ? -1 : 1) + ')">' +
+    body + wingUp + wingDown + '</svg>';
+}
+
+function spawnHearts(wrapId) {
+  const wrap = document.getElementById(wrapId);
+  const H = wrap.clientHeight;
+  for (let i = 0; i < 12; i++) {
+    const p = document.createElement('span');
+    p.className = 'fx fx-heart';
+    p.style.left = (5 + Math.random() * 85) + '%';
+    p.style.setProperty('--dur', (2.2 + Math.random() * 1.3).toFixed(2) + 's');
+    p.style.setProperty('--rise', -(H * 0.7 + Math.random() * H * 0.3 + 24).toFixed(0) + 'px');
+    p.style.setProperty('--amp', (4 + Math.random() * 9).toFixed(0) + 'px');
+    p.style.setProperty('--swaydur', (0.55 + Math.random() * 0.5).toFixed(2) + 's');
+    p.style.animationDelay = (Math.random() * 0.9).toFixed(2) + 's';
+    const sway = '<span class="sway" style="animation-delay:-' + (Math.random() * 1).toFixed(2) + 's">' +
+      heartSVG(Math.round(12 + Math.random() * 18)) + '</span>';
+    p.innerHTML = sway;
+    wrap.appendChild(p);
+    setTimeout(() => p.remove(), 4800);
+  }
+}
+
+function spawnBirds(wrapId) {
+  const wrap = document.getElementById(wrapId);
+  const W = wrap.clientWidth;
+  for (let i = 0; i < 6; i++) {
+    const b = document.createElement('span');
+    b.className = 'fx fx-bird';
+    const fromLeft = Math.random() < 0.5;
+    const size = Math.round(24 + Math.random() * 16);
+    b.style.top = (6 + Math.random() * 55) + '%';
+    b.style.left = fromLeft ? (-size - 10) + 'px' : (W + 10) + 'px';
+    b.style.setProperty('--dist', ((W + size * 2 + 20) * (fromLeft ? 1 : -1)) + 'px');
+    b.style.setProperty('--dur', (2.0 + Math.random() * 1.4).toFixed(2) + 's');
+    b.style.animationDelay = (Math.random() * 0.8).toFixed(2) + 's';
+    b.innerHTML = '<span class="bob" style="animation-delay:-' + (Math.random() * 0.5).toFixed(2) + 's">' +
+      birdSVG(size, !fromLeft) + '</span>';
+    wrap.appendChild(b);
+    setTimeout(() => b.remove(), 4600);
+  }
+}
+
+document.getElementById('btn-love').addEventListener('click', () => spawnHearts('local-video-wrap'));
+document.getElementById('btn-birds').addEventListener('click', () => spawnBirds('local-video-wrap'));
+document.getElementById('btn-gimme').addEventListener('click', () => spawnHearts('you-video-wrap'));
+
+// ── SAY HI! → 이메일 ───────────────────────────────────────────────────────
+document.getElementById('btn-sayhi').addEventListener('click', () => {
+  window.location.href = 'mailto:whynotblair@gmail.com';
+});
+
+// ── "If you want to ...SEE ME?" 아이콘 → CU-SeeMe 창 다시 열기 ─────────────
+document.getElementById('icon-seeme').addEventListener('click', () => {
+  ['win-local', 'win-you'].forEach((id) => {
+    document.getElementById(id).style.display = '';
+  });
+  layoutWindows();   // 드래그 안 한 창은 초기 위치로, 드래그한 창은 클램프만
+  focusWin(document.getElementById('win-local'));
+  // 카메라가 아직 연결 전(권한 거부 후 재시도 등)이면 다시 요청
+  if (!camStream) initCamera();
+});
+</script>
+</body>
+</html>

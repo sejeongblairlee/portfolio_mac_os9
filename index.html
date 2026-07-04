@@ -1,818 +1,573 @@
 <!DOCTYPE html>
 <html lang="ko">
 <head>
-  <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-  <title>Blair Lee — Product Designer</title>
-  <link rel="stylesheet" as="style" crossorigin href="https://cdn.jsdelivr.net/gh/orioncactus/pretendard@v1.3.9/dist/web/static/pretendard.css">
-  <link rel="stylesheet" href="style.css">
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Sejeong Lee — Product Designer</title>
+<link rel="stylesheet" as="style" crossorigin href="https://cdn.jsdelivr.net/gh/orioncactus/pretendard@v1.3.9/dist/web/static/pretendard.css">
+<style>
+* { margin:0; padding:0; box-sizing:border-box; }
+body {
+  background:#FAFAF8; overflow:hidden; width:100vw; height:100vh;
+  font-family:'Pretendard',-apple-system,'Helvetica Neue',sans-serif;
+}
+/* 밝기↓·대비↑ — 배경은 scene.background 사전 보정으로 순백 유지됨 */
+#c { display:block; filter: brightness(0.94) contrast(1.12); }
+#overlay {
+  position:fixed; inset:0; background:#FFFFFF; opacity:0;
+  pointer-events:none; transition:opacity .6s ease; z-index:99;
+}
+#overlay.go { opacity:1; pointer-events:all; }
+/* ── Figma 1:35 — Pretendard Bold 20/28, #000, top 20px, left/right 24px ── */
+.corner {
+  position:fixed; top:20px; z-index:10; pointer-events:none;
+  font-size:20px;
+  line-height:28px; color:#000; letter-spacing:0;
+  font-weight:700;
+}
+.corner.left  { left:24px;  text-align:left; }
+.corner.right { right:24px; text-align:right; }
+.corner b { font-weight:700; }
+</style>
 </head>
 <body>
-
-  <!-- ▐▌ STARTUP SCREEN ▐▌ -->
-  <div id="startup-screen">
-    <div class="su-dialog">
-
-      <!-- Inner white panel: 350×221 at (36, 29) -->
-      <div class="su-inner">
-        <!-- Canvas: 눈 없는 PNG + 눈을 매 프레임 직접 렌더링 -->
-        <div class="su-icon" id="finder-icon-wrap">
-          <canvas id="finder-logo-canvas"
-                  width="218" height="228"
-                  style="width:109px;height:114px;cursor:pointer;display:block;image-rendering:pixelated;">
-          </canvas>
-        </div>
-        <div class="su-name">Sejeong Lee</div>
-      </div>
-
-      <!-- STATE 1: Hello World + Enter button (default) -->
-      <div id="su-state-enter">
-        <div class="su-hello">Hello World, welcome to my workspace 1992</div>
-        <button class="su-btn" id="su-btn">Enter into...</button>
-      </div>
-
-      <!-- STATE 2: Starting up + progress bar (hidden until button click) -->
-      <div id="su-state-loading" style="display:none">
-        <div class="su-startlabel">Starting up...</div>
-        <div class="su-track">
-          <div class="su-bar" id="startup-bar"></div>
-        </div>
-      </div>
-
-    </div>
-  </div>
-
-  <!-- ▐▌ TOP MENU BAR ▐▌ -->
-  <nav id="menu-bar">
-    <div class="menu-left">
-      <div class="apple-menu" id="apple-menu">
-        <span class="apple-logo">&#xF8FF;</span>
-        <div class="apple-dropdown hidden" id="apple-dropdown">
-          <div class="apple-dd-item" id="dd-about-mac">이 매킨토시 정보</div>
-          <div class="apple-dd-sep"></div>
-          <div class="apple-dd-item" id="dd-balloon-help">
-            <span id="dd-balloon-label">풍선 도움말 보기</span>
-          </div>
-        </div>
-      </div>
-      <span class="menu-item" data-window="cuseme">About...</span>
-      <span class="menu-item" data-window="portfolio">Projects</span>
-      <span class="menu-item" data-window="cuseme">Contact ME!</span>
-    </div>
-    <div class="menu-right">
-      <span id="clock"></span>
-    </div>
-  </nav>
-
-  <!-- ▐▌ DESKTOP ▐▌ -->
-  <main id="desktop">
-
-    <!-- Desktop Icons -->
-    <div id="icons-container">
-      <div class="desktop-icon" data-window="portfolio" data-balloon="더블클릭하면 제 프로젝트들을 볼 수 있어요! 📁">
-        <img src="src/images/icon-projects-32.png" class="icon-img" alt="">
-        <div class="icon-label">Projects</div>
-      </div>
-      <div class="desktop-icon" data-window="blairTunes" data-balloon="제가 작업할 때 듣는 플레이리스트예요 🎧">
-        <img src="src/images/icon-blairTunes-32.png" class="icon-img" alt="">
-        <div class="icon-label">Blair-Tunes</div>
-      </div>
-      <div class="desktop-icon" data-window="cuseme" data-balloon="실시간으로 저랑 연결돼요 (사실은 화상캠이에요) 📹">
-        <img src="src/images/icon-cuseeme-32.png" class="icon-img" alt="">
-        <div class="icon-label">CU-SeeME</div>
-      </div>
-      <div class="desktop-icon" data-window="none" data-balloon="음... 사실 별거 없어요 (아직은요 👀)">
-        <img src="src/images/icon-andmore-32.png" class="icon-img" alt="">
-        <div class="icon-label">and more?</div>
-      </div>
-      <div class="desktop-icon" data-window="trash" data-balloon="제 흑역사들이 잠들어 있는 곳이에요 🗑️">
-        <img src="src/images/icon-trash-32.png" class="icon-img" alt="">
-        <div class="icon-label">Trash</div>
-      </div>
-    </div>
-
-    <!-- ╔═══════════════════════════════════════╗ -->
-    <!-- ║  WINDOW: Projects                     ║ -->
-    <!-- ╚═══════════════════════════════════════╝ -->
-    <div class="mac-window hidden" id="window-portfolio">
-      <div class="window-titlebar">
-        <button class="window-close-btn" data-target="portfolio" aria-label="닫기">
-          <svg class="close-icon" viewBox="0 0 8 8" width="8" height="8">
-            <line x1="1.5" y1="1.5" x2="6.5" y2="6.5" stroke="#2a2a2a" stroke-width="1.5" stroke-linecap="round"/>
-            <line x1="6.5" y1="1.5" x2="1.5" y2="6.5" stroke="#2a2a2a" stroke-width="1.5" stroke-linecap="round"/>
-          </svg>
-        </button>
-        <div class="titlebar-inner">
-          <div class="titlebar-picker"></div>
-          <div class="titlebar-label">
-            <img src="src/images/icon-projects-32.png" class="titlebar-icon" alt="">
-            <span class="window-title">Projects</span>
-          </div>
-          <div class="titlebar-picker"></div>
-          <div class="titlebar-zoom"></div>
-        </div>
-        <div class="titlebar-collapse"></div>
-      </div>
-
-      <!-- Status bar -->
-      <div class="pj-statusbar">4 Categories · 10 Services</div>
-
-      <!-- Accordion + Mac OS 9 Finder list rows -->
-      <div class="pj-content pj-acc-wrap">
-
-        <!-- ① Finance (2) — DEFAULT OPEN -->
-        <div class="pj-acc-item" data-open="true">
-          <div class="pj-acc-header">
-            <span class="pj-acc-arrow">▶</span>
-            <span class="pj-acc-chip" style="background:#0000FF"></span>
-            <span class="pj-acc-name">Finance</span>
-            <span class="pj-acc-count">(2)</span>
-          </div>
-          <div class="pj-acc-files">
-            <div class="pj-finder-row" data-key="monimo_SAMSUNG CARD.dmg">
-              <span class="pj-fr-chevron">▶</span>
-              <img src="src/logo/monimo.png" class="pj-fr-icon" alt="">
-              <span class="pj-fr-name">monimo</span>
-            </div>
-            <div class="pj-finder-row" data-key="LOCA_LOTTE CARD.pkg">
-              <span class="pj-fr-chevron">▶</span>
-              <img src="src/logo/loca.png" class="pj-fr-icon" alt="">
-              <span class="pj-fr-name">LOCA</span>
-            </div>
-          </div>
-        </div>
-
-        <!-- ② Commerce (3) -->
-        <div class="pj-acc-item" data-open="false">
-          <div class="pj-acc-header">
-            <span class="pj-acc-arrow">▶</span>
-            <span class="pj-acc-chip" style="background:#FF0000"></span>
-            <span class="pj-acc-name">Commerce</span>
-            <span class="pj-acc-count">(3)</span>
-          </div>
-          <div class="pj-acc-files">
-            <div class="pj-finder-row" data-key="MLB_SUPRA_F&F.app">
-              <span class="pj-fr-chevron">▶</span>
-              <img src="src/images/icon-projects.png" class="pj-fr-icon" alt="">
-              <span class="pj-fr-name">MLB Discovery SUPRA</span>
-            </div>
-            <div class="pj-finder-row" data-key="SI_Village_SHINSEGAE.dmg">
-              <span class="pj-fr-chevron">▶</span>
-              <img src="src/logo/sivillage.png" class="pj-fr-icon" alt="">
-              <span class="pj-fr-name">S.I.Village</span>
-            </div>
-            <div class="pj-finder-row" data-key="LOTTE_ON_LOTTE.pkg">
-              <span class="pj-fr-chevron">▶</span>
-              <img src="src/logo/lotte on.jpg" class="pj-fr-icon" alt="">
-              <span class="pj-fr-name">LOTTE ON</span>
-            </div>
-          </div>
-        </div>
-
-        <!-- ③ O2O (2) -->
-        <div class="pj-acc-item" data-open="false">
-          <div class="pj-acc-header">
-            <span class="pj-acc-arrow">▶</span>
-            <span class="pj-acc-chip" style="background:#FF6600"></span>
-            <span class="pj-acc-name">O2O</span>
-            <span class="pj-acc-count">(2)</span>
-          </div>
-          <div class="pj-acc-files">
-            <div class="pj-finder-row" data-key="DaLock_Startup.dmg">
-              <span class="pj-fr-chevron">▶</span>
-              <img src="src/images/icon-projects.png" class="pj-fr-icon" alt="">
-              <span class="pj-fr-name">DaLock</span>
-            </div>
-            <div class="pj-finder-row" data-key="T_Factory_SKT.pkg">
-              <span class="pj-fr-chevron">▶</span>
-              <img src="src/images/icon-projects.png" class="pj-fr-icon" alt="">
-              <span class="pj-fr-name">T Factory</span>
-            </div>
-          </div>
-        </div>
-
-        <!-- ④ Etc (3) — B2B + OTT 공존 -->
-        <div class="pj-acc-item" data-open="false">
-          <div class="pj-acc-header">
-            <span class="pj-acc-arrow">▶</span>
-            <span class="pj-acc-chip" style="background:#333399"></span>
-            <span class="pj-acc-name">Etc</span>
-            <span class="pj-acc-count">(3)</span>
-          </div>
-          <div class="pj-acc-files">
-            <div class="pj-finder-row" data-key="Addy_CJ ENM.sit">
-              <span class="pj-fr-chevron">▶</span>
-              <img src="src/images/icon-projects.png" class="pj-fr-icon" alt="">
-              <span class="pj-fr-name">Addy</span>
-            </div>
-            <div class="pj-finder-row" data-key="Tving_CJ ENM.dmg">
-              <span class="pj-fr-chevron">▶</span>
-              <img src="src/images/icon-projects.png" class="pj-fr-icon" alt="">
-              <span class="pj-fr-name">Tving</span>
-            </div>
-            <div class="pj-finder-row" data-key="TMR_LINA.pkg">
-              <span class="pj-fr-chevron">▶</span>
-              <img src="src/logo/lina.png" class="pj-fr-icon" alt="">
-              <span class="pj-fr-name">TMR Assistant</span>
-            </div>
-          </div>
-        </div>
-
-      </div><!-- .pj-acc-wrap -->
-      <div class="resize-handle"></div>
-    </div>
-
-    <!-- ╔═══════════════════════════════════════╗ -->
-    <!-- ║  WINDOW: Get Info (Project Detail)    ║ -->
-    <!-- ╚═══════════════════════════════════════╝ -->
-    <div class="mac-window hidden" id="window-getinfo">
-      <div class="window-titlebar">
-        <button class="window-close-btn" data-target="getinfo" aria-label="닫기">
-          <svg class="close-icon" viewBox="0 0 8 8" width="8" height="8">
-            <line x1="1.5" y1="1.5" x2="6.5" y2="6.5" stroke="#2a2a2a" stroke-width="1.5" stroke-linecap="round"/>
-            <line x1="6.5" y1="1.5" x2="1.5" y2="6.5" stroke="#2a2a2a" stroke-width="1.5" stroke-linecap="round"/>
-          </svg>
-        </button>
-        <div class="titlebar-inner">
-          <div class="titlebar-picker"></div>
-          <div class="titlebar-label">
-            <img src="src/images/icon-projects-32.png" class="titlebar-icon" alt="">
-            <span class="window-title" id="gi-win-title">Get Info</span>
-          </div>
-          <div class="titlebar-picker"></div>
-          <div class="titlebar-zoom"></div>
-        </div>
-        <div class="titlebar-collapse"></div>
-      </div>
-      <div class="gi-body">
-        <!-- File header -->
-        <div class="gi-file-header">
-          <img src="src/images/icon-projects-32.png" class="gi-file-icon" alt="">
-          <div class="gi-file-name" id="gi-filename">—</div>
-        </div>
-        <!-- Tabs -->
-        <div class="gi-tabs">
-          <button class="gi-tab gi-tab-active" data-panel="overview">Overview</button>
-          <button class="gi-tab" data-panel="details">Details</button>
-        </div>
-        <!-- Panels -->
-        <div class="gi-panels">
-          <div class="gi-panel gi-panel-active" id="gi-panel-overview">
-            <table class="gi-table">
-              <tr><td class="gi-key">Service</td><td class="gi-val" id="gi-service">—</td></tr>
-              <tr><td class="gi-key">Client</td><td class="gi-val" id="gi-client">—</td></tr>
-              <tr><td class="gi-key">Role</td><td class="gi-val" id="gi-role">—</td></tr>
-              <tr><td class="gi-key">Domain</td><td class="gi-val" id="gi-domain">—</td></tr>
-              <tr><td class="gi-key">Period</td><td class="gi-val" id="gi-period">—</td></tr>
-            </table>
-          </div>
-          <div class="gi-panel" id="gi-panel-details">
-            <div class="gi-details-text" id="gi-details">—</div>
-          </div>
-        </div>
-      </div>
-      <div class="resize-handle"></div>
-    </div>
-
-    <!-- ╔═══════════════════════════════════════╗ -->
-    <!-- ║  WINDOW: About This Macintosh         ║ -->
-    <!-- ╚═══════════════════════════════════════╝ -->
-    <div class="mac-window hidden" id="window-about-mac">
-      <div class="window-titlebar">
-        <button class="window-close-btn" data-target="about-mac" aria-label="닫기">
-          <svg class="close-icon" viewBox="0 0 8 8" width="8" height="8">
-            <line x1="1.5" y1="1.5" x2="6.5" y2="6.5" stroke="#2a2a2a" stroke-width="1.5" stroke-linecap="round"/>
-            <line x1="6.5" y1="1.5" x2="1.5" y2="6.5" stroke="#2a2a2a" stroke-width="1.5" stroke-linecap="round"/>
-          </svg>
-        </button>
-        <div class="titlebar-inner">
-          <div class="titlebar-picker"></div>
-          <div class="titlebar-label">
-            <span class="titlebar-emoji">💻</span>
-            <span class="window-title">About This Macintosh</span>
-          </div>
-          <div class="titlebar-picker"></div>
-          <div class="titlebar-zoom"></div>
-        </div>
-        <div class="titlebar-collapse"></div>
-      </div>
-
-      <div class="abm-body">
-        <div class="abm-header">
-          <div class="abm-icon">💻</div>
-          <div class="abm-meta">
-            <div class="abm-os">Blair OS</div>
-            <div class="abm-ver">Version 9.6.10 — Product Designer Edition</div>
-            <div class="abm-row-sm">Built-in Memory&nbsp;: 8 Years Experience</div>
-            <div class="abm-row-sm">Virtual Memory&nbsp;: Unlimited Curiosity</div>
-          </div>
-        </div>
-
-        <div class="abm-divider"></div>
-
-        <div class="abm-memlist-hdr">
-          <span>Skill / Application</span>
-          <span>Allocation</span>
-        </div>
-        <div class="abm-memlist" id="abm-memlist">
-          <div class="abm-row">
-            <span class="abm-row-name">Product Design.app</span>
-            <div class="abm-bar"><div class="abm-bar-fill" style="width:95%; background:#3366FF"></div></div>
-            <span class="abm-row-pct">95%</span>
-          </div>
-          <div class="abm-row">
-            <span class="abm-row-name">UX Research.app</span>
-            <div class="abm-bar"><div class="abm-bar-fill" style="width:88%; background:#9933CC"></div></div>
-            <span class="abm-row-pct">88%</span>
-          </div>
-          <div class="abm-row">
-            <span class="abm-row-name">Prototyping (Figma).app</span>
-            <div class="abm-bar"><div class="abm-bar-fill" style="width:92%; background:#33AA55"></div></div>
-            <span class="abm-row-pct">92%</span>
-          </div>
-          <div class="abm-row">
-            <span class="abm-row-name">Frontend (HTML/CSS/JS).app</span>
-            <div class="abm-bar"><div class="abm-bar-fill" style="width:78%; background:#FF9900"></div></div>
-            <span class="abm-row-pct">78%</span>
-          </div>
-          <div class="abm-row">
-            <span class="abm-row-name">야근 모드.app</span>
-            <div class="abm-bar"><div class="abm-bar-fill" style="width:60%; background:#CC3333"></div></div>
-            <span class="abm-row-pct">60%</span>
-          </div>
-          <div class="abm-row">
-            <span class="abm-row-name">커피.app</span>
-            <div class="abm-bar"><div class="abm-bar-fill" style="width:100%; background:#996633"></div></div>
-            <span class="abm-row-pct">∞%</span>
-          </div>
-        </div>
-
-        <div class="abm-divider"></div>
-
-        <div class="abm-footer">
-          <span class="abm-footer-icon">ⓘ</span>
-          <span class="abm-footer-text">Largest Unused Block: "퇴근 후 시간" — 매우 적음</span>
-        </div>
-      </div>
-    </div>
-
-    <!-- ╔═══════════════════════════════════════╗ -->
-    <!-- ║  WINDOW: Trash                        ║ -->
-    <!-- ╚═══════════════════════════════════════╝ -->
-    <div class="mac-window hidden" id="window-trash">
-      <div class="window-titlebar">
-        <button class="window-close-btn" data-target="trash" aria-label="닫기">
-          <svg class="close-icon" viewBox="0 0 8 8" width="8" height="8">
-            <line x1="1.5" y1="1.5" x2="6.5" y2="6.5" stroke="#2a2a2a" stroke-width="1.5" stroke-linecap="round"/>
-            <line x1="6.5" y1="1.5" x2="1.5" y2="6.5" stroke="#2a2a2a" stroke-width="1.5" stroke-linecap="round"/>
-          </svg>
-        </button>
-        <div class="titlebar-inner">
-          <div class="titlebar-picker"></div>
-          <div class="titlebar-label">
-            <img src="src/images/icon-trash-32.png" class="titlebar-icon" alt="">
-            <span class="window-title">Trash</span>
-          </div>
-          <div class="titlebar-picker"></div>
-          <div class="titlebar-zoom"></div>
-        </div>
-        <div class="titlebar-collapse"></div>
-      </div>
-
-      <div class="trash-statusbar" id="trash-statusbar">5 items, 흑역사 한가득</div>
-
-      <div class="trash-list">
-        <div class="trash-row">
-          <span class="trash-row-icon">📐</span>
-          <div class="trash-row-info">
-            <span class="trash-row-name">완벽한_시안_final_진짜최종.fig</span>
-            <span class="trash-row-kind">Figma 파일 — v47</span>
-          </div>
-        </div>
-        <div class="trash-row">
-          <span class="trash-row-icon">📊</span>
-          <div class="trash-row-info">
-            <span class="trash-row-name">카페인_의존도_분석.xlsx</span>
-            <span class="trash-row-kind">스프레드시트 — ∞</span>
-          </div>
-        </div>
-        <div class="trash-row">
-          <span class="trash-row-icon">📝</span>
-          <div class="trash-row-info">
-            <span class="trash-row-name">팀장님_죄송합니다_초안3.txt</span>
-            <span class="trash-row-kind">텍스트 문서 — 3 bytes</span>
-          </div>
-        </div>
-        <div class="trash-row">
-          <span class="trash-row-icon">🐛</span>
-          <div class="trash-row-info">
-            <span class="trash-row-name">프로덕션_버그_재현안됨.zip</span>
-            <span class="trash-row-kind">압축 파일 — 재현 불가</span>
-          </div>
-        </div>
-        <div class="trash-row">
-          <span class="trash-row-icon">⏰</span>
-          <div class="trash-row-info">
-            <span class="trash-row-name">야근_금지_다짐.txt</span>
-            <span class="trash-row-kind">텍스트 문서 — 지켜지지 않음</span>
-          </div>
-        </div>
-      </div>
-
-      <div class="trash-footer">
-        <button class="trash-empty-btn" id="trash-empty-btn">휴지통 비우기…</button>
-      </div>
-
-      <div class="resize-handle"></div>
-    </div>
-
-    <!-- ╔═══════════════════════════════════════╗ -->
-    <!-- ║  WINDOW: Project Case Study (Magazine)║ -->
-    <!-- ╚═══════════════════════════════════════╝ -->
-    <div class="mac-window hidden mag-window" id="window-magazine">
-      <div class="window-titlebar">
-        <button class="window-close-btn" data-target="magazine" aria-label="닫기">
-          <svg class="close-icon" viewBox="0 0 8 8" width="8" height="8">
-            <line x1="1.5" y1="1.5" x2="6.5" y2="6.5" stroke="#2a2a2a" stroke-width="1.5" stroke-linecap="round"/>
-            <line x1="6.5" y1="1.5" x2="1.5" y2="6.5" stroke="#2a2a2a" stroke-width="1.5" stroke-linecap="round"/>
-          </svg>
-        </button>
-        <div class="titlebar-inner">
-          <div class="titlebar-picker"></div>
-          <div class="titlebar-label">
-            <img src="src/images/icon-projects-32.png" class="titlebar-icon" id="mag-titlebar-icon" alt="">
-            <span class="window-title" id="mag-win-title">Project</span>
-          </div>
-          <div class="titlebar-picker"></div>
-          <div class="titlebar-zoom"></div>
-        </div>
-        <div class="titlebar-collapse"></div>
-      </div>
-
-      <div class="mag-body" id="mag-body">
-        <!-- Project Tabs (가로 sticky 탭) -->
-        <div class="mag-tabbar" id="mag-tabbar"></div>
-
-        <!-- System Metadata Header (Get Info 변형) -->
-        <div class="mag-header" id="mag-header">
-          <div class="mag-header-icon">
-            <img id="mag-icon" src="" alt="">
-          </div>
-          <div class="mag-header-text">
-            <h2 class="mag-title" id="mag-title"></h2>
-            <p class="mag-subtitle" id="mag-subtitle"></p>
-          </div>
-          <table class="mag-meta-table">
-            <tr><td class="mag-meta-key">기간</td><td class="mag-meta-val" id="mag-meta-period"></td></tr>
-            <tr><td class="mag-meta-key">도메인</td><td class="mag-meta-val" id="mag-meta-domain"></td></tr>
-            <tr><td class="mag-meta-key">역할</td><td class="mag-meta-val" id="mag-meta-role"></td></tr>
-            <tr><td class="mag-meta-key">기여도</td><td class="mag-meta-val" id="mag-meta-contribution"></td></tr>
-          </table>
-          <div class="mag-nav">
-            <button class="mag-nav-btn" id="mag-prev" aria-label="이전 프로젝트">◀</button>
-            <button class="mag-nav-btn" id="mag-next" aria-label="다음 프로젝트">▶</button>
-          </div>
-        </div>
-
-        <!-- System Alert Metric Strip -->
-        <div class="mag-metrics" id="mag-metrics"></div>
-
-        <!-- Split-Screen Storyteller -->
-        <div class="mag-story" id="mag-story">
-          <div class="mag-story-col" id="mag-story-col"></div>
-          <div class="mag-visual-stage" id="mag-visual-stage"></div>
-        </div>
-      </div>
-
-      <div class="resize-handle"></div>
-    </div>
-
-    <!-- ╔═══════════════════════════════════════╗ -->
-    <!-- ║  WINDOW: CU-SeeMe                     ║ -->
-    <!-- ╚═══════════════════════════════════════╝ -->
-    <div class="mac-window hidden" id="window-cuseme">
-      <div class="window-titlebar">
-        <button class="window-close-btn" data-target="cuseme" aria-label="닫기">
-          <svg class="close-icon" viewBox="0 0 8 8" width="8" height="8">
-            <line x1="1.5" y1="1.5" x2="6.5" y2="6.5" stroke="#2a2a2a" stroke-width="1.5" stroke-linecap="round"/>
-            <line x1="6.5" y1="1.5" x2="1.5" y2="6.5" stroke="#2a2a2a" stroke-width="1.5" stroke-linecap="round"/>
-          </svg>
-        </button>
-        <div class="titlebar-inner">
-          <div class="titlebar-picker"></div>
-          <div class="titlebar-label">
-            <img src="src/images/icon-cuseeme-32.png" class="titlebar-icon" alt="">
-            <span class="window-title">CU-SeeMe</span>
-          </div>
-          <div class="titlebar-picker"></div>
-          <div class="titlebar-zoom"></div>
-        </div>
-        <div class="titlebar-collapse"></div>
-      </div>
-      <div class="window-content cuseme-content">
-        <div class="cuseme-header">
-          <div class="cuseme-avatar">👤</div>
-          <div class="cuseme-info">
-            <div class="cuseme-name">Blair Lee</div>
-            <div class="cuseme-status">
-              <span class="status-dot"></span> Blair Lee Studio
-            </div>
-          </div>
-        </div>
-        <hr class="cuseme-divider">
-        <div class="cuseme-rows">
-          <div class="cuseme-row">
-            <span class="cuseme-label">Email</span>
-            <span class="cuseme-value">hello@blairlee.studio</span>
-          </div>
-          <div class="cuseme-row">
-            <span class="cuseme-label">Web</span>
-            <span class="cuseme-value">blairlee.studio</span>
-          </div>
-          <div class="cuseme-row">
-            <span class="cuseme-label">LinkedIn</span>
-            <span class="cuseme-value">/in/blairlee</span>
-          </div>
-          <div class="cuseme-row">
-            <span class="cuseme-label">Instagram</span>
-            <span class="cuseme-value">@blairlee</span>
-          </div>
-        </div>
-        <hr class="cuseme-divider">
-        <p class="cuseme-bio">
-          서울 기반 프로덕트 디자이너 (1992–)<br>
-          사용자 중심의 디지털 경험을 설계합니다.
-        </p>
-      </div>
-      <div class="resize-handle"></div>
-    </div>
-
-    <!-- ╔═══════════════════════════════════════╗ -->
-    <!-- ║  WINDOW: CU-SeeMe Local (Blair)       ║ -->
-    <!-- ╚═══════════════════════════════════════╝ -->
-    <div class="mac-window cu-window hidden" id="window-cu-local">
-      <div class="window-titlebar cu-titlebar">
-        <button class="window-close-btn cu-close-pair" data-target="cu-local" aria-label="닫기">
-          <svg class="close-icon" viewBox="0 0 8 8" width="8" height="8">
-            <line x1="1.5" y1="1.5" x2="6.5" y2="6.5" stroke="#fff" stroke-width="1.5" stroke-linecap="round"/>
-            <line x1="6.5" y1="1.5" x2="1.5" y2="6.5" stroke="#fff" stroke-width="1.5" stroke-linecap="round"/>
-          </svg>
-        </button>
-        <span class="window-title">CU-SeeMe (Local)</span>
-        <div class="titlebar-spacer"></div>
-      </div>
-      <div class="cu-body">
-        <div class="cu-name-bar">BLAIR LEE &nbsp;·&nbsp; Local</div>
-
-        <!-- Noise canvas + particle target -->
-        <div class="cu-video-wrap">
-          <video id="cu-canvas" class="cu-vid" autoplay muted loop playsinline>
-            <source src="src/CU-SeeME/hello.mp4" type="video/mp4">
-            <source src="src/CU-SeeME/hello.mov" type="video/quicktime">
-          </video>
-          <div class="cu-scanlines"></div>
-          <div class="cu-particles" id="cu-particles"></div>
-        </div>
-        <div class="cu-vid-stats" id="cu-local-stats">15.2 fps&nbsp;&nbsp;24 Kbps</div>
-        <div class="cu-status-line">Transmitting · 24 Kbps (355 cap)</div>
-
-        <!-- Pixel-art reaction buttons (Blair receives reactions) -->
-        <div class="cu-reactions">
-
-          <!-- ❤ Pixel Heart -->
-          <button class="cu-react-btn" data-emoji="heart" title="Love">
-            <svg class="cu-px-icon" viewBox="0 0 12 10" shape-rendering="crispEdges" xmlns="http://www.w3.org/2000/svg">
-              <rect x="1" y="0" width="3" height="2"/>
-              <rect x="8" y="0" width="3" height="2"/>
-              <rect x="0" y="2" width="12" height="3"/>
-              <rect x="1" y="5" width="10" height="2"/>
-              <rect x="2" y="7" width="8" height="2"/>
-              <rect x="4" y="9" width="4" height="1"/>
-            </svg>
-          </button>
-
-          <!-- 👍 Pixel Thumb Up -->
-          <button class="cu-react-btn" data-emoji="thumb" title="Like">
-            <svg class="cu-px-icon" viewBox="0 0 10 12" shape-rendering="crispEdges" xmlns="http://www.w3.org/2000/svg">
-              <rect x="4" y="0" width="2" height="4"/>
-              <rect x="3" y="4" width="3" height="2"/>
-              <rect x="0" y="5" width="10" height="5"/>
-              <rect x="0" y="10" width="3" height="2"/>
-            </svg>
-          </button>
-
-          <!-- 😮 Pixel Wow Face -->
-          <button class="cu-react-btn" data-emoji="wow" title="Wow">
-            <svg class="cu-px-icon" viewBox="0 0 12 12" shape-rendering="crispEdges" xmlns="http://www.w3.org/2000/svg">
-              <rect x="2" y="0" width="8" height="2"/>
-              <rect x="0" y="2" width="2" height="8"/>
-              <rect x="10" y="2" width="2" height="8"/>
-              <rect x="2" y="10" width="8" height="2"/>
-              <rect x="2" y="3" width="3" height="2"/>
-              <rect x="7" y="3" width="3" height="2"/>
-              <rect x="4" y="7" width="4" height="1"/>
-              <rect x="3" y="8" width="1" height="2"/>
-              <rect x="8" y="8" width="1" height="2"/>
-              <rect x="4" y="10" width="4" height="1"/>
-            </svg>
-          </button>
-
-        </div><!-- .cu-reactions -->
-
-        <!-- KakaoTalk CTA — href에 오픈채팅 URL 입력 -->
-        <a class="cu-cta-btn" href="https://open.kakao.com/" target="_blank" rel="noopener">
-          &#9632; KakaoTalk 1:1 Chat
-        </a>
-      </div>
-    </div>
-
-    <!-- ╔═══════════════════════════════════════╗ -->
-    <!-- ║  WINDOW: CU-SeeMe Remote (Visitor)    ║ -->
-    <!-- ╚═══════════════════════════════════════╝ -->
-    <div class="mac-window cu-window hidden" id="window-cu-remote">
-      <div class="window-titlebar cu-titlebar">
-        <button class="window-close-btn cu-close-pair" data-target="cu-remote" aria-label="닫기">
-          <svg class="close-icon" viewBox="0 0 8 8" width="8" height="8">
-            <line x1="1.5" y1="1.5" x2="6.5" y2="6.5" stroke="#fff" stroke-width="1.5" stroke-linecap="round"/>
-            <line x1="6.5" y1="1.5" x2="1.5" y2="6.5" stroke="#fff" stroke-width="1.5" stroke-linecap="round"/>
-          </svg>
-        </button>
-        <span class="window-title">CU-SeeMe (Remote)</span>
-        <div class="titlebar-spacer"></div>
-      </div>
-      <div class="cu-body">
-        <div class="cu-name-bar" id="cu-remote-name">YOU &nbsp;·&nbsp; Remote</div>
-
-        <div class="cu-video-wrap" id="cu-remote-wrap">
-          <video id="cu-webcam" class="cu-vid" autoplay muted playsinline></video>
-
-          <!-- No-cam placeholder -->
-          <div class="cu-no-cam" id="cu-no-cam">
-            <div class="cu-no-cam-icon">&#9632;</div>
-            <div>Allow camera to connect</div>
-          </div>
-
-          <!-- CAM OFF overlay -->
-          <div class="cu-camoff-overlay" id="cu-camoff-overlay">
-            <div class="cu-camoff-label">CAMERA OFF</div>
-          </div>
-
-          <!-- MASK FACE overlay (pixel cat sunglasses) -->
-          <div class="cu-mask-overlay" id="cu-mask-overlay">
-            <svg class="cu-mask-svg" viewBox="0 0 42 28" shape-rendering="crispEdges" xmlns="http://www.w3.org/2000/svg">
-              <!-- Cat ears -->
-              <rect fill="#909090" x="2"  y="0" width="7" height="8"/>
-              <rect fill="#FFB0B0" x="4"  y="2" width="3" height="4"/>
-              <rect fill="#909090" x="33" y="0" width="7" height="8"/>
-              <rect fill="#FFB0B0" x="35" y="2" width="3" height="4"/>
-              <!-- Face -->
-              <rect fill="#C8C8C8" x="2"  y="6"  width="38" height="22"/>
-              <!-- Sunglasses left lens -->
-              <rect fill="#111"    x="2"  y="9"  width="17" height="11"/>
-              <rect fill="#333"    x="3"  y="10" width="15" height="9"/>
-              <!-- Sunglasses bridge -->
-              <rect fill="#111"    x="19" y="12" width="4"  height="5"/>
-              <!-- Sunglasses right lens -->
-              <rect fill="#111"    x="23" y="9"  width="17" height="11"/>
-              <rect fill="#333"    x="24" y="10" width="15" height="9"/>
-              <!-- Lens shine -->
-              <rect fill="#555"    x="4"  y="11" width="5" height="2"/>
-              <rect fill="#555"    x="25" y="11" width="5" height="2"/>
-              <!-- Nose -->
-              <rect fill="#FFB0B0" x="19" y="22" width="4" height="2"/>
-              <!-- Whiskers -->
-              <rect fill="#888"    x="2"  y="24" width="13" height="1"/>
-              <rect fill="#888"    x="27" y="24" width="13" height="1"/>
-              <rect fill="#888"    x="2"  y="26" width="11" height="1"/>
-              <rect fill="#888"    x="29" y="26" width="11" height="1"/>
-            </svg>
-          </div>
-
-          <div class="cu-scanlines"></div>
-        </div><!-- .cu-video-wrap -->
-
-        <div class="cu-vid-stats" id="cu-remote-stats">-- fps&nbsp;&nbsp;-- Kbps</div>
-        <div class="cu-status-line">Receiving: <span id="cu-recv-info">-- kbps</span></div>
-
-        <!-- Privacy controls -->
-        <div class="cu-priv-btns">
-          <button class="cu-priv-btn" id="cu-mask-btn">MASK FACE</button>
-          <button class="cu-priv-btn" id="cu-camoff-btn">CAM OFF</button>
-        </div>
-
-      </div>
-    </div>
-
-    <!-- ╔═══════════════════════════════════════╗ -->
-    <!-- ║  WINDOW: Blair-Tunes (QuickTime UI    ║ -->
-    <!-- ║  + Spotify-style 좌:플레이리스트/우:영상) ║ -->
-    <!-- ╚═══════════════════════════════════════╝ -->
-    <div class="mac-window hidden" id="window-blairTunes">
-      <div class="window-titlebar">
-        <button class="window-close-btn" data-target="blairTunes" aria-label="닫기">
-          <svg class="close-icon" viewBox="0 0 8 8" width="8" height="8">
-            <line x1="1.5" y1="1.5" x2="6.5" y2="6.5" stroke="#2a2a2a" stroke-width="1.5" stroke-linecap="round"/>
-            <line x1="6.5" y1="1.5" x2="1.5" y2="6.5" stroke="#2a2a2a" stroke-width="1.5" stroke-linecap="round"/>
-          </svg>
-        </button>
-        <div class="titlebar-inner">
-          <div class="titlebar-picker"></div>
-          <div class="titlebar-label">
-            <img src="src/images/icon-blairTunes-32.png" class="titlebar-icon" alt="">
-            <span class="window-title">QuickTime Player</span>
-          </div>
-          <div class="titlebar-picker"></div>
-          <div class="titlebar-zoom"></div>
-        </div>
-        <div class="titlebar-collapse"></div>
-      </div>
-
-      <!-- Spotify 스타일 본문: 좌측 플레이리스트 + 우측 영상 -->
-      <div class="qtp-body">
-
-        <!-- 좌측: 플레이리스트 사이드바 -->
-        <div class="qtp-sidebar">
-          <div class="qtp-sidebar-hdr">
-            <span class="qtp-sidebar-title">♪ Blair-Tunes</span>
-            <span class="qtp-sidebar-count" id="qtp-track-count"></span>
-          </div>
-          <div class="qtp-list" id="qt-playlist"></div>
-        </div>
-
-        <!-- 우측: 영상 + 컨트롤바 -->
-        <div class="qtp-main">
-          <!-- 영상 영역 -->
-          <div class="qtp-video-area">
-            <!-- Click to Play 스플래시 (초기 대기화면) -->
-            <div class="qtp-splash" id="qtp-splash">
-              <div class="qtp-splash-logo" id="qtp-splash-logo">▶</div>
-              <div class="qtp-splash-track" id="qtp-splash-track">Blair-Tunes</div>
-              <div class="qtp-splash-hint" id="qtp-splash-hint">Press ▶ to play</div>
-            </div>
-            <iframe id="qt-iframe" src="about:blank"
-              frameborder="0"
-              allow="autoplay; encrypted-media; fullscreen; picture-in-picture"
-              allowfullscreen>
-            </iframe>
-            <!-- YouTube 제목 카드(상단) / 로고(우하단) 가리기용 오버레이 -->
-            <div class="qtp-yt-mask qtp-yt-mask-top"></div>
-            <div class="qtp-yt-mask qtp-yt-mask-logo"></div>
-          </div>
-
-          <!-- Mac OS 9 QuickTime 컨트롤바 -->
-          <div class="qtp-ctrl">
-            <div class="qtp-track-info">
-              <span class="qtp-track-title" id="qt-track-title">No Track</span>
-              <span class="qtp-track-artist" id="qt-track-artist">—</span>
-            </div>
-            <div class="qtp-ctrl-row">
-              <button class="qtp-btn" id="qt-prev" onclick="qtLoadPrev()">⏮</button>
-              <button class="qtp-btn qtp-play-btn" id="qt-play" onclick="qtTogglePlay()">▶</button>
-              <button class="qtp-btn" id="qt-next" onclick="qtLoadNext()">⏭</button>
-              <div class="qtp-progress">
-                <div class="qtp-progress-fill" id="qtp-fill"></div>
-              </div>
-              <span class="qtp-time" id="qt-time">0:00</span>
-              <span class="qtp-vol-icon">🔈</span>
-              <input class="qtp-vol" id="qt-vol" type="range" min="0" max="100" value="80">
-            </div>
-          </div>
-        </div>
-      </div>
-
-      <div class="resize-handle"></div>
-    </div>
-
-    <!-- Mobile Backdrop Overlay -->
-    <div id="mobile-overlay"></div>
-
-    <!-- 풍선 도움말 (Balloon Help) -->
-    <div class="balloon-help hidden" id="balloon-help">
-      <div class="balloon-text" id="balloon-text"></div>
-    </div>
-
-    <!-- Mac OS 9 스타일 경고/확인 대화상자 -->
-    <div class="os9-alert-overlay hidden" id="os9-alert-overlay">
-      <div class="os9-alert">
-        <div class="os9-alert-body">
-          <div class="os9-alert-icon" id="os9-alert-icon">💣</div>
-          <div class="os9-alert-text" id="os9-alert-text"></div>
-        </div>
-        <div class="os9-alert-actions" id="os9-alert-actions"></div>
-      </div>
-    </div>
-
-  </main>
-
-  <!-- Sound preloads — DOM <audio> 방식이 file:// 에서도 안정적으로 동작 -->
-  <audio id="snd-click"   src="src/sounds/Click.wav"   preload="auto"></audio>
-  <audio id="snd-startup" src="src/sounds/Startup.wav" preload="auto"></audio>
-  <audio id="snd-quack"   src="src/sounds/Quack.wav"   preload="auto"></audio>
-  <audio id="snd-sosumi"  src="src/sounds/Sosumi.wav"  preload="auto"></audio>
-  <audio id="snd-droplet" src="src/sounds/Droplet.wav" preload="auto"></audio>
-  <audio id="snd-indigo"  src="src/sounds/Indigo.wav"  preload="auto"></audio>
-
-  <script src="data/projects-data.js"></script>
-  <script src="script.js"></script>
+<div class="corner left"><b>SEJEONG LEE</b><br>Product Designer</div>
+<div class="corner right">Seoul, Korea<br><b>whynotblair@gmail.com</b></div>
+<canvas id="c"></canvas>
+<div id="overlay"></div>
+
+<script src="data/mac3d-assets.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/three@0.128.0/build/three.min.js"></script>
+<script>
+(function () {
+'use strict';
+
+// 캔버스 CSS 필터(brightness .94 / contrast 1.12) 통과 후 #FAFAF8이 되도록 사전 보정
+const BG = 0xFCFCFA;
+const DEG = Math.PI / 180;
+
+// ── Renderer / Scene / Camera (고정 카메라 — 드래그 회전 없음) ─────────────
+const canvas = document.getElementById('c');
+const renderer = new THREE.WebGLRenderer({ canvas, antialias: true });
+renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
+renderer.shadowMap.enabled = true;
+renderer.shadowMap.type = THREE.PCFSoftShadowMap;
+renderer.outputEncoding = THREE.sRGBEncoding;
+
+const scene = new THREE.Scene();
+scene.background = new THREE.Color(BG);
+
+const camera = new THREE.PerspectiveCamera(26, 1, 0.1, 100);
+camera.position.set(0, 5.0, 18.6);
+camera.lookAt(0, 1.37, 0);
+
+function onResize() {
+  const w = window.innerWidth, h = window.innerHeight;
+  renderer.setSize(w, h);
+  camera.aspect = w / h;
+  camera.updateProjectionMatrix();
+}
+window.addEventListener('resize', onResize);
+onResize();
+
+// ── Lighting — 밝고 부드러운 키노트 렌더 (좌상단이 살짝 밝음) ──────────────
+// 앰비언트를 낮추고 키 라이트를 올려 면 간 명암 정의(디피니션) 강화
+scene.add(new THREE.HemisphereLight(0xFFFFFF, 0xE2E2E2, 0.70));
+
+const keyL = new THREE.DirectionalLight(0xFFFFFF, 0.62);  // 좌상단 키 (거의 머리 위)
+keyL.position.set(-1.2, 18, 10);
+keyL.castShadow = true;
+keyL.shadow.mapSize.set(2048, 2048);
+keyL.shadow.camera.near = 1;  keyL.shadow.camera.far = 34;
+keyL.shadow.camera.left = -9; keyL.shadow.camera.right = 9;
+keyL.shadow.camera.top = 9;   keyL.shadow.camera.bottom = -9;
+keyL.shadow.bias = -0.0004;
+keyL.shadow.radius = 12;
+scene.add(keyL);
+
+const fillR = new THREE.DirectionalLight(0xFFFFFF, 0.16); // 우측 필
+fillR.position.set(6, 5, 5);
+scene.add(fillR);
+
+const fillF = new THREE.DirectionalLight(0xFFFFFF, 0.12); // 정면 필
+fillF.position.set(0, 3, 12);
+scene.add(fillF);
+
+// 바닥 — Figma 접지 그림자 (키보드·마우스 아래 뚜렷한 소프트 섀도)
+const floor = new THREE.Mesh(
+  new THREE.PlaneGeometry(80, 80),
+  new THREE.ShadowMaterial({ opacity: 0.24 })
+);
+floor.rotation.x = -Math.PI / 2;
+floor.receiveShadow = true;
+scene.add(floor);
+
+// 그라운딩 블롭 섀도 — 애플 제품 렌더식: 넓고 매우 부드러운 저농도 타원,
+// 본체+키보드 아래 중앙 배치 (가우시안 폴오프)
+(function addBlobShadow() {
+  const c = document.createElement('canvas');
+  c.width = 512; c.height = 256;
+  const ctx = c.getContext('2d');
+  const g = ctx.createRadialGradient(256, 128, 0, 256, 128, 250);
+  g.addColorStop(0, 'rgba(0,0,0,0.10)');
+  g.addColorStop(0.55, 'rgba(0,0,0,0.045)');
+  g.addColorStop(1, 'rgba(0,0,0,0)');
+  ctx.save();
+  ctx.translate(256, 128);
+  ctx.scale(1, 0.5);
+  ctx.translate(-256, -128);
+  ctx.fillStyle = g;
+  ctx.fillRect(0, -128, 512, 512);
+  ctx.restore();
+  const tex = new THREE.CanvasTexture(c);
+  const blob = new THREE.Mesh(
+    new THREE.PlaneGeometry(9.5, 4.75),
+    new THREE.MeshBasicMaterial({ map: tex, transparent: true, depthWrite: false })
+  );
+  blob.rotation.x = -Math.PI / 2;
+  blob.position.set(0, 0.002, 1.9);
+  scene.add(blob);
+}());
+
+// ── Materials — Figma 실측: 완전 무채색 뉴트럴 그레이 (r=g=b) ───────────────
+const whiteMat = new THREE.MeshStandardMaterial({
+  color: 0xE9E9E9, roughness: 0.94, metalness: 0.0,
+});
+const recessMat = new THREE.MeshStandardMaterial({
+  color: 0xD8D8D8, roughness: 0.96, metalness: 0.0,   // 리세스 = 은은한 AO 톤
+});
+const keyMat = new THREE.MeshStandardMaterial({
+  color: 0xA8A8A8, roughness: 0.92, metalness: 0.0,   // Figma 키캡 상면 155–178
+});
+const darkMat = new THREE.MeshStandardMaterial({ color: 0x141414, roughness: 0.75 });
+const seamMat = new THREE.MeshStandardMaterial({ color: 0xC6C6C6, roughness: 0.95 });
+const cableMat = new THREE.MeshStandardMaterial({ color: 0xE0E0E0, roughness: 0.9 });
+
+// ── Helpers ────────────────────────────────────────────────────────────────
+function roundedRectShape(w, h, r) {
+  const s = new THREE.Shape();
+  const x = -w / 2, y = -h / 2;
+  s.moveTo(x + r, y);
+  s.lineTo(x + w - r, y);
+  s.quadraticCurveTo(x + w, y, x + w, y + r);
+  s.lineTo(x + w, y + h - r);
+  s.quadraticCurveTo(x + w, y + h, x + w - r, y + h);
+  s.lineTo(x + r, y + h);
+  s.quadraticCurveTo(x, y + h, x, y + h - r);
+  s.lineTo(x, y + r);
+  s.quadraticCurveTo(x, y, x + r, y);
+  return s;
+}
+
+function roundedBoxMesh(w, h, depth, r, mat, bevel) {
+  const geo = new THREE.ExtrudeGeometry(roundedRectShape(w, h, r), {
+    depth, bevelEnabled: true,
+    bevelThickness: bevel, bevelSize: bevel, bevelSegments: 4, curveSegments: 10,
+  });
+  geo.center();
+  const m = new THREE.Mesh(geo, mat);
+  m.castShadow = true;
+  m.receiveShadow = true;
+  return m;
+}
+
+// ── 전체 세트 그룹 (마우스 추적 회전용) ────────────────────────────────────
+const rig = new THREE.Group();
+scene.add(rig);
+
+// ═══════════════════════════════════════════════════════════════════════════
+//  MACINTOSH 본체 — Figma 실측 비율
+//  body 3.5 → recess 2.99(0.85) → CRT 2.70×2.025(0.77, 4:3)
+// ═══════════════════════════════════════════════════════════════════════════
+const mac = new THREE.Group();
+rig.add(mac);
+
+const BODY_W = 3.5, BODY_H = 4.4, BODY_D = 3.3, BODY_BEVEL = 0.05;
+const body = roundedBoxMesh(BODY_W, BODY_H, BODY_D, 0.22, whiteMat, BODY_BEVEL);
+const BODY_CY = BODY_H / 2 + 0.02;
+body.position.set(0, BODY_CY, 0);
+mac.add(body);
+
+const FRONT_Z = BODY_D / 2 + BODY_BEVEL;
+
+function onFront(mesh, x, y, z) {
+  mesh.position.set(x, BODY_CY + y, z);
+  mac.add(mesh);
+  return mesh;
+}
+
+// 스크린 리세스 — Figma 실측: 상단 베젤 얇고(≈14px) 하단 두꺼움(≈53px), r≈6%
+const recess = roundedBoxMesh(2.90, 2.725, 0.05, 0.18, recessMat, 0.02);
+onFront(recess, 0, 0.65, FRONT_Z + 0.015);
+
+// ── CRT 스크린 — Figma 실측 376×318px → 2.66×2.25 (1.182:1) ────────────────
+const SCW = 2.66, SCH = 2.25;
+const scrCanvas = document.createElement('canvas');
+scrCanvas.width = 1440; scrCanvas.height = 1218;
+
+// 정적 레이어 (배경 + 타이포) — 매 프레임 재사용
+const staticC = document.createElement('canvas');
+staticC.width = scrCanvas.width; staticC.height = scrCanvas.height;
+
+const CRT_R = 153; // CRT 라운드 코너 (px) — Figma 실측 CRT 폭의 10.6%
+
+function crtPath(ctx, w, h, r) {
+  ctx.beginPath();
+  ctx.moveTo(r, 0);
+  ctx.lineTo(w - r, 0);      ctx.quadraticCurveTo(w, 0, w, r);
+  ctx.lineTo(w, h - r);      ctx.quadraticCurveTo(w, h, w - r, h);
+  ctx.lineTo(r, h);          ctx.quadraticCurveTo(0, h, 0, h - r);
+  ctx.lineTo(0, r);          ctx.quadraticCurveTo(0, 0, r, 0);
+  ctx.closePath();
+}
+
+function renderStatic() {
+  const ctx = staticC.getContext('2d');
+  const w = staticC.width, h = staticC.height;
+
+  // 코너 밖 = 조명 반영된 리세스 톤 (뉴트럴)
+  ctx.fillStyle = '#F1F1F1';
+  ctx.fillRect(0, 0, w, h);
+
+  ctx.save();
+  crtPath(ctx, w, h, CRT_R);
+  ctx.clip();
+  ctx.fillStyle = '#FFFFFF';
+  ctx.fillRect(0, 0, w, h);
+
+  // "Sejeong LEE" 워드마크 — Figma 원본 이미지 에셋 (360×80 박스,
+  // 내부 이미지 w117.95% h215.6% offset(-7.82%, -58.1%) 크롭 그대로 재현)
+  if (wordmarkImg.complete && wordmarkImg.naturalWidth) {
+    const bx = w * 0.016, by = h * 0.4654, bw = w * 0.9574, bh = h * 0.2516;
+    ctx.save();
+    ctx.beginPath();
+    ctx.rect(bx, by, bw, bh);
+    ctx.clip();
+    ctx.drawImage(wordmarkImg, bx - 0.0782 * bw, by - 0.581 * bh, 1.1795 * bw, 2.156 * bh);
+    ctx.restore();
+  }
+
+  // 태그라인 — Figma: VT323 Regular 20px (CRT 높이의 6.29%), 베이스라인 81.4%
+  const TL = 'HELLO WORLD, WELCOME TO MY WORKSPACE !';
+  ctx.fillStyle = '#000000';
+  ctx.textAlign = 'center';
+  ctx.font = Math.round(h * 0.0644) + 'px "VT323scr", monospace';
+  ctx.fillText(TL, w * 0.516, h * 0.8145);
+
+  // CRT 비네트 — 중심부만 순백, 가장자리 미세하게 어둡게 (뉴트럴)
+  const vg = ctx.createRadialGradient(w/2, h*0.45, h*0.3, w/2, h*0.5, h*0.95);
+  vg.addColorStop(0, 'rgba(0,0,0,0)');
+  vg.addColorStop(1, 'rgba(0,0,0,0.075)');
+  ctx.fillStyle = vg;
+  ctx.fillRect(0, 0, w, h);
+
+  // 스크린 베벨 인셋 섀도 — 상단에서 아래로 떨어지는 얕은 안쪽 그림자
+  const tg = ctx.createLinearGradient(0, 0, 0, h * 0.08);
+  tg.addColorStop(0, 'rgba(0,0,0,0.09)');
+  tg.addColorStop(1, 'rgba(0,0,0,0)');
+  ctx.fillStyle = tg;
+  ctx.fillRect(0, 0, w, h * 0.08);
+  ctx.restore();
+}
+
+// data URI 로드 — file:// 에서 외부 이미지를 그리면 canvas가 tainted 되어
+// THREE.CanvasTexture 업로드가 SecurityError로 실패하므로 반드시 임베드 사용
+const tigerImg = new Image();
+tigerImg.onload = renderStatic;
+tigerImg.src = MAC3D_TIGER_SRC;
+
+const wordmarkImg = new Image();
+wordmarkImg.onload = renderStatic;
+wordmarkImg.src = MAC3D_WORDMARK_SRC;
+
+renderStatic();
+try {
+  const vt = new FontFace('VT323scr', 'url(src/fonts/VT323-Regular.ttf)');
+  vt.load().then((f) => { document.fonts.add(f); renderStatic(); }).catch(() => {});
+} catch (e) {}
+
+// ── 인터랙션 상태 ──────────────────────────────────────────────────────────
+const state = {
+  hover: false,        // 스크린 호버
+  warm: 0,             // 0→1 (호버 시 색온도/글로우)
+  typed: '',
+  booting: false,      // 부팅 페이드 진행 중
+};
+
+// ── 프레임 합성: 정적 레이어 + 호랑이 + 타이핑 + 웜 틴트 + 플래시 ──────────
+function drawScreen(t, dt) {
+  const ctx = scrCanvas.getContext('2d');
+  const w = scrCanvas.width, h = scrCanvas.height;
+
+  ctx.drawImage(staticC, 0, 0);
+
+  ctx.save();
+  crtPath(ctx, w, h, CRT_R);
+  ctx.clip();
+
+  // ① 호랑이 — Figma: 240×120 박스, CRT 폭 63.8%, 중앙 정렬, 정적
+  if (tigerImg.complete && tigerImg.naturalWidth) {
+    ctx.drawImage(tigerImg, w * 0.1755, h * 0.0881, w * 0.6383, h * 0.3774);
+  }
+
+  // ② 타이핑 라인 — 입력이 있을 때만 표시 (Figma 대기 화면엔 없음)
+  if (state.typed.length > 0) {
+    ctx.fillStyle = '#333333';
+    ctx.textAlign = 'center';
+    ctx.font = '400 34px Monaco, "Courier New", monospace';
+    const line = state.typed.slice(-26).toUpperCase();
+    const cursor = (Math.floor(t / 530) % 2 === 0) ? '▌' : ' ';
+    ctx.fillText(line + cursor, w / 2, h * 0.92);
+  }
+
+  // ③ 호버: 웜 틴트 + 밝기
+  if (state.warm > 0.01) {
+    ctx.fillStyle = 'rgba(255, 240, 214, ' + (0.15 * state.warm).toFixed(3) + ')';
+    ctx.fillRect(0, 0, w, h);
+  }
+
+  ctx.restore();
+}
+
+const scrTexture = new THREE.CanvasTexture(scrCanvas);
+scrTexture.encoding = THREE.sRGBEncoding;
+scrTexture.anisotropy = renderer.capabilities.getMaxAnisotropy();
+
+const screenMesh = new THREE.Mesh(
+  new THREE.PlaneGeometry(SCW, SCH),
+  new THREE.MeshBasicMaterial({ map: scrTexture })
+);
+onFront(screenMesh, 0, 0.79, FRONT_Z + 0.09);
+
+// 호버 시 CRT 글로우 (웜 화이트)
+const glow = new THREE.PointLight(0xFFE8C4, 0, 4.5);
+glow.position.set(0, BODY_CY + 0.79, FRONT_Z + 1.0);
+mac.add(glow);
+
+// ═══ 친(chin) — Figma 실측 ══════════════════════════════════════════════════
+
+// Apple 로고 (모노크롬)
+const logoCanvas = document.createElement('canvas');
+logoCanvas.width = 128; logoCanvas.height = 128;
+(function drawLogo() {
+  const ctx = logoCanvas.getContext('2d');
+  ctx.save();
+  ctx.translate(14, 18);
+  const apple = new Path2D();
+  apple.moveTo(50, 30);
+  apple.bezierCurveTo(60, 16, 80, 19, 86, 35);
+  apple.bezierCurveTo(94, 54, 85, 80, 66, 90);
+  apple.bezierCurveTo(58, 94, 42, 94, 34, 90);
+  apple.bezierCurveTo(15, 80, 6, 54, 14, 35);
+  apple.bezierCurveTo(20, 19, 40, 16, 50, 30);
+  apple.closePath();
+  ctx.fillStyle = '#4A4A4A';
+  ctx.fill(apple);
+  ctx.beginPath();
+  ctx.ellipse(60, 10, 14, 7, -0.7, 0, Math.PI * 2);
+  ctx.fill();
+  ctx.globalCompositeOperation = 'destination-out';
+  ctx.beginPath();
+  ctx.arc(97, 52, 17, 0, Math.PI * 2);
+  ctx.fill();
+  ctx.restore();
+}());
+const logoTexture = new THREE.CanvasTexture(logoCanvas);
+logoTexture.encoding = THREE.sRGBEncoding;
+const logo = new THREE.Mesh(
+  new THREE.PlaneGeometry(0.21, 0.225),
+  new THREE.MeshBasicMaterial({ map: logoTexture, transparent: true })
+);
+onFront(logo, -1.482, -1.395, FRONT_Z + 0.008);
+
+// 플로피 그루브 + 슬릿 — Figma 실측: 슬릿 107×14px(0.76×0.10), 중심 +0.37
+const groove = roundedBoxMesh(0.84, 0.16, 0.03, 0.05, recessMat, 0.01);
+onFront(groove, 0.37, -1.15, FRONT_Z + 0.012);
+const slit = new THREE.Mesh(new THREE.BoxGeometry(0.76, 0.10, 0.02), darkMat);
+onFront(slit, 0.37, -1.15, FRONT_Z + 0.045);
+
+// 우측 블랙 인셋 플레이트 — Figma 실측: 91×29px(0.64×0.205), 중심 +1.10
+const plate = roundedBoxMesh(0.72, 0.27, 0.04, 0.07, whiteMat, 0.012);
+onFront(plate, 1.10, -1.15, FRONT_Z + 0.018);
+const plateInset = roundedBoxMesh(0.64, 0.205, 0.02, 0.07, darkMat, 0.006);
+onFront(plateInset, 1.10, -1.15, FRONT_Z + 0.046);
+
+const dot = new THREE.Mesh(new THREE.CylinderGeometry(0.014, 0.014, 0.02, 10), darkMat);
+dot.rotation.x = Math.PI / 2;
+onFront(dot, 1.48, -1.15, FRONT_Z + 0.008);
+
+// 뒷면 통풍구
+for (let i = 0; i < 8; i++) {
+  const vent = new THREE.Mesh(
+    new THREE.BoxGeometry(BODY_W * .72, 0.03, 0.02), seamMat
+  );
+  onFront(vent, 0, 1.4 - i * 0.17, -(FRONT_Z + 0.005));
+}
+
+// ═══════════════════════════════════════════════════════════════════════════
+//  키보드 — M0110, 실제 키 입력 반응
+// ═══════════════════════════════════════════════════════════════════════════
+const kb = new THREE.Group();
+kb.position.set(-0.25, 0.05, 3.22);   // Figma: 모니터 중심 대비 ≈35px 왼쪽
+kb.rotation.x = 6.5 * DEG;
+rig.add(kb);
+
+const KB_W = 4.75, KB_D = 2.6;   // Figma 실측: 렌더 폭 = 본체의 1.45배, 깊이 178px
+
+const kbLower = roundedBoxMesh(KB_W, KB_D, 0.28, 0.08, whiteMat, 0.02);
+kbLower.rotation.x = -Math.PI / 2;
+kbLower.position.y = 0.09;
+kb.add(kbLower);
+
+const kbUpper = roundedBoxMesh(KB_W - 0.12, KB_D - 0.12, 0.07, 0.06, whiteMat, 0.015);
+kbUpper.rotation.x = -Math.PI / 2;
+kbUpper.position.y = 0.20;
+kb.add(kbUpper);
+
+const KU = 0.255, PITCH = 0.305, KEY_H = 0.08;
+const KEY_Y = 0.30;
+const keyMap = {};   // KeyboardEvent.code → { mesh, baseY, press }
+
+function addKey(x, z, wUnits, code) {
+  const w = KU + (wUnits - 1) * PITCH;
+  const key = roundedBoxMesh(w, KU * 0.9, KEY_H, 0.035, keyMat, 0.012);
+  key.rotation.x = -Math.PI / 2;
+  key.position.set(x + (w - KU) / 2, KEY_Y, z);
+  kb.add(key);
+  if (code) keyMap[code] = { mesh: key, baseY: KEY_Y, press: 0 };
+  return wUnits * PITCH;
+}
+
+// 실제 배열 매핑 — 총 14.5u × 5줄
+const layout = [
+  [['Backquote',1],['Digit1',1],['Digit2',1],['Digit3',1],['Digit4',1],['Digit5',1],['Digit6',1],['Digit7',1],['Digit8',1],['Digit9',1],['Digit0',1],['Minus',1],['Equal',1],['Backspace',1.5]],
+  [['Tab',1.5],['KeyQ',1],['KeyW',1],['KeyE',1],['KeyR',1],['KeyT',1],['KeyY',1],['KeyU',1],['KeyI',1],['KeyO',1],['KeyP',1],['BracketLeft',1],['BracketRight',1],['Backslash',1]],
+  [['CapsLock',1.75],['KeyA',1],['KeyS',1],['KeyD',1],['KeyF',1],['KeyG',1],['KeyH',1],['KeyJ',1],['KeyK',1],['KeyL',1],['Semicolon',1],['Quote',1],['Enter',1.75]],
+  [['ShiftLeft',2.25],['KeyZ',1],['KeyX',1],['KeyC',1],['KeyV',1],['KeyB',1],['KeyN',1],['KeyM',1],['Comma',1],['Period',1],['Slash',1],['ShiftRight',2.25]],
+  [['AltLeft',1.5],['MetaLeft',1.25],['Space',9],['MetaRight',1.25],['AltRight',1.5]],
+];
+const MAIN_X0 = -2.21;
+layout.forEach((row, r) => {
+  let x = MAIN_X0;
+  const z = -KB_D / 2 + 0.45 + r * PITCH;
+  row.forEach(([code, u]) => { x += addKey(x, z, u, code); });
+});
+
+// ── 실제 키 입력 → 키 애니메이션 + 화면 타이핑 시뮬레이션 ──────────────────
+window.addEventListener('keydown', (e) => {
+  const k = keyMap[e.code];
+  if (k) k.press = 1;
+  if (e.metaKey || e.ctrlKey) return;
+  if (e.key.length === 1) {
+    state.typed = (state.typed + e.key).slice(-60);
+  } else if (e.code === 'Backspace') {
+    state.typed = state.typed.slice(0, -1);
+  }
+});
+window.addEventListener('keyup', (e) => {
+  const k = keyMap[e.code];
+  if (k) k.press = 0;
+});
+
+// ═══════════════════════════════════════════════════════════════════════════
+//  마우스 (M0100) — Figma 비율로 축소
+// ═══════════════════════════════════════════════════════════════════════════
+const mouse3d = new THREE.Group();
+mouse3d.position.set(2.74, 0, 4.10);   // Figma: 키보드 우측 17px 갭, 바닥선 정렬
+mouse3d.rotation.y = -0.06;
+rig.add(mouse3d);
+
+const mouseBody = roundedBoxMesh(0.80, 1.30, 0.34, 0.075, whiteMat, 0.022);
+mouseBody.rotation.x = -Math.PI / 2;
+mouseBody.position.y = 0.19;
+mouse3d.add(mouseBody);
+
+const mBtn = roundedBoxMesh(0.50, 0.30, 0.04, 0.03, keyMat, 0.01);
+mBtn.rotation.x = -Math.PI / 2;
+mBtn.position.set(0, 0.4, -0.35);
+mouse3d.add(mBtn);
+
+// 마우스 케이블
+(function addCable() {
+  const pts = [
+    [2.42, 0.09, 3.6],
+    [2.2, 0.05, 2.9],
+    [1.95, 0.1, 2.2],
+    [1.75, 0.25, 1.6],
+  ].map(p => new THREE.Vector3(...p));
+  const curve = new THREE.CatmullRomCurve3(pts);
+  const tube = new THREE.Mesh(new THREE.TubeGeometry(curve, 48, 0.022, 8), cableMat);
+  tube.castShadow = true;
+  rig.add(tube);
+}());
+
+// ═══════════════════════════════════════════════════════════════════════════
+//  인터랙션 — 커서 추적(±4°/±2°) + 스크린 호버/클릭
+// ═══════════════════════════════════════════════════════════════════════════
+const raycaster = new THREE.Raycaster();
+const ndc = new THREE.Vector2();
+let targetRotY = 0, targetRotX = 0;
+
+window.addEventListener('pointermove', (e) => {
+  const nx = (e.clientX / window.innerWidth) * 2 - 1;   // -1 ~ 1
+  const ny = (e.clientY / window.innerHeight) * 2 - 1;
+  targetRotY = nx * 4 * DEG;     // 최대 ±4°
+  targetRotX = ny * 2 * DEG;     // 최대 ±2°
+
+  ndc.x = nx;
+  ndc.y = -ny;
+  raycaster.setFromCamera(ndc, camera);
+  state.hover = !state.booting && raycaster.intersectObject(screenMesh).length > 0;
+  canvas.style.cursor = state.hover ? 'pointer' : 'default';
+});
+
+// 스크린 클릭 → 부팅: 화이트 페이드 후 데스크탑(desktop.html)으로
+canvas.addEventListener('click', () => {
+  if (!state.hover || state.booting) return;
+  state.booting = true;
+  document.getElementById('overlay').classList.add('go');
+  setTimeout(() => { window.location.href = 'desktop.html'; }, 650);
+});
+
+// ═══════════════════════════════════════════════════════════════════════════
+//  Loop — 60fps, 시간 기반
+// ═══════════════════════════════════════════════════════════════════════════
+let prevT = performance.now();
+
+function animate() {
+  requestAnimationFrame(animate);
+  const t = performance.now();
+  const dt = Math.min((t - prevT) / 1000, 0.05);
+  prevT = t;
+
+  // ① 브리딩 — 5.5s ease-in-out, 아주 미세한 상하 이동
+  mac.position.y = Math.sin(t / 5500 * Math.PI * 2) * 0.018;
+
+  // ② 커서 추적 회전 (부드러운 lerp, 절대 ±4°/±2° 초과 없음)
+  rig.rotation.y += (targetRotY - rig.rotation.y) * 0.05;
+  rig.rotation.x += (targetRotX - rig.rotation.x) * 0.05;
+
+  // ③ 호버 상태 → 웜 틴트/글로우 lerp
+  const warmTarget = state.hover ? 1 : 0;
+  state.warm += (warmTarget - state.warm) * 0.08;
+  glow.intensity = state.warm * 0.5;
+
+  // ④ 키 프레스 애니메이션
+  for (const code in keyMap) {
+    const k = keyMap[code];
+    const ty = k.baseY - 0.04 * k.press;
+    k.mesh.position.y += (ty - k.mesh.position.y) * 0.4;
+  }
+
+  // ⑤ 스크린 합성
+  drawScreen(t, dt);
+  scrTexture.needsUpdate = true;
+
+  renderer.render(scene, camera);
+}
+animate();
+
+})();
+</script>
 </body>
 </html>
