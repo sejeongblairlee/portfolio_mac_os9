@@ -1,6 +1,9 @@
 {
   "name": "portfolio",
   "private": true,
+  "scripts": {
+    "dev": "npx -y serve -l 5500 ."
+  },
   "dependencies": {
     "jpeg-js": "^0.4.4"
   }

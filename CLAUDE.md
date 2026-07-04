@@ -26,6 +26,11 @@ https://www.figma.com/design/nOOniYoXTbhuQ0FxO4ifAV/Untitled
 
 ## 반드시 알아야 할 기술 제약
 
+0. **YouTube 재생은 file://에서 절대 안 됨**: YouTube 임베드는 유효한 리퍼러를
+   요구해서 로컬 파일로 열면 무조건 Error 153. 로컬 확인은 `npm run dev`
+   (localhost:5500, 정적 서버) 또는 `npx vercel dev`(API 함수까지 필요할 때)로.
+   배포 사이트에서는 정상 재생 (origin 파라미터 + referrerPolicy 설정됨).
+
 1. **file:// canvas taint**: 로컬에서 열면 외부 이미지 파일을 캔버스에 그리는 순간
    Three.js 텍스처 업로드가 `SecurityError`로 전부 실패한다. 그래서 3D 스크린에
    들어가는 이미지(워드마크·호랑이)는 `data/mac3d-assets.js`에 **data URI로 임베드**됨.
