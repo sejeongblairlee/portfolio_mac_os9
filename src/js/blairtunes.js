@@ -227,19 +227,48 @@ function loadYouTubeAPI() {
   return ytApiPromise;
 }
 
+const IS_DEV = window.location.protocol === 'file:' ||
+  ['localhost', '127.0.0.1'].includes(window.location.hostname);
+
+/**
+ * Error 153(리퍼러/origin 누락) 대응:
+ * iframe을 직접 만들어 로드 전에 origin 파라미터 + referrerPolicy를 심고,
+ * YT.Player는 기존 iframe에 attach한다 (enablejsapi=1 필수).
+ * /embed/{videoId} 형식만 사용 — watch URL은 iframe src에 절대 넣지 않는다.
+ */
+function buildYouTubeIframe(videoId) {
+  const params = new URLSearchParams();
+  params.set('enablejsapi', '1');
+  if (/^https?:$/.test(window.location.protocol)) {
+    params.set('origin', window.location.origin);   // file://에선 무효 origin이라 생략
+  }
+  params.set('rel', '0');
+  params.set('modestbranding', '1');
+  params.set('playsinline', '1');
+  params.set('controls', '0');   // 크롬리스 유지 (진행바/볼륨은 자체 UI 예정)
+
+  const iframe = document.createElement('iframe');
+  iframe.id = 'bt-yt';
+  iframe.src = `https://www.youtube.com/embed/${videoId}?${params.toString()}`;
+  iframe.referrerPolicy = 'strict-origin-when-cross-origin';
+  iframe.allow = 'accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share';
+  iframe.allowFullscreen = true;
+  if (IS_DEV) console.log('[blair-tunes] iframe src:', iframe.src);
+  return iframe;
+}
+
 async function ensurePlayer() {
   if (ytPlayer) return ytPlayer;
   const YT = await loadYouTubeAPI();
   const t = tracks[currentIndexOf()];
+  if (!t?.youtube_video_id) return null;
+
+  const holder = document.getElementById('bt-yt');
+  const iframe = buildYouTubeIframe(t.youtube_video_id);
+  holder.replaceWith(iframe);
+
   ytPlayer = await new Promise((resolve) => {
-    const p = new YT.Player('bt-yt', {
-      videoId: t?.youtube_video_id ?? undefined,
-      playerVars: {
-        controls: 0,          // 진행바/볼륨은 스펙상 미구현 — 크롬리스 유지
-        rel: 0,
-        playsinline: 1,
-        modestbranding: 1,
-      },
+    const p = new YT.Player(iframe, {
       events: {
         onReady: () => resolve(p),
         onStateChange: (e) => {
@@ -247,7 +276,7 @@ async function ensurePlayer() {
           if (e.data === YTPS.PLAYING) { setPlaying(true); hideEmbedFallback(); }
           else if (e.data === YTPS.PAUSED || e.data === YTPS.ENDED) setPlaying(false);
         },
-        // 임베드 불가(101/150/153 등) 포함 모든 플레이어 오류 → 폴백 오버레이
+        // 임베드 오류(101/150/153 등)가 실제로 발생했을 때만 폴백 표시
         onError: () => {
           setPlaying(false);
           showEmbedFallback();
@@ -291,6 +320,7 @@ function setPlaying(playing) {
 // ── 컨트롤 (Step 5) ─────────────────────────────────────────────────────────
 async function togglePlay() {
   const p = await ensurePlayer();
+  if (!p) return;
   if (state.isPlaying) p.pauseVideo();
   else p.playVideo();
 }
@@ -412,7 +442,12 @@ async function initBlairTunes() {
 
 initBlairTunes();
 
-// 테스트/디버그 훅 (콘솔에서 폴백 오버레이 확인용)
-window.__blairTunes = { state, showEmbedFallback, hideEmbedFallback };
+// 테스트/디버그 훅 (콘솔에서 폴백 오버레이·iframe src 확인용)
+window.__blairTunes = {
+  state,
+  showEmbedFallback,
+  hideEmbedFallback,
+  getIframeSrc: () => document.querySelector('.bt-video iframe')?.src ?? null,
+};
 
 })();
