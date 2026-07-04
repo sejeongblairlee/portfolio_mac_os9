@@ -9,7 +9,9 @@
  *  - color_source='fallback'이면 /api/theme-color로 테마 파생
  * 값 변경 시 src/lib/supabase-config.ts와 동기화할 것.
  *
- * 아직 구현하지 않음(스펙): YouTube iframe/재생/진행바/볼륨 로직/미니마이즈 전환/드래그
+ * Step 5: YouTube IFrame API 재생 구현.
+ * 공유 상태(state.selectedTrackId / state.isPlaying)를 메인·미니 플레이어가 함께 읽음.
+ * 아직 구현하지 않음(스펙): 진행바/볼륨 로직/영상 종료 시 자동 다음곡/드래그/키보드 단축키
  */
 
 (function () {
@@ -95,9 +97,9 @@ function controlsHTML() {
     <div class="bt-controls">
       <div class="bt-controls-inner">
         <div class="bt-btns">
-          <button class="bt-btn" aria-label="previous"><img src="${ICONS}/icon-playback.svg" alt=""></button>
-          <button class="bt-btn" aria-label="play"><img src="${ICONS}/icon-play.svg" alt=""></button>
-          <button class="bt-btn" aria-label="next"><img src="${ICONS}/icon-playforward.svg" alt=""></button>
+          <button class="bt-btn bt-prev" aria-label="previous"><img src="${ICONS}/icon-playback.svg" alt=""></button>
+          <button class="bt-btn bt-play" aria-label="play"><img src="${ICONS}/icon-play.svg" alt=""></button>
+          <button class="bt-btn bt-next" aria-label="next"><img src="${ICONS}/icon-playforward.svg" alt=""></button>
         </div>
         <div class="bt-volume">
           <div class="bt-vol-track">
@@ -128,7 +130,10 @@ function windowHTML() {
         <div class="bt-slider"><div class="bt-slider-handle"></div></div>
       </div>
       <div class="bt-col-center">
-        <div class="bt-video"><img class="bt-thumb" id="bt-thumb" src="" alt=""></div>
+        <div class="bt-video">
+          <img class="bt-thumb" id="bt-thumb" src="" alt="">
+          <div id="bt-yt"></div>
+        </div>
         ${controlsHTML()}
       </div>
       <div class="bt-col-cur">
@@ -157,9 +162,9 @@ function windowHTML() {
       <div class="bt-video">
         <img class="bt-thumb" id="bt-mini-thumb" src="" alt="">
         <div class="bt-mini-overlay">
-          <button class="bt-btn side" aria-label="previous"><img src="${ICONS}/icon-playback.svg" alt=""></button>
-          <button class="bt-btn" aria-label="play"><img src="${ICONS}/icon-play.svg" alt=""></button>
-          <button class="bt-btn side" aria-label="next"><img src="${ICONS}/icon-playforward.svg" alt=""></button>
+          <button class="bt-btn side bt-prev" aria-label="previous"><img src="${ICONS}/icon-playback.svg" alt=""></button>
+          <button class="bt-btn bt-play" aria-label="play"><img src="${ICONS}/icon-play.svg" alt=""></button>
+          <button class="bt-btn side bt-next" aria-label="next"><img src="${ICONS}/icon-playforward.svg" alt=""></button>
         </div>
       </div>
       <div class="bt-row playing">
@@ -175,7 +180,102 @@ function windowHTML() {
 }
 
 let tracks = [];
-let currentIndex = 0;
+
+// ── 공유 상태 — 메인 플레이어와 미니 플레이어가 함께 읽음 (Step 5) ──────────
+const state = {
+  selectedTrackId: null,
+  isPlaying: false,
+};
+
+function currentIndexOf() {
+  const i = tracks.findIndex((t) => t.id === state.selectedTrackId);
+  return i === -1 ? 0 : i;
+}
+
+// ── YouTube IFrame API ──────────────────────────────────────────────────────
+let ytPlayer = null;          // YT.Player 인스턴스 (메인 비디오 영역 하나만 존재)
+let ytApiPromise = null;
+
+function loadYouTubeAPI() {
+  if (ytApiPromise) return ytApiPromise;
+  ytApiPromise = new Promise((resolve) => {
+    if (window.YT && window.YT.Player) { resolve(window.YT); return; }
+    const prev = window.onYouTubeIframeAPIReady;
+    window.onYouTubeIframeAPIReady = () => {
+      if (typeof prev === 'function') prev();
+      resolve(window.YT);
+    };
+    const s = document.createElement('script');
+    s.src = 'https://www.youtube.com/iframe_api';
+    document.head.appendChild(s);
+  });
+  return ytApiPromise;
+}
+
+async function ensurePlayer() {
+  if (ytPlayer) return ytPlayer;
+  const YT = await loadYouTubeAPI();
+  const t = tracks[currentIndexOf()];
+  ytPlayer = await new Promise((resolve) => {
+    const p = new YT.Player('bt-yt', {
+      videoId: t?.youtube_video_id ?? undefined,
+      playerVars: {
+        controls: 0,          // 진행바/볼륨은 스펙상 미구현 — 크롬리스 유지
+        rel: 0,
+        playsinline: 1,
+        modestbranding: 1,
+      },
+      events: {
+        onReady: () => resolve(p),
+        onStateChange: (e) => {
+          const YTPS = window.YT.PlayerState;
+          if (e.data === YTPS.PLAYING) setPlaying(true);
+          else if (e.data === YTPS.PAUSED || e.data === YTPS.ENDED) setPlaying(false);
+        },
+      },
+    });
+  });
+  return ytPlayer;
+}
+
+// 재생 중 표시용 픽셀 pause 글리프 (play 아이콘과 동일 스케일)
+const PAUSE_SVG =
+  '<svg width="24" height="24" viewBox="0 0 24 24" shape-rendering="crispEdges">' +
+  '<rect x="6" y="5" width="4" height="14" fill="#111"/>' +
+  '<rect x="14" y="5" width="4" height="14" fill="#111"/></svg>';
+const PLAY_IMG = `<img src="${ICONS}/icon-play.svg" alt="">`;
+
+function setPlaying(playing) {
+  state.isPlaying = playing;
+  document.querySelectorAll('.bt-play').forEach((btn) => {
+    btn.innerHTML = playing ? PAUSE_SVG : PLAY_IMG;
+    btn.setAttribute('aria-label', playing ? 'pause' : 'play');
+  });
+}
+
+// ── 컨트롤 (Step 5) ─────────────────────────────────────────────────────────
+async function togglePlay() {
+  const p = await ensurePlayer();
+  if (state.isPlaying) p.pauseVideo();
+  else p.playVideo();
+}
+
+function selectTrack(id, { autoplay } = { autoplay: true }) {
+  const track = tracks.find((t) => t.id === id);
+  if (!track) return;
+  state.selectedTrackId = id;
+  renderCurrent();
+  if (ytPlayer && track.youtube_video_id) {
+    if (autoplay) ytPlayer.loadVideoById(track.youtube_video_id);
+    else ytPlayer.cueVideoById(track.youtube_video_id);
+  }
+}
+
+function stepTrack(delta) {
+  if (!tracks.length) return;
+  const next = (currentIndexOf() + delta + tracks.length) % tracks.length;  // 순환
+  selectTrack(tracks[next].id, { autoplay: state.isPlaying });
+}
 
 function setThumb(img, track) {
   img.src = track.thumbnail_url ?? '';
@@ -187,6 +287,7 @@ function setThumb(img, track) {
 }
 
 function renderCurrent() {
+  const currentIndex = currentIndexOf();
   const t = tracks[currentIndex];
   if (!t) return;
 
@@ -219,8 +320,9 @@ function renderCurrent() {
 
 function renderList() {
   const list = document.getElementById('bt-list');
+  const currentIndex = currentIndexOf();
   list.innerHTML = tracks.map((t, i) => `
-    <button class="bt-row${i === currentIndex ? ' playing' : ''}" data-index="${i}">
+    <button class="bt-row${i === currentIndex ? ' playing' : ''}" data-id="${esc(t.id)}">
       <div class="bt-row-txt">
         <p>${esc(t.title)}</p>
         <p>${esc(t.artist)}</p>
@@ -229,10 +331,7 @@ function renderList() {
       <span class="bt-dur">${esc(t.duration_label ?? 'mm:hh')}</span>
     </button>`).join('');
   list.querySelectorAll('.bt-row').forEach((row) => {
-    row.addEventListener('click', () => {
-      currentIndex = Number(row.dataset.index);
-      renderCurrent();
-    });
+    row.addEventListener('click', () => selectTrack(row.dataset.id));
   });
 }
 
@@ -255,15 +354,21 @@ async function initBlairTunes() {
     return;
   }
   tracks = fetched;
-  currentIndex = 0;          // 첫 published 트랙 기본 선택
+  state.selectedTrackId = tracks[0].id;   // 첫 published 트랙 기본 선택
   renderList();
   renderCurrent();
 
-  // "Enjoy Music!" 아이콘 → 플레이어 열기
+  // 컨트롤 버튼 — 메인·미니 공통 (같은 공유 상태/플레이어 제어)
+  document.querySelectorAll('.bt-play').forEach((b) => b.addEventListener('click', togglePlay));
+  document.querySelectorAll('.bt-prev').forEach((b) => b.addEventListener('click', () => stepTrack(-1)));
+  document.querySelectorAll('.bt-next').forEach((b) => b.addEventListener('click', () => stepTrack(1)));
+
+  // "Enjoy Music!" 아이콘 → 플레이어 열기 (+ 최초 오픈 시 YouTube 플레이어 생성)
   const icon = document.getElementById('icon-tunes');
   if (icon) {
     icon.addEventListener('click', () => {
       document.getElementById('bt-win').hidden = false;
+      ensurePlayer().catch((e) => console.warn('[blair-tunes] YT init:', e));
     });
   }
 }
