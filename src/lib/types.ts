@@ -36,3 +36,13 @@ export interface Track {
   /** timestamptz ISO 문자열 — DB 트리거로 자동 갱신 */
   updated_at: string;
 }
+
+/**
+ * fetch 시점에 YouTube 메타데이터가 파생·보정된 트랙 (Step 2).
+ * DB에 youtube_video_id / thumbnail_url이 비어 있어도
+ * youtube_url에서 파생 가능하면 채워진 상태로 UI에 전달된다.
+ */
+export interface EnrichedTrack extends Track {
+  /** maxresdefault 404 대비용 hqdefault 폴백 (UI의 <img onerror>에서 사용) */
+  thumbnail_fallback_url: string | null;
+}

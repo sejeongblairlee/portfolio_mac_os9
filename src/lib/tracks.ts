@@ -8,8 +8,9 @@
  * esm.sh CDN import로 브라우저에서 직접 쓰거나 가벼운 번들 단계를 추가한다.
  */
 import { createClient, type SupabaseClient } from '@supabase/supabase-js';
-import type { Track } from './types';
+import type { Track, EnrichedTrack } from './types';
 import { SUPABASE_URL, SUPABASE_ANON_KEY } from './supabase-config';
+import { enrichTrack } from './youtube';
 
 let client: SupabaseClient | null = null;
 
@@ -21,7 +22,8 @@ function getClient(): SupabaseClient {
 }
 
 export interface FetchTracksResult {
-  tracks: Track[];
+  /** YouTube 메타데이터가 파생·보정된 트랙 (Step 2: enrichTrack 적용) */
+  tracks: EnrichedTrack[];
   /** null이면 성공 */
   error: string | null;
 }
@@ -38,7 +40,8 @@ export async function fetchTracks(): Promise<FetchTracksResult> {
     if (error) {
       return { tracks: [], error: error.message };
     }
-    return { tracks: (data ?? []) as Track[], error: null };
+    const tracks = ((data ?? []) as Track[]).map(enrichTrack);
+    return { tracks, error: null };
   } catch (e) {
     return {
       tracks: [],
