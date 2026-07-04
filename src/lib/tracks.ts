@@ -11,6 +11,7 @@ import { createClient, type SupabaseClient } from '@supabase/supabase-js';
 import type { Track, EnrichedTrack } from './types';
 import { SUPABASE_URL, SUPABASE_ANON_KEY } from './supabase-config';
 import { enrichTrack } from './youtube';
+import { applyDerivedThemeColors } from './theme-api';
 
 let client: SupabaseClient | null = null;
 
@@ -40,7 +41,9 @@ export async function fetchTracks(): Promise<FetchTracksResult> {
     if (error) {
       return { tracks: [], error: error.message };
     }
-    const tracks = ((data ?? []) as Track[]).map(enrichTrack);
+    const enriched = ((data ?? []) as Track[]).map(enrichTrack);
+    // Step 3: fallback 색인 트랙은 썸네일 도미넌트 컬러로 교체 (실패 시 fallback 유지)
+    const tracks = await applyDerivedThemeColors(enriched);
     return { tracks, error: null };
   } catch (e) {
     return {
