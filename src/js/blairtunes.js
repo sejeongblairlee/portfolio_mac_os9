@@ -86,10 +86,21 @@ async function fetchTracks() {
 const esc = (s) => String(s ?? '').replace(/[&<>"']/g, (c) =>
   ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
 
-function liveLine(t) {
-  if (!t.performance_location && !t.performance_year) return '';
-  const parts = [t.performance_location, t.performance_year].filter(Boolean).join(', ');
-  return `Live Video from ${parts}`;
+/**
+ * 공연 정보 라벨.
+ * - location + year : "Live Video from San Diego, 2016"
+ * - location만      : "Live Video from San Diego"
+ * - year만          : "Live Video, 2016"
+ * - 둘 다 없음       : ""
+ * DB 값에 이미 "Live Video..." 프리픽스가 들어 있으면 중복으로 붙이지 않는다.
+ */
+function formatPerformanceLabel(track) {
+  const loc = (track.performance_location ?? '').trim();
+  const year = track.performance_year;
+  if (!loc && !year) return '';
+  if (!loc) return `Live Video, ${year}`;
+  const base = /^live\s+video/i.test(loc) ? loc : `Live Video from ${loc}`;
+  return year ? `${base}, ${year}` : base;
 }
 
 function controlsHTML() {
@@ -133,6 +144,10 @@ function windowHTML() {
         <div class="bt-video">
           <img class="bt-thumb" id="bt-thumb" src="" alt="">
           <div id="bt-yt"></div>
+          <div class="bt-embed-fallback" id="bt-fallback" hidden>
+            <p>This video can&rsquo;t be played here.</p>
+            <a id="bt-fallback-link" href="#" target="_blank" rel="noopener">Watch on YouTube</a>
+          </div>
         </div>
         ${controlsHTML()}
       </div>
@@ -229,8 +244,13 @@ async function ensurePlayer() {
         onReady: () => resolve(p),
         onStateChange: (e) => {
           const YTPS = window.YT.PlayerState;
-          if (e.data === YTPS.PLAYING) setPlaying(true);
+          if (e.data === YTPS.PLAYING) { setPlaying(true); hideEmbedFallback(); }
           else if (e.data === YTPS.PAUSED || e.data === YTPS.ENDED) setPlaying(false);
+        },
+        // 임베드 불가(101/150/153 등) 포함 모든 플레이어 오류 → 폴백 오버레이
+        onError: () => {
+          setPlaying(false);
+          showEmbedFallback();
         },
       },
     });
@@ -244,6 +264,21 @@ const PAUSE_SVG =
   '<rect x="6" y="5" width="4" height="14" fill="#111"/>' +
   '<rect x="14" y="5" width="4" height="14" fill="#111"/></svg>';
 const PLAY_IMG = `<img src="${ICONS}/icon-play.svg" alt="">`;
+
+// ── 임베드 불가 폴백 (Watch on YouTube) ─────────────────────────────────────
+function showEmbedFallback() {
+  const t = tracks[currentIndexOf()];
+  const box = document.getElementById('bt-fallback');
+  const link = document.getElementById('bt-fallback-link');
+  if (!box || !link || !t) return;
+  link.href = t.youtube_url;
+  box.hidden = false;
+}
+
+function hideEmbedFallback() {
+  const box = document.getElementById('bt-fallback');
+  if (box) box.hidden = true;
+}
 
 function setPlaying(playing) {
   state.isPlaying = playing;
@@ -264,6 +299,7 @@ function selectTrack(id, { autoplay } = { autoplay: true }) {
   const track = tracks.find((t) => t.id === id);
   if (!track) return;
   state.selectedTrackId = id;
+  hideEmbedFallback();          // 새 트랙은 다시 임베드 시도
   renderCurrent();
   if (ytPlayer && track.youtube_video_id) {
     if (autoplay) ytPlayer.loadVideoById(track.youtube_video_id);
@@ -301,8 +337,9 @@ function renderCurrent() {
   document.getElementById('bt-cur-title').textContent = t.title;
   document.getElementById('bt-cur-artist').textContent = `/${t.artist}`;
   const live = document.getElementById('bt-cur-live');
-  live.textContent = liveLine(t);
-  live.style.display = liveLine(t) ? '' : 'none';
+  const label = formatPerformanceLabel(t);
+  live.textContent = label;
+  live.style.display = label ? '' : 'none';
 
   const des = document.getElementById('bt-cur-des');
   des.innerHTML = (t.curation ?? '')
@@ -374,5 +411,8 @@ async function initBlairTunes() {
 }
 
 initBlairTunes();
+
+// 테스트/디버그 훅 (콘솔에서 폴백 오버레이 확인용)
+window.__blairTunes = { state, showEmbedFallback, hideEmbedFallback };
 
 })();

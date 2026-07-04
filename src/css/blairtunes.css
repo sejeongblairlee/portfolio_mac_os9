@@ -118,6 +118,27 @@
 .bt-video iframe {
   position: absolute; inset: 0; width: 100%; height: 100%; border: 0;
 }
+
+/* 임베드 불가 영상 폴백 (YT onError) — 레이아웃 변경 없음, 비디오 영역 위 오버레이 */
+.bt-embed-fallback {
+  position: absolute; inset: 0; z-index: 3;
+  background: rgba(0, 0, 0, 0.92);   /* YT 자체 에러 문구가 비치지 않게 */
+  display: flex; flex-direction: column; gap: 12px;
+  align-items: center; justify-content: center;
+  text-align: center; padding: 16px;
+}
+.bt-embed-fallback[hidden] { display: none; }
+.bt-embed-fallback p {
+  font-family: 'VT323', monospace; font-size: 20px; line-height: 24px;
+  letter-spacing: -1px; color: #fff;
+}
+.bt-embed-fallback a {
+  font-family: 'VT323', monospace; font-size: 20px; line-height: 24px;
+  text-transform: uppercase; background: #fff; color: #000;
+  border: 1px solid #000; padding: 4px 10px;
+  text-decoration: none; cursor: pointer;
+}
+.bt-embed-fallback a:active { background: #000; color: #fff; }
 .bt-controls {
   width: 100%; display: flex; align-items: flex-start; justify-content: center;
   padding: 16px 0 24px 8px;
