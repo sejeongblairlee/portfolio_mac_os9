@@ -18,15 +18,17 @@
   top: 50%;
   transform: translate(-50%, -50%);
   width: min(1282px, calc(100vw - 40px));   /* 1280 콘텐츠 + 보더, 세이프 에어리어 준수 */
-  background: #2B2318;                       /* Figma 기본값 — JS가 theme_color로 교체 */
-  transition: background-color 300ms ease;
+  /* 테마: fetchTracks()의 theme_color/text_color → CSS 변수 (JS가 설정)
+     #2A2118/#FFF은 최종 폴백으로만 사용 */
+  background: var(--bt-theme, #2A2118);
+  color: var(--bt-text, #FFFFFF);
+  transition: background-color 300ms ease, color 300ms ease;
   border: 1px solid #000;
   display: flex;
   flex-direction: column;
   align-items: center;
   z-index: 500;
   box-shadow: 4px 4px 0 rgba(0,0,0,0.28), 8px 8px 0 rgba(0,0,0,0.08);
-  color: #fff;
 }
 .bt-win[hidden] { display: none; }
 
@@ -44,7 +46,8 @@
 .bt-title {
   flex: 1; min-width: 1px; text-align: center;
   font-family: 'VT323', monospace; font-size: 16px; line-height: 16px;
-  letter-spacing: -1.6px; color: #fff;
+  letter-spacing: -1.6px; color: var(--bt-text, #fff);
+  transition: color 300ms ease;
 }
 
 /* ── 본문: 좌 플레이리스트 / 중앙 플레이어 / 우 큐레이션 ── */
@@ -68,7 +71,8 @@
   display: flex; gap: 4px; align-items: center;
   padding: 6px 8px; width: 100%;
   background: transparent; border: none; text-align: left; cursor: pointer;
-  color: #fff; flex-shrink: 0;
+  color: var(--bt-text, #fff); flex-shrink: 0;
+  transition: color 300ms ease;
 }
 .bt-row .bt-row-txt {
   flex: 1; min-width: 1px; display: flex; flex-direction: column;
@@ -164,7 +168,12 @@
   height: 16px; padding: 0 20px; display: flex; gap: 10px; align-items: center;
   position: relative; overflow: hidden; width: 100%;
 }
-.bt-vol-fill { flex: 1; min-width: 1px; height: 4px; background: #0037FF; border: 1px solid #000; }
+.bt-vol-fill {
+  flex: 1; min-width: 1px; height: 4px;
+  background: var(--bt-accent, #0037FF);   /* 슬라이더 액티브 = 테마 파생 액센트 */
+  border: 1px solid #000;
+  transition: background-color 300ms ease;
+}
 .bt-vol-rest { flex: 1; min-width: 1px; height: 4px; border: 1px solid #000; }
 .bt-vol-handle {
   position: absolute; left: 112px; top: 0; width: 16px; height: 16px;
@@ -172,10 +181,11 @@
 }
 .bt-vol-labels { display: flex; justify-content: space-between; width: 100%; }
 .bt-vol-step { width: 40px; display: flex; flex-direction: column; gap: 2px; align-items: center; }
-.bt-vol-step i { display: block; width: 1px; height: 6px; background: #fff; }
+.bt-vol-step i { display: block; width: 1px; height: 6px; background: var(--bt-text, #fff); }
 .bt-vol-step span {
   font-family: 'VT323', monospace; font-size: 14px; line-height: 14px;
-  letter-spacing: -1.4px; color: #fff; text-align: center;
+  letter-spacing: -1.4px; color: var(--bt-text, #fff); text-align: center;
+  transition: color 300ms ease;
 }
 
 /* 03 — 큐레이션 (우) */
@@ -188,18 +198,21 @@
 .bt-cur-tit { display: flex; flex-direction: column; gap: 8px; width: 100%; }
 .bt-cur-tit .bt-t1, .bt-cur-tit .bt-t2 {
   font-family: 'EB Garamond', Georgia, serif; font-weight: 400;
-  font-size: 40px; line-height: 40px; letter-spacing: -3.2px; color: #fff;
+  font-size: 40px; line-height: 40px; letter-spacing: -3.2px;
+  color: var(--bt-text, #fff); transition: color 300ms ease;
   width: 100%;
 }
 .bt-cur-tit .bt-t2 { white-space: nowrap; }
 .bt-cur-tit .bt-live {
   font-family: 'EB Garamond', Georgia, serif; font-size: 14px; line-height: 20px;
-  letter-spacing: -1.12px; color: #fff; width: 100%;
+  letter-spacing: -1.12px; color: var(--bt-text, #fff); transition: color 300ms ease;
+  width: 100%;
 }
 .bt-cur-des {
   display: flex; flex-direction: column; gap: 8px; width: 100%;
   font-family: 'Pretendard', sans-serif; font-weight: 200;   /* ExtraLight */
-  font-size: 12px; line-height: 18px; letter-spacing: -0.36px; color: #fff;
+  font-size: 12px; line-height: 18px; letter-spacing: -0.36px;
+  color: var(--bt-text, #fff); transition: color 300ms ease;
 }
 .bt-col-cur .bt-slider { opacity: 0; }   /* Figma: 우측 슬라이더는 투명 자리맞춤 */
 
@@ -228,13 +241,13 @@
   position: absolute;
   right: 40px; bottom: 40px;
   width: 320px;
-  background: #2B2318;
-  transition: background-color 300ms ease;
+  background: var(--bt-theme, #2A2118);
+  color: var(--bt-text, #FFFFFF);
+  transition: background-color 300ms ease, color 300ms ease;
   border: 1px solid #000;
   display: flex; flex-direction: column; align-items: center;
   z-index: 510;
   box-shadow: 4px 4px 0 rgba(0,0,0,0.28), 8px 8px 0 rgba(0,0,0,0.08);
-  color: #fff;
 }
 .bt-mini[hidden] { display: none; }
 .bt-mini-body { width: 100%; display: flex; flex-direction: column; gap: 4px; align-items: center; }
