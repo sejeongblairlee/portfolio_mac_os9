@@ -36,7 +36,6 @@ body {
 <canvas id="c"></canvas>
 <div id="overlay"></div>
 
-<script src="data/mac3d-assets.js"></script>
 <script src="https://cdn.jsdelivr.net/npm/three@0.128.0/build/three.min.js"></script>
 <script src="https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/loaders/GLTFLoader.js"></script>
 <script>
@@ -155,10 +154,6 @@ const whiteMat = new THREE.MeshStandardMaterial({
 const keyMat = new THREE.MeshStandardMaterial({
   color: 0xA8A8A8, roughness: 0.92, metalness: 0.0,   // Figma 키캡 상면 155–178
 });
-// 디버그 전용: 매킨토시 본체만 살짝 웜톤 오프화이트(키보드/마우스는 whiteMat 그대로 유지)
-const macBodyMat = DEBUG_DEPTH
-  ? new THREE.MeshStandardMaterial({ color: 0xF0E7D8, roughness: 0.92, metalness: 0.0 })
-  : whiteMat;
 const cableMat = new THREE.MeshStandardMaterial({ color: 0xE0E0E0, roughness: 0.9 });
 
 // ── Helpers ────────────────────────────────────────────────────────────────
@@ -212,16 +207,13 @@ mac.add(macBody);
 new THREE.GLTFLoader().load('src/models/macintosh-classic-body.glb', (gltf) => {
   const model = gltf.scene;
 
-  // 클린 매트 화이트로 통일 — 텍스처가 있는 메시(스캔 디칼/로고류)는 깨져 보일
-  // 위험이 있어 이번 1차 패스에서는 숨김, 단색 셸 메시만 매트 화이트 적용
+  // GLB에 내장된 원본 재질/텍스처(레인보우 애플 로고, "Macintosh Classic" 라벨,
+  // 스크린 텍스처 포함)를 그대로 사용 — 머티리얼 오버라이드도, 숨김 처리도 하지 않는다.
   model.traverse((child) => {
     if (!child.isMesh) return;
-    const hasTexture = !!(child.material && child.material.map);
-    if (hasTexture) { child.visible = false; return; }
-    // 이 GLB는 NORMAL 속성이 아예 없어(export 파이프라인 이슈) MeshStandardMaterial이
-    // 조명을 못 받아 새까맣게 나옴 — 지오메트리에서 직접 계산해 채워준다.
+    // 이 GLB는 NORMAL 속성이 아예 없어(export 파이프라인 이슈) 조명을 전혀 못 받아
+    // 새까맣게 나옴 — 지오메트리에서 직접 계산해 채워준다(재질/텍스처는 원본 그대로).
     if (!child.geometry.attributes.normal) child.geometry.computeVertexNormals();
-    child.material = macBodyMat;
     child.castShadow = true;
     child.receiveShadow = true;
   });
@@ -263,144 +255,26 @@ function onFront(mesh, x, y, z) {
 // (구) 스크린 리세스 패널 제거 — GLB 본체 자체에 리세스가 조형되어 있어
 // 이 평면 패널을 남겨두면 GLB 리세스와 어긋나며 겹쳐 보임 (본체 교체 후 정리).
 
-// ── CRT 스크린 — Figma 실측 376×318px → 2.66×2.25 (1.182:1) ────────────────
-const SCW = 2.66, SCH = 2.25;
-const scrCanvas = document.createElement('canvas');
-scrCanvas.width = 1440; scrCanvas.height = 1218;
-
-// 정적 레이어 (배경 + 타이포) — 매 프레임 재사용
-const staticC = document.createElement('canvas');
-staticC.width = scrCanvas.width; staticC.height = scrCanvas.height;
-
-const CRT_R = 153; // CRT 라운드 코너 (px) — Figma 실측 CRT 폭의 10.6%
-
-function crtPath(ctx, w, h, r) {
-  ctx.beginPath();
-  ctx.moveTo(r, 0);
-  ctx.lineTo(w - r, 0);      ctx.quadraticCurveTo(w, 0, w, r);
-  ctx.lineTo(w, h - r);      ctx.quadraticCurveTo(w, h, w - r, h);
-  ctx.lineTo(r, h);          ctx.quadraticCurveTo(0, h, 0, h - r);
-  ctx.lineTo(0, r);          ctx.quadraticCurveTo(0, 0, r, 0);
-  ctx.closePath();
-}
-
-function renderStatic() {
-  const ctx = staticC.getContext('2d');
-  const w = staticC.width, h = staticC.height;
-
-  // 코너 밖 = 조명 반영된 리세스 톤 (뉴트럴)
-  ctx.fillStyle = '#F1F1F1';
-  ctx.fillRect(0, 0, w, h);
-
-  ctx.save();
-  crtPath(ctx, w, h, CRT_R);
-  ctx.clip();
-  ctx.fillStyle = '#FFFFFF';
-  ctx.fillRect(0, 0, w, h);
-
-  // "Sejeong LEE" 워드마크 — Figma 원본 이미지 에셋 (360×80 박스,
-  // 내부 이미지 w117.95% h215.6% offset(-7.82%, -58.1%) 크롭 그대로 재현)
-  if (wordmarkImg.complete && wordmarkImg.naturalWidth) {
-    const bx = w * 0.016, by = h * 0.4654, bw = w * 0.9574, bh = h * 0.2516;
-    ctx.save();
-    ctx.beginPath();
-    ctx.rect(bx, by, bw, bh);
-    ctx.clip();
-    ctx.drawImage(wordmarkImg, bx - 0.0782 * bw, by - 0.581 * bh, 1.1795 * bw, 2.156 * bh);
-    ctx.restore();
-  }
-
-  // 태그라인 — Figma: VT323 Regular 20px (CRT 높이의 6.29%), 베이스라인 81.4%
-  const TL = 'HELLO WORLD, WELCOME TO MY WORKSPACE !';
-  ctx.fillStyle = '#000000';
-  ctx.textAlign = 'center';
-  ctx.font = Math.round(h * 0.0644) + 'px "VT323scr", monospace';
-  ctx.fillText(TL, w * 0.516, h * 0.8145);
-
-  // CRT 비네트 — 중심부만 순백, 가장자리 미세하게 어둡게 (뉴트럴)
-  const vg = ctx.createRadialGradient(w/2, h*0.45, h*0.3, w/2, h*0.5, h*0.95);
-  vg.addColorStop(0, 'rgba(0,0,0,0)');
-  vg.addColorStop(1, 'rgba(0,0,0,0.075)');
-  ctx.fillStyle = vg;
-  ctx.fillRect(0, 0, w, h);
-
-  // 스크린 베벨 인셋 섀도 — 상단에서 아래로 떨어지는 얕은 안쪽 그림자
-  const tg = ctx.createLinearGradient(0, 0, 0, h * 0.08);
-  tg.addColorStop(0, 'rgba(0,0,0,0.09)');
-  tg.addColorStop(1, 'rgba(0,0,0,0)');
-  ctx.fillStyle = tg;
-  ctx.fillRect(0, 0, w, h * 0.08);
-  ctx.restore();
-}
-
-// data URI 로드 — file:// 에서 외부 이미지를 그리면 canvas가 tainted 되어
-// THREE.CanvasTexture 업로드가 SecurityError로 실패하므로 반드시 임베드 사용
-const tigerImg = new Image();
-tigerImg.onload = renderStatic;
-tigerImg.src = MAC3D_TIGER_SRC;
-
-const wordmarkImg = new Image();
-wordmarkImg.onload = renderStatic;
-wordmarkImg.src = MAC3D_WORDMARK_SRC;
-
-renderStatic();
-try {
-  const vt = new FontFace('VT323scr', 'url(src/fonts/VT323-Regular.ttf)');
-  vt.load().then((f) => { document.fonts.add(f); renderStatic(); }).catch(() => {});
-} catch (e) {}
+// (구) 캔버스로 그리던 커스텀 CRT 스크린("Sejeong LEE" 워드마크 + 호랑이 +
+// 타이핑 시뮬레이션)과 회색 Apple 로고 데칼 전부 제거 — GLB가 이미 원본
+// 레인보우 애플 로고·"Macintosh Classic" 라벨·스크린 텍스처를 내장하고 있어
+// 화면 콘텐츠는 이후 별도 작업에서 GLB 쪽을 기준으로 다시 다룬다.
+// 호버/부팅 클릭 판정만은 계속 필요해서, 같은 화면 자리에 안 보이는
+// 히트테스트용 평면만 남겨둔다(렌더 안 됨 — 레이캐스트 전용).
+const hitPlane = onFront(
+  new THREE.Mesh(
+    new THREE.PlaneGeometry(2.66, 2.25),
+    new THREE.MeshBasicMaterial({ transparent: true, opacity: 0, depthWrite: false })
+  ),
+  0, 0.79, FRONT_Z + 0.09
+);
 
 // ── 인터랙션 상태 ──────────────────────────────────────────────────────────
 const state = {
   hover: false,        // 스크린 호버
   warm: 0,             // 0→1 (호버 시 색온도/글로우)
-  typed: '',
   booting: false,      // 부팅 페이드 진행 중
 };
-
-// ── 프레임 합성: 정적 레이어 + 호랑이 + 타이핑 + 웜 틴트 + 플래시 ──────────
-function drawScreen(t, dt) {
-  const ctx = scrCanvas.getContext('2d');
-  const w = scrCanvas.width, h = scrCanvas.height;
-
-  ctx.drawImage(staticC, 0, 0);
-
-  ctx.save();
-  crtPath(ctx, w, h, CRT_R);
-  ctx.clip();
-
-  // ① 호랑이 — Figma: 240×120 박스, CRT 폭 63.8%, 중앙 정렬, 정적
-  if (tigerImg.complete && tigerImg.naturalWidth) {
-    ctx.drawImage(tigerImg, w * 0.1755, h * 0.0881, w * 0.6383, h * 0.3774);
-  }
-
-  // ② 타이핑 라인 — 입력이 있을 때만 표시 (Figma 대기 화면엔 없음)
-  if (state.typed.length > 0) {
-    ctx.fillStyle = '#333333';
-    ctx.textAlign = 'center';
-    ctx.font = '400 34px Monaco, "Courier New", monospace';
-    const line = state.typed.slice(-26).toUpperCase();
-    const cursor = (Math.floor(t / 530) % 2 === 0) ? '▌' : ' ';
-    ctx.fillText(line + cursor, w / 2, h * 0.92);
-  }
-
-  // ③ 호버: 웜 틴트 + 밝기
-  if (state.warm > 0.01) {
-    ctx.fillStyle = 'rgba(255, 240, 214, ' + (0.15 * state.warm).toFixed(3) + ')';
-    ctx.fillRect(0, 0, w, h);
-  }
-
-  ctx.restore();
-}
-
-const scrTexture = new THREE.CanvasTexture(scrCanvas);
-scrTexture.encoding = THREE.sRGBEncoding;
-scrTexture.anisotropy = renderer.capabilities.getMaxAnisotropy();
-
-const screenMesh = new THREE.Mesh(
-  new THREE.PlaneGeometry(SCW, SCH),
-  new THREE.MeshBasicMaterial({ map: scrTexture })
-);
-onFront(screenMesh, 0, 0.79, FRONT_Z + 0.09);
 
 // 호버 시 CRT 글로우 (웜 화이트)
 const glow = new THREE.PointLight(0xFFE8C4, 0, 4.5);
@@ -462,16 +336,10 @@ layout.forEach((row, r) => {
   row.forEach(([code, u]) => { x += addKey(x, z, u, code); });
 });
 
-// ── 실제 키 입력 → 키 애니메이션 + 화면 타이핑 시뮬레이션 ──────────────────
+// ── 실제 키 입력 → 키 프레스 애니메이션 ────────────────────────────────────
 window.addEventListener('keydown', (e) => {
   const k = keyMap[e.code];
   if (k) k.press = 1;
-  if (e.metaKey || e.ctrlKey) return;
-  if (e.key.length === 1) {
-    state.typed = (state.typed + e.key).slice(-60);
-  } else if (e.code === 'Backspace') {
-    state.typed = state.typed.slice(0, -1);
-  }
 });
 window.addEventListener('keyup', (e) => {
   const k = keyMap[e.code];
@@ -526,7 +394,7 @@ window.addEventListener('pointermove', (e) => {
   ndc.x = nx;
   ndc.y = -ny;
   raycaster.setFromCamera(ndc, camera);
-  state.hover = !state.booting && raycaster.intersectObject(screenMesh).length > 0;
+  state.hover = !state.booting && raycaster.intersectObject(hitPlane).length > 0;
   canvas.style.cursor = state.hover ? 'pointer' : 'default';
 });
 
@@ -541,13 +409,9 @@ canvas.addEventListener('click', () => {
 // ═══════════════════════════════════════════════════════════════════════════
 //  Loop — 60fps, 시간 기반
 // ═══════════════════════════════════════════════════════════════════════════
-let prevT = performance.now();
-
 function animate() {
   requestAnimationFrame(animate);
   const t = performance.now();
-  const dt = Math.min((t - prevT) / 1000, 0.05);
-  prevT = t;
 
   // ① 브리딩 — 5.5s ease-in-out, 아주 미세한 상하 이동
   mac.position.y = Math.sin(t / 5500 * Math.PI * 2) * 0.018;
@@ -567,10 +431,6 @@ function animate() {
     const ty = k.baseY - 0.04 * k.press;
     k.mesh.position.y += (ty - k.mesh.position.y) * 0.4;
   }
-
-  // ⑤ 스크린 합성
-  drawScreen(t, dt);
-  scrTexture.needsUpdate = true;
 
   renderer.render(scene, camera);
 }
