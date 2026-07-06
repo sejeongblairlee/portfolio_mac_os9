@@ -134,14 +134,9 @@ scene.add(floor);
 const whiteMat = new THREE.MeshStandardMaterial({
   color: 0xE9E9E9, roughness: 0.94, metalness: 0.0,
 });
-const recessMat = new THREE.MeshStandardMaterial({
-  color: 0xD8D8D8, roughness: 0.96, metalness: 0.0,   // 리세스 = 은은한 AO 톤
-});
 const keyMat = new THREE.MeshStandardMaterial({
   color: 0xA8A8A8, roughness: 0.92, metalness: 0.0,   // Figma 키캡 상면 155–178
 });
-const darkMat = new THREE.MeshStandardMaterial({ color: 0x141414, roughness: 0.75 });
-const seamMat = new THREE.MeshStandardMaterial({ color: 0xC6C6C6, roughness: 0.95 });
 const cableMat = new THREE.MeshStandardMaterial({ color: 0xE0E0E0, roughness: 0.9 });
 
 // ── Helpers ────────────────────────────────────────────────────────────────
@@ -243,9 +238,8 @@ function onFront(mesh, x, y, z) {
   return mesh;
 }
 
-// 스크린 리세스 — Figma 실측: 상단 베젤 얇고(≈14px) 하단 두꺼움(≈53px), r≈6%
-const recess = roundedBoxMesh(2.90, 2.725, 0.05, 0.18, recessMat, 0.02);
-onFront(recess, 0, 0.65, FRONT_Z + 0.015);
+// (구) 스크린 리세스 패널 제거 — GLB 본체 자체에 리세스가 조형되어 있어
+// 이 평면 패널을 남겨두면 GLB 리세스와 어긋나며 겹쳐 보임 (본체 교체 후 정리).
 
 // ── CRT 스크린 — Figma 실측 376×318px → 2.66×2.25 (1.182:1) ────────────────
 const SCW = 2.66, SCH = 2.25;
@@ -391,65 +385,11 @@ const glow = new THREE.PointLight(0xFFE8C4, 0, 4.5);
 glow.position.set(0, BODY_CY + 0.79, FRONT_Z + 1.0);
 mac.add(glow);
 
-// ═══ 친(chin) — Figma 실측 ══════════════════════════════════════════════════
-
-// Apple 로고 (모노크롬)
-const logoCanvas = document.createElement('canvas');
-logoCanvas.width = 128; logoCanvas.height = 128;
-(function drawLogo() {
-  const ctx = logoCanvas.getContext('2d');
-  ctx.save();
-  ctx.translate(14, 18);
-  const apple = new Path2D();
-  apple.moveTo(50, 30);
-  apple.bezierCurveTo(60, 16, 80, 19, 86, 35);
-  apple.bezierCurveTo(94, 54, 85, 80, 66, 90);
-  apple.bezierCurveTo(58, 94, 42, 94, 34, 90);
-  apple.bezierCurveTo(15, 80, 6, 54, 14, 35);
-  apple.bezierCurveTo(20, 19, 40, 16, 50, 30);
-  apple.closePath();
-  ctx.fillStyle = '#4A4A4A';
-  ctx.fill(apple);
-  ctx.beginPath();
-  ctx.ellipse(60, 10, 14, 7, -0.7, 0, Math.PI * 2);
-  ctx.fill();
-  ctx.globalCompositeOperation = 'destination-out';
-  ctx.beginPath();
-  ctx.arc(97, 52, 17, 0, Math.PI * 2);
-  ctx.fill();
-  ctx.restore();
-}());
-const logoTexture = new THREE.CanvasTexture(logoCanvas);
-logoTexture.encoding = THREE.sRGBEncoding;
-const logo = new THREE.Mesh(
-  new THREE.PlaneGeometry(0.21, 0.225),
-  new THREE.MeshBasicMaterial({ map: logoTexture, transparent: true })
-);
-onFront(logo, -1.482, -1.395, FRONT_Z + 0.008);
-
-// 플로피 그루브 + 슬릿 — Figma 실측: 슬릿 107×14px(0.76×0.10), 중심 +0.37
-const groove = roundedBoxMesh(0.84, 0.16, 0.03, 0.05, recessMat, 0.01);
-onFront(groove, 0.37, -1.15, FRONT_Z + 0.012);
-const slit = new THREE.Mesh(new THREE.BoxGeometry(0.76, 0.10, 0.02), darkMat);
-onFront(slit, 0.37, -1.15, FRONT_Z + 0.045);
-
-// 우측 블랙 인셋 플레이트 — Figma 실측: 91×29px(0.64×0.205), 중심 +1.10
-const plate = roundedBoxMesh(0.72, 0.27, 0.04, 0.07, whiteMat, 0.012);
-onFront(plate, 1.10, -1.15, FRONT_Z + 0.018);
-const plateInset = roundedBoxMesh(0.64, 0.205, 0.02, 0.07, darkMat, 0.006);
-onFront(plateInset, 1.10, -1.15, FRONT_Z + 0.046);
-
-const dot = new THREE.Mesh(new THREE.CylinderGeometry(0.014, 0.014, 0.02, 10), darkMat);
-dot.rotation.x = Math.PI / 2;
-onFront(dot, 1.48, -1.15, FRONT_Z + 0.008);
-
-// 뒷면 통풍구
-for (let i = 0; i < 8; i++) {
-  const vent = new THREE.Mesh(
-    new THREE.BoxGeometry(BODY_W * .72, 0.03, 0.02), seamMat
-  );
-  onFront(vent, 0, 1.4 - i * 0.17, -(FRONT_Z + 0.005));
-}
+// (구) 친(chin) 디테일 일체 제거 — Apple 로고 데칼, 플로피 그루브/슬릿,
+// 우측 인셋 플레이트, 도트, 뒷면 통풍구는 전부 생성 지오메트리 시절 본체용
+// 장식이었다. GLB 본체가 이 형상들을 이미 실제 지오메트리로 갖고 있어서
+// (리세스·플로피 슬릿·배지·통풍구·애플 로고 몰딩 전부 포함), 남겨두면 위치가
+// 미세하게 어긋난 채 이중으로 겹쳐 보인다 — 전부 제거하고 GLB 쪽만 남김.
 
 // ═══════════════════════════════════════════════════════════════════════════
 //  키보드 — M0110, 실제 키 입력 반응
