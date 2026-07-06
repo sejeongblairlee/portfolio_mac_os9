@@ -264,9 +264,16 @@
 .bt-mini[hidden] { display: none; }
 .bt-mini-body { width: 100%; display: flex; flex-direction: column; gap: 4px; align-items: center; }
 .bt-mini .bt-video { border-radius: 4px; }
+/* 스크림+컨트롤은 비디오 영역 호버 시에만 표시.
+   오버레이가 항상 포인터를 받아(투명 상태 포함) 자기 :hover로 나타난다 —
+   크로스 오리진 iframe 위에선 조상 :hover가 신뢰성 없어서 이 방식이 필수.
+   부수 효과로 미니마이즈 중 YT 표면 직접 클릭도 차단(기존과 동일). */
 .bt-mini-overlay {
   position: absolute; inset: 0; background: rgba(0,0,0,0.49);
   display: flex; gap: 4px; align-items: center; justify-content: center;
+  opacity: 0;
+  transition: opacity 150ms ease;
 }
+.bt-mini-overlay:hover { opacity: 1; }
 .bt-mini-overlay .bt-btn.side { background: rgba(255,255,255,0.8); }
 .bt-mini .bt-row { cursor: default; }
