@@ -10,9 +10,13 @@
  *    아니면 /api/theme-color(썸네일 도미넌트, WCAG AA 보정)로 파생.
  *    파생 실패 시 DB 값 유지 — 잘못된 색을 캐시하지 않는다.
  *
- * 재생: YouTube IFrame API. videoId가 바뀔 때만 iframe을 파괴/재생성하고,
+ * 재생: YouTube IFrame API — 플레이어 인스턴스는 항상 1개(#bt-win 안).
+ * 트랙 전환은 loadVideoById (iframe 재생성 없음 → 볼륨/뮤트 유지),
  * 색/큐레이션 갱신은 iframe을 건드리지 않는다.
+ * 미니마이즈는 #bt-win을 display:none으로 숨길 뿐 iframe을 옮기지 않는다
+ * (재부착 = 리로드 = 재생 끊김). 영상 종료 시 다음 트랙 자동재생(순환).
  * 자동재생 차단 시: 뮤트로 재생 시작 → 첫 사용자 인터랙션에서 볼륨 복원.
+ * Figma에 진행바 UI가 없어 시킹은 seekTo() 로직만 제공, 시각화는 duration 라벨.
  */
 (function () {
 'use strict';
@@ -101,11 +105,20 @@ function accentFrom(themeHex) {
 }
 
 // ═══ 공유 상태 — 메인/미니/플레이리스트가 함께 읽음 ════════════════════════
+// YouTube 플레이어 인스턴스는 항상 1개 (#bt-win 안). 미니는 같은 상태를 읽는
+// 뷰일 뿐 별도 플레이어를 만들지 않는다.
 
 let tracks = [];
 const state = {
   selectedTrackId: null,
   isPlaying: false,
+  currentTime: 0,
+  duration: 0,
+  volume: 50,        // Figma 기본 = medium(50%) 위치
+  isMuted: false,
+  isMinimized: false,
+  playerReady: false,
+  embedError: false,
 };
 
 function currentIndexOf() {
@@ -155,7 +168,6 @@ let ytApiPromise = null;
 let building = false;
 let queuedBuild = null;
 let wasAutoMuted = false;
-let volumeBeforeMute = null;
 
 function loadYouTubeAPI() {
   if (ytApiPromise) return ytApiPromise;
@@ -204,7 +216,6 @@ function playWithAutoplayFallback(p) {
       const YTPS = window.YT.PlayerState;
       const st = p.getPlayerState();
       if (st !== YTPS.PLAYING && st !== YTPS.BUFFERING) {
-        volumeBeforeMute = p.getVolume();
         p.mute();
         wasAutoMuted = true;
         p.playVideo();
@@ -213,15 +224,26 @@ function playWithAutoplayFallback(p) {
   }, 900);
 }
 
-// 첫 사용자 인터랙션 → 자동 뮤트 해제 + 볼륨 복원
+// 첫 사용자 인터랙션 → 자동 뮤트 해제 + 볼륨 복원 (사용자가 뮤트한 상태면 유지)
 document.addEventListener('pointerdown', () => {
   if (!wasAutoMuted || !ytPlayer) return;
+  wasAutoMuted = false;
+  if (state.isMuted) return;
   try {
     ytPlayer.unMute();
-    if (volumeBeforeMute != null) ytPlayer.setVolume(volumeBeforeMute);
+    ytPlayer.setVolume(state.volume);
   } catch { /* noop */ }
-  wasAutoMuted = false;
 }, { capture: true });
+
+/** 공유 상태의 볼륨/뮤트를 활성 플레이어에 반영 */
+function applyVolumeToPlayer() {
+  if (!ytPlayer || !state.playerReady) return;
+  try {
+    ytPlayer.setVolume(state.volume);
+    if (state.isMuted) ytPlayer.mute();
+    else if (!wasAutoMuted) ytPlayer.unMute();
+  } catch { /* noop */ }
+}
 
 /**
  * videoId가 바뀔 때만 호출: 이전 플레이어 정지·파괴 → 새 iframe → (옵션) 자동재생.
@@ -233,6 +255,8 @@ async function rebuildPlayer(videoId, autoplay) {
   try {
     const YT = await loadYouTubeAPI();
     if (ytPlayer) {
+      state.playerReady = false;
+      stopProgressTicker();
       try { ytPlayer.stopVideo(); } catch { /* noop */ }
       try { ytPlayer.destroy(); } catch { /* noop */ }
       ytPlayer = null;
@@ -243,15 +267,26 @@ async function rebuildPlayer(videoId, autoplay) {
     const iframe = buildYouTubeIframe(videoId, autoplay);
     videoBox.insertBefore(iframe, document.getElementById('bt-fallback'));
     currentVideoId = videoId;
+    state.currentTime = 0;
+    state.duration = 0;
 
     ytPlayer = await new Promise((resolve) => {
       const p = new YT.Player(iframe, {
         events: {
-          onReady: () => resolve(p),
+          onReady: () => {
+            state.playerReady = true;
+            try { p.setVolume(state.volume); if (state.isMuted) p.mute(); } catch { /* noop */ }
+            resolve(p);
+          },
           onStateChange: (e) => {
             const YTPS = window.YT.PlayerState;
             if (e.data === YTPS.PLAYING) { setPlaying(true); hideEmbedFallback(); }
-            else if (e.data === YTPS.PAUSED || e.data === YTPS.ENDED) setPlaying(false);
+            else if (e.data === YTPS.PAUSED) setPlaying(false);
+            else if (e.data === YTPS.ENDED) {
+              // 자동 다음곡 — 마지막 트랙이면 첫 트랙으로 순환 (§5)
+              setPlaying(false);
+              stepTrack(1);
+            }
           },
           onError: () => {
             setPlaying(false);
@@ -260,6 +295,7 @@ async function rebuildPlayer(videoId, autoplay) {
         },
       });
     });
+    startProgressTicker();
     if (autoplay) playWithAutoplayFallback(ytPlayer);
   } finally {
     building = false;
@@ -271,6 +307,103 @@ async function rebuildPlayer(videoId, autoplay) {
   }
 }
 
+// ═══ 진행 상태 — Figma UI에 진행바 요소가 없어 시각화는 duration 라벨만.
+// 시킹은 seekTo(초)로 제공 (진행바가 디자인에 추가되면 여기 연결).
+
+let progressTimer = null;
+
+function formatTime(sec) {
+  const s = Math.max(0, Math.round(sec));
+  return `${Math.floor(s / 60)}:${String(s % 60).padStart(2, '0')}`;
+}
+
+function renderProgress() {
+  if (!(state.duration > 0)) return;
+  const label = formatTime(state.duration);
+  const mini = document.getElementById('bt-mini-dur');
+  if (mini && mini.textContent !== label) mini.textContent = label;
+  const row = document.querySelector(`#bt-list .bt-row[data-id="${CSS.escape(state.selectedTrackId ?? '')}"] .bt-dur`);
+  if (row && row.textContent !== label) row.textContent = label;
+}
+
+function startProgressTicker() {
+  if (progressTimer) return;
+  progressTimer = setInterval(() => {
+    if (!ytPlayer || !state.playerReady) return;
+    try {
+      state.currentTime = ytPlayer.getCurrentTime() || 0;
+      state.duration = ytPlayer.getDuration() || 0;
+    } catch { return; }
+    renderProgress();
+  }, 250);
+}
+
+function stopProgressTicker() {
+  if (progressTimer) { clearInterval(progressTimer); progressTimer = null; }
+}
+
+/** 재생/일시정지와 무관하게 동작. 끝 직전으로 클램프해 의도치 않은 ENDED 방지. */
+function seekTo(sec) {
+  if (!ytPlayer || !state.playerReady) return;
+  const d = state.duration;
+  const t = Math.max(0, d > 0 ? Math.min(sec, d - 0.3) : sec);
+  try {
+    ytPlayer.seekTo(t, true);
+    state.currentTime = t;
+  } catch { /* noop */ }
+}
+
+// ═══ 볼륨 슬라이더 — Figma 72:174 (fill/rest flex 비율 + 16px 핸들) ═══════════
+// 라벨(mute~party!)은 시각 눈금일 뿐, 값은 0–100 연속.
+
+function setVolume(v) {
+  const vol = Math.round(Math.max(0, Math.min(100, v)));
+  state.volume = vol;
+  state.isMuted = vol === 0;          // 0 = 뮤트, 올리면 자동 언뮤트
+  if (vol > 0) wasAutoMuted = false;  // 사용자 볼륨 조작 = 자동뮤트 복원 불필요
+  applyVolumeToPlayer();
+  renderVolume();
+}
+
+function renderVolume() {
+  const win = document.getElementById('bt-win');
+  const fill = win.querySelector('.bt-vol-fill');
+  const rest = win.querySelector('.bt-vol-rest');
+  const handle = win.querySelector('.bt-vol-handle');
+  if (!fill) return;
+  const ratio = state.volume / 100;
+  fill.style.flexGrow = ratio;
+  rest.style.flexGrow = 1 - ratio;
+  // 기본값(50) = Figma 정적 좌표 112px (트랙 240px 기준)와 동일
+  handle.style.left = `calc(17px + ${ratio} * (100% - 50px))`;
+}
+
+function initVolumeSlider() {
+  const track = document.querySelector('#bt-win .bt-vol-track');
+  if (!track) return;
+  let dragging = false, pid = null;
+  const volFromEvent = (e) => {
+    const r = track.getBoundingClientRect();
+    const inner = r.width - 40;                    // 좌우 패딩 20px
+    if (inner <= 0) return state.volume;
+    return ((e.clientX - r.left - 20) / inner) * 100;
+  };
+  track.addEventListener('pointerdown', (e) => {
+    dragging = true;
+    pid = e.pointerId;
+    track.setPointerCapture(pid);
+    setVolume(volFromEvent(e));
+    e.preventDefault();
+  });
+  track.addEventListener('pointermove', (e) => {
+    if (!dragging || e.pointerId !== pid) return;
+    setVolume(volFromEvent(e));
+  });
+  const end = (e) => { if (e.pointerId === pid) dragging = false; };
+  track.addEventListener('pointerup', end);
+  track.addEventListener('pointercancel', end);
+}
+
 // ═══ 임베드 불가 폴백 ══════════════════════════════════════════════════════
 
 function showEmbedFallback() {
@@ -280,11 +413,13 @@ function showEmbedFallback() {
   if (!box || !link || !t) return;
   link.href = t.youtube_url;
   box.hidden = false;
+  state.embedError = true;
 }
 
 function hideEmbedFallback() {
   const box = document.getElementById('bt-fallback');
   if (box) box.hidden = true;
+  state.embedError = false;
 }
 
 // ═══ 재생 상태 표시 (메인·미니 동기화) ═════════════════════════════════════
@@ -315,7 +450,10 @@ async function togglePlay() {
   else playWithAutoplayFallback(ytPlayer);
 }
 
-/** 트랙 선택 → 자동재생. 같은 videoId면 iframe 재생성 없음 (§6). */
+/**
+ * 트랙 선택 → 자동재생. 진행 상태/임베드 에러는 리셋, 볼륨·뮤트·미니 상태는 유지 (§6).
+ * 플레이어가 살아 있으면 loadVideoById로 videoId만 교체 — iframe 재생성 없음.
+ */
 function selectTrack(id, { autoplay = true } = {}) {
   const track = tracks.find((t) => t.id === id);
   if (!track) return;
@@ -325,10 +463,23 @@ function selectTrack(id, { autoplay = true } = {}) {
   refreshThemeFor(track);     // 썸네일 파생 색 최신화 (iframe 미접촉)
 
   if (!track.youtube_video_id) return;
-  if (!ytPlayer && document.getElementById('bt-win').hidden) return;  // 창 열기 전엔 재생 안 함
+  const opened = !document.getElementById('bt-win').hidden || state.isMinimized;
+  if (!ytPlayer && !opened) return;   // 창 열기 전엔 재생 안 함
 
   if (track.youtube_video_id !== currentVideoId) {
-    rebuildPlayer(track.youtube_video_id, autoplay);
+    state.currentTime = 0;
+    state.duration = 0;
+    if (ytPlayer && state.playerReady) {
+      currentVideoId = track.youtube_video_id;
+      try {
+        if (autoplay) ytPlayer.loadVideoById(track.youtube_video_id);
+        else ytPlayer.cueVideoById(track.youtube_video_id);
+      } catch {
+        rebuildPlayer(track.youtube_video_id, autoplay);
+      }
+    } else {
+      rebuildPlayer(track.youtube_video_id, autoplay);
+    }
   } else if (autoplay && !state.isPlaying && ytPlayer) {
     playWithAutoplayFallback(ytPlayer);
   }
@@ -420,7 +571,7 @@ function windowHTML() {
 
   <div class="bt-mini" id="bt-mini" hidden>
     <div class="bt-header">
-      <button class="bt-hbtn" aria-label="maximize"><img src="${ICONS}/icon-maximize.svg" alt=""></button>
+      <button class="bt-hbtn" id="bt-restore" aria-label="maximize"><img src="${ICONS}/icon-maximize.svg" alt=""></button>
       <span class="bt-title">Blair-tunes</span>
       <button class="bt-hbtn" id="bt-mini-close" aria-label="close"><img src="${ICONS}/icon-close.svg" alt=""></button>
     </div>
@@ -555,15 +706,29 @@ async function initBlairTunes() {
 
   makeDraggable(document.getElementById('bt-win'));
   makeDraggable(document.getElementById('bt-mini'));
+  initVolumeSlider();
+  renderVolume();
+
+  // 미니마이즈/복원 — iframe은 #bt-win 안에 그대로 (display:none이어도 오디오 유지).
+  // iframe을 옮기면 리로드되어 재생이 끊기므로 절대 재부착하지 않는다 (§2).
+  const setMinimized = (min) => {
+    state.isMinimized = min;
+    document.getElementById('bt-win').hidden = min;
+    document.getElementById('bt-mini').hidden = !min;
+  };
+  document.getElementById('bt-minimize').addEventListener('click', () => setMinimized(true));
+  document.getElementById('bt-restore').addEventListener('click', () => setMinimized(false));
 
   document.getElementById('bt-close').addEventListener('click', () => {
     document.getElementById('bt-win').hidden = true;
+    state.isMinimized = false;
     if (ytPlayer) { try { ytPlayer.pauseVideo(); } catch { /* noop */ } }
   });
   document.getElementById('bt-mini-close').addEventListener('click', () => {
     document.getElementById('bt-mini').hidden = true;
+    state.isMinimized = false;
+    if (ytPlayer) { try { ytPlayer.pauseVideo(); } catch { /* noop */ } }
   });
-  // 미니마이즈 전환 인터랙션은 아직 미구현 (버튼 비주얼만)
 
   const { tracks: fetched, error } = await fetchTracks();
   if (error || !fetched.length) {
@@ -585,10 +750,11 @@ async function initBlairTunes() {
   if (icon) {
     icon.addEventListener('click', () => {
       const win = document.getElementById('bt-win');
-      const wasHidden = win.hidden;
+      const wasClosed = win.hidden && !state.isMinimized;
+      if (state.isMinimized) setMinimized(false);   // 미니 → 풀 플레이어 (재생 유지)
       win.hidden = false;
       const t = tracks[currentIndexOf()];
-      if (wasHidden && t?.youtube_video_id && t.youtube_video_id !== currentVideoId) {
+      if (wasClosed && t?.youtube_video_id && t.youtube_video_id !== currentVideoId) {
         rebuildPlayer(t.youtube_video_id, true).catch((e) => console.warn('[blair-tunes] YT init:', e));
       }
     });
@@ -603,6 +769,10 @@ window.__blairTunes = {
   showEmbedFallback,
   hideEmbedFallback,
   selectTrack: (id) => selectTrack(id),
+  setVolume,
+  seekTo,
+  getPlayerState: () => { try { return ytPlayer?.getPlayerState() ?? null; } catch { return null; } },
+  getPlayerVolume: () => { try { return ytPlayer?.getVolume() ?? null; } catch { return null; } },
   getIframeSrc: () => document.querySelector('.bt-video iframe')?.src ?? null,
   getTheme: () => {
     const el = document.getElementById('bt-win');

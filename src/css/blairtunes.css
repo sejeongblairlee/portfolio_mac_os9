@@ -164,11 +164,12 @@
 }
 .bt-btn:active { filter: brightness(0.85); }
 
-/* 볼륨 (240px) — 정적 UI, 로직 없음 */
+/* 볼륨 (240px) — 0–100 드래그/클릭, fill·rest flexGrow와 핸들 left는 JS가 설정 */
 .bt-volume { width: 240px; display: flex; flex-direction: column; gap: 6px; flex-shrink: 0; }
 .bt-vol-track {
   height: 16px; padding: 0 20px; display: flex; gap: 10px; align-items: center;
   position: relative; overflow: hidden; width: 100%;
+  cursor: pointer; touch-action: none; user-select: none; -webkit-user-select: none;
 }
 .bt-vol-fill {
   flex: 1; min-width: 1px; height: 4px;

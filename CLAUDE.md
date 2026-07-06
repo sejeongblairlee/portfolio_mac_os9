@@ -18,7 +18,10 @@ https://www.figma.com/design/nOOniYoXTbhuQ0FxO4ifAV/Untitled
     (`src/css/blairtunes.css` + `src/js/blairtunes.js`, Figma 6:748 데스크탑 /
     115:2964 모바일 / 107:2745 미니마이즈드. 데이터는 Supabase `tracks` —
     스키마/파이프라인은 `src/lib/*.ts`, 브라우저 포트는 blairtunes.js에 인라인.
-    아직 미구현: iframe 재생/진행바/볼륨 로직/미니 전환/드래그)
+    재생/볼륨/미니마이즈/자동다음곡/드래그 구현 완료. YT 플레이어 인스턴스는
+    항상 1개(#bt-win 안) — 미니마이즈는 창만 숨기고 iframe을 옮기지 않는다
+    (재부착=리로드). 트랙 전환은 loadVideoById. Figma에 진행바 UI가 없어서
+    시킹은 seekTo() 로직만 존재, 시각화는 리스트/미니 duration 라벨 갱신뿐)
 - `blair-os.html` — 레거시 데스크탑 (구 index.html, 참조용 보존. 플로우에서 미사용)
 - `design.md` — **반응형 팝업 레이아웃 규칙의 source of truth** (브레이크포인트 768px,
   세이프 에어리어 20px, CU-SeeMe 320px max / 비디오 3:2, 스태거 배치, 레트로 섀도).
