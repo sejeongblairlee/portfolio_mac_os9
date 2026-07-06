@@ -13,8 +13,10 @@
  * 재생: YouTube IFrame API — 플레이어 인스턴스는 항상 1개(#bt-win 안).
  * 트랙 전환은 loadVideoById (iframe 재생성 없음 → 볼륨/뮤트 유지),
  * 색/큐레이션 갱신은 iframe을 건드리지 않는다.
- * 미니마이즈는 #bt-win을 display:none으로 숨길 뿐 iframe을 옮기지 않는다
- * (재부착 = 리로드 = 재생 끊김). 영상 종료 시 다음 트랙 자동재생(순환).
+ * iframe은 화면 고정 도크(#bt-yt-dock)에 살고 DOM에서 절대 이동하지 않는다
+ * (재부착 = 리로드 = 재생 끊김). 도크는 rAF로 활성 창(메인/미니)의
+ * .bt-video 위에 위치 동기화 — 미니마이즈 중에도 영상이 보인다.
+ * 영상 종료 시 다음 트랙 자동재생(순환).
  * 자동재생 차단 시: 뮤트로 재생 시작 → 첫 사용자 인터랙션에서 볼륨 복원.
  * Figma에 진행바 UI가 없어 시킹은 seekTo() 로직만 제공, 시각화는 duration 라벨.
  */
@@ -245,6 +247,44 @@ function applyVolumeToPlayer() {
   } catch { /* noop */ }
 }
 
+// ── 비디오 도크: 단일 iframe이 사는 position:fixed 레이어 ──────────────────
+// 메인/미니 어느 창이 보이든 그 창의 .bt-video 사각형 위에 rAF로 얹힌다.
+// iframe을 창 사이로 reparent하면 리로드되어 재생이 끊기므로 이 방식이 필수.
+
+let dock = null;
+
+function ensureDock() {
+  if (dock) return dock;
+  dock = document.createElement('div');
+  dock.id = 'bt-yt-dock';
+  dock.style.visibility = 'hidden';
+  document.body.appendChild(dock);
+  requestAnimationFrame(syncDock);
+  return dock;
+}
+
+/** 미니 오버레이(스크림+컨트롤)는 도크보다 위에 있어야 클릭 가능 — 도크 안팎 이동 */
+function placeMiniOverlay(inDock) {
+  const overlay = document.querySelector('.bt-mini-overlay');
+  if (!overlay) return;
+  const target = inDock ? dock : document.querySelector('#bt-mini .bt-video');
+  if (target && overlay.parentElement !== target) target.appendChild(overlay);
+}
+
+function syncDock() {
+  requestAnimationFrame(syncDock);   // 드래그/리사이즈/전환을 페인트 전에 반영
+  const host = document.getElementById(state.isMinimized ? 'bt-mini' : 'bt-win');
+  const show = !!ytPlayer && !!host && !host.hidden && !state.embedError;
+  dock.style.visibility = show ? 'visible' : 'hidden';   // display 전환 없음 — 재생 유지
+  placeMiniOverlay(show && state.isMinimized);
+  if (!show) return;
+  const r = host.querySelector('.bt-video').getBoundingClientRect();
+  dock.style.left = (r.left + 1) + 'px';    // +1/-2 = .bt-video 보더 안쪽
+  dock.style.top = (r.top + 1) + 'px';
+  dock.style.width = (r.width - 2) + 'px';
+  dock.style.height = (r.height - 2) + 'px';
+}
+
 /**
  * videoId가 바뀔 때만 호출: 이전 플레이어 정지·파괴 → 새 iframe → (옵션) 자동재생.
  * 빠른 연속 클릭은 마지막 요청만 반영.
@@ -263,9 +303,9 @@ async function rebuildPlayer(videoId, autoplay) {
     }
     document.querySelectorAll('#bt-yt').forEach((el) => el.remove());
 
-    const videoBox = document.querySelector('#bt-win .bt-video');
     const iframe = buildYouTubeIframe(videoId, autoplay);
-    videoBox.insertBefore(iframe, document.getElementById('bt-fallback'));
+    const d = ensureDock();
+    d.insertBefore(iframe, d.firstChild);   // 오버레이가 도크에 있으면 그 아래로
     currentVideoId = videoId;
     state.currentTime = 0;
     state.duration = 0;
@@ -545,7 +585,6 @@ function windowHTML() {
       <div class="bt-col-center">
         <div class="bt-video">
           <img class="bt-thumb" id="bt-thumb" src="" alt="">
-          <div id="bt-yt"></div>
           <div class="bt-embed-fallback" id="bt-fallback" hidden>
             <p>This video can&rsquo;t be played here.</p>
             <a id="bt-fallback-link" href="#" target="_blank" rel="noopener">Watch on YouTube</a>
@@ -709,8 +748,7 @@ async function initBlairTunes() {
   initVolumeSlider();
   renderVolume();
 
-  // 미니마이즈/복원 — iframe은 #bt-win 안에 그대로 (display:none이어도 오디오 유지).
-  // iframe을 옮기면 리로드되어 재생이 끊기므로 절대 재부착하지 않는다 (§2).
+  // 미니마이즈/복원 — 창만 전환. 도크(syncDock)가 다음 프레임에 영상을 미니 위로 옮겨 얹는다.
   const setMinimized = (min) => {
     state.isMinimized = min;
     document.getElementById('bt-win').hidden = min;
@@ -773,7 +811,8 @@ window.__blairTunes = {
   seekTo,
   getPlayerState: () => { try { return ytPlayer?.getPlayerState() ?? null; } catch { return null; } },
   getPlayerVolume: () => { try { return ytPlayer?.getVolume() ?? null; } catch { return null; } },
-  getIframeSrc: () => document.querySelector('.bt-video iframe')?.src ?? null,
+  getIframeSrc: () => document.querySelector('#bt-yt-dock iframe')?.src ?? null,
+  getDockRect: () => dock ? { visibility: dock.style.visibility, ...dock.getBoundingClientRect().toJSON() } : null,
   getTheme: () => {
     const el = document.getElementById('bt-win');
     return {

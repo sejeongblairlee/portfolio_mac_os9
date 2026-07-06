@@ -121,7 +121,16 @@
   position: absolute; inset: 0; width: 100%; height: 100%;
   object-fit: cover;
 }
-.bt-video iframe {
+/* 비디오 도크 — 단일 YT iframe이 사는 고정 레이어. 플레이어 창(500)·미니(510) 위,
+   메뉴바(9999) 아래. 위치/표시는 JS(syncDock)가 활성 창의 .bt-video에 rAF 동기화. */
+#bt-yt-dock {
+  position: fixed;
+  z-index: 511;
+  overflow: hidden;
+  border-radius: 3px;   /* .bt-video 4px 보더 안쪽 라운드 */
+  background: #000;
+}
+#bt-yt-dock iframe {
   position: absolute; inset: 0; width: 100%; height: 100%; border: 0;
 }
 
