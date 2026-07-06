@@ -772,6 +772,7 @@ function makeResizable(win) {
       pid = e.pointerId;
       h.setPointerCapture(pid);
       setDockInteractive(false);   // 크로스 오리진 도크가 이벤트를 삼키는 것 방지
+      win.classList.add('resizing');   // 타이거 활동 신호(tiger-run.js)가 읽는 마커
       sx = e.clientX; w0 = r.width; left0 = r.left;
       e.preventDefault();
       e.stopPropagation();   // 타이틀바 드래그와 상호 배타
@@ -789,7 +790,12 @@ function makeResizable(win) {
       if (side === 'w') win.style.left = (left0 + w0 - w) + 'px';   // 우변 앵커
     });
 
-    const end = (e) => { if (e.pointerId === pid) { pid = null; setDockInteractive(true); } };
+    const end = (e) => {
+      if (e.pointerId !== pid) return;
+      pid = null;
+      setDockInteractive(true);
+      win.classList.remove('resizing');
+    };
     h.addEventListener('pointerup', end);
     h.addEventListener('pointercancel', end);
   });
@@ -813,6 +819,7 @@ async function initBlairTunes() {
     state.isMinimized = min;
     document.getElementById('bt-win').hidden = min;
     document.getElementById('bt-mini').hidden = !min;
+    window.__tigerRun?.reportWindowAction();   // 타이거 활동 펄스 (옵셔널 — 없어도 무해)
   };
   document.getElementById('bt-minimize').addEventListener('click', () => setMinimized(true));
   document.getElementById('bt-restore').addEventListener('click', () => setMinimized(false));
@@ -851,6 +858,7 @@ async function initBlairTunes() {
       const wasClosed = win.hidden && !state.isMinimized;
       if (state.isMinimized) setMinimized(false);   // 미니 → 풀 플레이어 (재생 유지)
       win.hidden = false;
+      window.__tigerRun?.reportWindowAction();
       const t = tracks[currentIndexOf()];
       if (wasClosed && t?.youtube_video_id && t.youtube_video_id !== currentVideoId) {
         rebuildPlayer(t.youtube_video_id, true).catch((e) => console.warn('[blair-tunes] YT init:', e));

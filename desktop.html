@@ -562,6 +562,7 @@ document.getElementById('icon-seeme').addEventListener('click', () => {
   });
   layoutWindows();   // 드래그 안 한 창은 초기 위치로, 드래그한 창은 클램프만
   focusWin(document.getElementById('win-local'));
+  window.__tigerRun?.reportWindowAction();   // 타이거 활동 펄스 (옵셔널 — 없어도 무해)
   // 카메라가 아직 연결 전(권한 거부 후 재시도 등)이면 다시 요청
   if (!camStream) initCamera();
 });
