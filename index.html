@@ -209,6 +209,7 @@ new THREE.GLTFLoader().load('src/models/macintosh-classic-body.glb', (gltf) => {
 
   // GLB에 내장된 원본 재질/텍스처(레인보우 애플 로고, "Macintosh Classic" 라벨,
   // 스크린 텍스처 포함)를 그대로 사용 — 머티리얼 오버라이드도, 숨김 처리도 하지 않는다.
+  const maxAniso = renderer.capabilities.getMaxAnisotropy();
   model.traverse((child) => {
     if (!child.isMesh) return;
     // 이 GLB는 NORMAL 속성이 아예 없어(export 파이프라인 이슈) 조명을 전혀 못 받아
@@ -216,6 +217,53 @@ new THREE.GLTFLoader().load('src/models/macintosh-classic-body.glb', (gltf) => {
     if (!child.geometry.attributes.normal) child.geometry.computeVertexNormals();
     child.castShadow = true;
     child.receiveShadow = true;
+
+    // UV 아일랜드 정규화 — 이 GLB의 "Emissive"(스크린) 메시는 U가 [2.10, 2.89]처럼
+    // 정수만큼 밀려 저장돼 있다(SketchUp 익스포트 특성으로 보임). 실측 확인:
+    // 원래 기본 샘플러(REPEAT)에서는 이 오프셋이 우연히 랩어라운드로 상쇄돼
+    // 화면이 맞게 보였지만, ClampToEdge에서는 전부 가장자리 1픽셀로 뭉개진다.
+    // "샘플링이 UV 아일랜드 밖으로 나가지 않게" 하려면 오프셋 자체를 제거해야
+    // 하므로, 정수부만 빼서 각 축을 [0,1] 근방으로 되돌린다(비율/모양은 불변 —
+    // 라벨/로고 재생성이 전혀 아니고 순수 좌표 정규화).
+    if (child.geometry.attributes.uv) {
+      const uv = child.geometry.attributes.uv;
+      let uMin = Infinity, vMin = Infinity;
+      for (let i = 0; i < uv.count; i++) {
+        uMin = Math.min(uMin, uv.getX(i));
+        vMin = Math.min(vMin, uv.getY(i));
+      }
+      const uShift = Math.floor(uMin), vShift = Math.floor(vMin);
+      if (uShift !== 0 || vShift !== 0) {
+        for (let i = 0; i < uv.count; i++) {
+          uv.setXY(i, uv.getX(i) - uShift, uv.getY(i) - vShift);
+        }
+        uv.needsUpdate = true;
+      }
+    }
+
+    // 텍스처 샘플링 보정 — "Macintosh Classic" 라벨 뒤에 검은/회색 사각 아티팩트가
+    // 보이던 진짜 원인: 이 재질은 glTF alphaMode 기본값(OPAQUE)이라 material.transparent
+    // 가 false였다. 브라우저의 PNG 디코더가 완전 투명(alpha=0) 픽셀의 RGB를 (0,0,0)으로
+    // 정리해버리는데(원본 PNG 자체엔 흰색으로 저장돼 있음 — 파일 자체는 정상),
+    // 알파를 무시하는 오파크 렌더링이라 그 "안 보여야 할" 검정이 그대로 그려져
+    // 조명을 받아 회색 사각으로 나타났다. transparent:true로 알파 블렌딩을 켜면
+    // alpha=0 영역은 밑에 있는 색과 100% 블렌딩되어 RGB 값 자체가 무의미해지므로
+    // (0,0,0이든 255,255,255든) 더 이상 드러나지 않는다 — 라벨/로고를 다시 그리는
+    // 게 아니라 GLB 원본 텍스처의 알파 채널을 있는 그대로 존중하는 것.
+    const mats = Array.isArray(child.material) ? child.material : [child.material];
+    mats.forEach((mat) => {
+      if (!mat || !mat.map) return;
+      const tex = mat.map;
+      tex.wrapS = THREE.ClampToEdgeWrapping;
+      tex.wrapT = THREE.ClampToEdgeWrapping;
+      tex.flipY = false;               // glTF 텍스처는 flipY 없이 저장됨
+      tex.encoding = THREE.sRGBEncoding; // (r128 API명 — r152+의 colorSpace/SRGBColorSpace에 해당)
+      if (maxAniso) tex.anisotropy = maxAniso;
+      tex.needsUpdate = true;
+      mat.transparent = true;
+      mat.alphaTest = 0.02;   // 완전透명 경계의 미세한 블렌딩 잔상 방지
+      mat.needsUpdate = true;
+    });
   });
 
   // 정규화: 회전을 먼저 정하고, 그 자세 기준으로 바운딩 박스를 다시 재서 중심 이동+스케일
