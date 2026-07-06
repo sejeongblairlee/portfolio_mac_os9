@@ -159,7 +159,7 @@ body {
 <!-- ▐▌ MENU BAR ▐▌ -->
 <nav id="menu-bar">
   <div class="mb-lead">
-    <img class="mb-tiger" src="src/images/desktop/menubar-tiger.svg" alt="tiger">
+    <div class="mb-tiger" id="mb-tiger" role="img" aria-label="tiger"></div>
     <span class="mb-item">About ME</span>
     <span class="mb-item">Works</span>
     <span class="mb-item">Contact</span>
@@ -566,6 +566,7 @@ document.getElementById('icon-seeme').addEventListener('click', () => {
   if (!camStream) initCamera();
 });
 </script>
+<script src="src/js/tiger-run.js" defer></script>
 <script src="src/js/blairtunes.js" defer></script>
 </body>
 </html>
