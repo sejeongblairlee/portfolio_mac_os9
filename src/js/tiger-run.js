@@ -9,6 +9,10 @@
  * goToAndStop(0). 속도: 재생/정지 여부와 별개로 activitySpeed를 계속 갱신해
  * anim.setSpeed()만 호출 — JSON 리로드도 리마운트도 하지 않는다.
  *
+ * 속도 곡선: raw 합산 점수(RAW_BASE + 신호별 기여) × TIGER_SPEED_MULTIPLIER(0.7),
+ * 최종적으로 [0.35, 1.6]로 클램프 — 전체적으로 차분하게 움직이도록 다운스케일.
+ * 활동 감지 자체(임계값/스무딩/타이밍)는 바뀌지 않았고, 여기서 바뀐 건 속도 곡선뿐.
+ *
  * 신호 소스:
  *  - 포인터 속도(px/ms, 지수이동평균으로 완충) → 구간별 기여도
  *  - Blair-tunes 재생 상태(window.__blairTunes.state.isPlaying, 읽기 전용)
@@ -31,16 +35,22 @@ const WINDOW_ACTION_MS = 500;   // 창 열기/최소화/복원 펄스 지속시�
 const VELOCITY_SMOOTH = 0.25;   // lerp 계수 — 매 프레임 떨림 완충
 const DOM_SIGNAL_EVERY = 6;     // 창 개수/드래그/리사이즈 DOM 조회 주기(프레임) — 매 프레임 조회 방지
 
-const SPEED_MIN = 0.6, SPEED_MAX = 2.4, SPEED_BASE = 0.6;
-const W_PLAYER = 0.45, W_DRAG = 0.6, W_RESIZE = 0.8, W_ACTION = 0.35;
-const W_WINDOW_EACH = 0.12, W_WINDOW_MAX = 0.48;
+// 전체를 차분하게: raw 합산 점수를 낸 뒤 배율을 곱하고 최종 범위로 클램프.
+// (활동 감지 로직·타이밍은 그대로 — 여기서 바뀌는 건 속도 곡선뿐)
+const TIGER_SPEED_MULTIPLIER = 0.7;
+const SPEED_MIN = 0.35, SPEED_MAX = 1.6;   // 배율 적용 "후" 최종 한계
+const RAW_BASE = 0.5;
+const W_PLAYER = 0.3, W_DRAG = 1.1, W_RESIZE = 1.45, W_ACTION = 0.3;
+const W_WINDOW_EACH = 0.04, W_WINDOW_MAX = 0.16;   // 창 개수는 아주 미세하게만 가산
 
+/** 포인터 속도(px/ms) → raw 기여도. 5단계: 매우 느림/느림/보통/빠름/매우 빠름. */
 function pointerSpeedContribution(v) {
-  if (v < 0.05) return 0;
-  if (v < 0.25) return 0.7;
-  if (v < 0.6) return 1.0;
-  if (v < 1.2) return 1.4;
-  return 1.8;
+  if (v < 0.05) return 0;      // 무활동
+  if (v < 0.15) return 0.1;    // 매우 느림 → 최종 speed ~0.42
+  if (v < 0.35) return 0.35;   // 느림 → ~0.60
+  if (v < 0.7) return 0.7;     // 보통 → ~0.84
+  if (v < 1.3) return 1.15;    // 빠름 → ~1.16
+  return 1.6;                  // 매우 빠름 → ~1.47
 }
 
 let lottiePromise = null;
@@ -113,7 +123,7 @@ async function initTigerRun(container) {
 
   // ── 재생/속도 적용 (중복 호출 방지 — 값이 바뀔 때만 Lottie API 호출) ──
   let running = false;
-  let currentSpeed = SPEED_BASE;
+  let currentSpeed = SPEED_MIN;
 
   function setRunning(next) {
     if (next === running) return;
@@ -152,14 +162,15 @@ async function initTigerRun(container) {
 
     if (!shouldRun) { setRunning(false); return; }
 
-    const speed = Math.min(SPEED_MAX, Math.max(SPEED_MIN,
-      SPEED_BASE +
+    const rawSpeed = RAW_BASE +
       pointerSpeedContribution(smoothedVelocity) +
       (playerPlaying ? W_PLAYER : 0) +
       Math.min(W_WINDOW_MAX, signals.openCount * W_WINDOW_EACH) +
       (signals.dragging ? W_DRAG : 0) +
       (signals.resizing ? W_RESIZE : 0) +
-      (recentAction ? W_ACTION : 0)));
+      (recentAction ? W_ACTION : 0);
+
+    const speed = Math.min(SPEED_MAX, Math.max(SPEED_MIN, rawSpeed * TIGER_SPEED_MULTIPLIER));
 
     setRunning(true);
     setSpeed(speed);
