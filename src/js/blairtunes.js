@@ -476,6 +476,9 @@ function setPlaying(playing) {
     btn.innerHTML = playing ? PAUSE_SVG : PLAY_IMG;
     btn.setAttribute('aria-label', playing ? 'pause' : 'play');
   });
+  // 이퀄라이저 동기화: 재생 중일 때만 애니메이션 (CSS animation-play-state)
+  ['bt-win', 'bt-mini'].forEach((id) =>
+    document.getElementById(id)?.classList.toggle('bt-playing', playing));
 }
 
 // ═══ 컨트롤 ════════════════════════════════════════════════════════════════
@@ -536,13 +539,10 @@ function stepTrack(delta) {
 const esc = (s) => String(s ?? '').replace(/[&<>"']/g, (c) =>
   ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
 
-function formatPerformanceLabel(track) {
-  const loc = (track.performance_location ?? '').trim();
-  const year = track.performance_year;
-  if (!loc && !year) return '';
-  if (!loc) return `Live Video, ${year}`;
-  const base = /^live\s+video/i.test(loc) ? loc : `Live Video from ${loc}`;
-  return year ? `${base}, ${year}` : base;
+/** 자막 = performance_location DB 값 그대로. 접두사/연도 이어붙이기 금지 —
+    "Live from Paris, 2002", "Tiny Desk Concert" 같은 완성 문자열을 그대로 저장·표시. */
+function subtitleOf(track) {
+  return (track.performance_location ?? '').trim();
 }
 
 function controlsHTML() {
@@ -628,7 +628,7 @@ function windowHTML() {
           <p id="bt-mini-title"></p>
           <p id="bt-mini-artist"></p>
         </div>
-        <img class="bt-np" src="${ICONS}/icon-nowplaying.svg" alt="" style="display:block">
+        <span class="bt-np" aria-hidden="true"><i></i><i></i><i></i></span>
         <span class="bt-dur" id="bt-mini-dur"></span>
       </div>
     </div>
@@ -657,7 +657,7 @@ function renderCurrent() {
   document.getElementById('bt-cur-title').textContent = t.title;
   document.getElementById('bt-cur-artist').textContent = `/${t.artist}`;
   const live = document.getElementById('bt-cur-live');
-  const label = formatPerformanceLabel(t);
+  const label = subtitleOf(t);
   live.textContent = label;
   live.style.display = label ? '' : 'none';
 
@@ -684,7 +684,7 @@ function renderList() {
         <p>${esc(t.title)}</p>
         <p>${esc(t.artist)}</p>
       </div>
-      <img class="bt-np" src="${ICONS}/icon-nowplaying.svg" alt="">
+      <span class="bt-np" aria-hidden="true"><i></i><i></i><i></i></span>
       <span class="bt-dur">${esc(t.duration_label ?? 'mm:hh')}</span>
     </button>`).join('');
   list.querySelectorAll('.bt-row').forEach((row) => {
