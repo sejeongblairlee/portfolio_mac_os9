@@ -38,6 +38,7 @@ body {
 
 <script src="data/mac3d-assets.js"></script>
 <script src="https://cdn.jsdelivr.net/npm/three@0.128.0/build/three.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/loaders/GLTFLoader.js"></script>
 <script>
 (function () {
 'use strict';
@@ -183,10 +184,56 @@ const mac = new THREE.Group();
 rig.add(mac);
 
 const BODY_W = 3.5, BODY_H = 4.4, BODY_D = 3.3, BODY_BEVEL = 0.05;
-const body = roundedBoxMesh(BODY_W, BODY_H, BODY_D, 0.22, whiteMat, BODY_BEVEL);
 const BODY_CY = BODY_H / 2 + 0.02;
-body.position.set(0, BODY_CY, 0);
-mac.add(body);
+
+// 생성 지오메트리 본체 → GLB 스캔 모델로 교체 (screen/recess/logo 등 전면 디테일은
+// FRONT_Z/BODY_CY 기준 그대로 유지 — 본체 쉘만 교체).
+const macBody = new THREE.Group();
+macBody.position.set(0, BODY_CY, 0);
+mac.add(macBody);
+
+new THREE.GLTFLoader().load('public/models/macintosh-classic-body.glb', (gltf) => {
+  const model = gltf.scene;
+
+  // 클린 매트 화이트로 통일 — 텍스처가 있는 메시(스캔 디칼/로고류)는 깨져 보일
+  // 위험이 있어 이번 1차 패스에서는 숨김, 단색 셸 메시만 매트 화이트 적용
+  model.traverse((child) => {
+    if (!child.isMesh) return;
+    const hasTexture = !!(child.material && child.material.map);
+    if (hasTexture) { child.visible = false; return; }
+    // 이 GLB는 NORMAL 속성이 아예 없어(export 파이프라인 이슈) MeshStandardMaterial이
+    // 조명을 못 받아 새까맣게 나옴 — 지오메트리에서 직접 계산해 채워준다.
+    if (!child.geometry.attributes.normal) child.geometry.computeVertexNormals();
+    child.material = whiteMat;
+    child.castShadow = true;
+    child.receiveShadow = true;
+  });
+
+  // 정규화: 회전을 먼저 정하고, 그 자세 기준으로 바운딩 박스를 다시 재서 중심 이동+스케일
+  // (회전을 나중에 적용하면 이미 계산된 center가 안 맞아 시각 중심이 틀어짐)
+  function normalizeAndPlace(rotY) {
+    model.rotation.set(0, rotY, 0);
+    model.position.set(0, 0, 0);
+    model.scale.set(1, 1, 1);
+    model.updateMatrixWorld(true);
+
+    const box = new THREE.Box3().setFromObject(model);
+    const size = new THREE.Vector3();
+    box.getSize(size);
+    const center = new THREE.Vector3();
+    box.getCenter(center);
+
+    const scaleFactor = Math.min(BODY_W / size.x, BODY_H / size.y, BODY_D / size.z);
+    model.scale.setScalar(scaleFactor);
+    // position은 부모 공간(스케일 적용 후) 기준 평행이동이라 center에도 scaleFactor를 곱해야 한다
+    model.position.copy(center).multiplyScalar(-scaleFactor);
+    model.updateMatrixWorld(true);
+  }
+  // rotY=0 = CRT 전면이 +Z(카메라)를 향함 — 카메라 궤도 렌더로 실측 확인 완료
+  normalizeAndPlace(0);
+
+  macBody.add(model);
+});
 
 const FRONT_Z = BODY_D / 2 + BODY_BEVEL;
 
