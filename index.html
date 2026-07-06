@@ -43,8 +43,14 @@ body {
 (function () {
 'use strict';
 
+// ?debug(=depth) 로 방문 시에만 진단용 다크 씬으로 전환 — 기본 랜딩(라이트 키노트 렌더)은
+// 완전히 그대로. 모델 실루엣/깊이/그림자 확인용, 방문자에게 노출되는 기본 화면이 아님.
+const DEBUG_DEPTH = /[?&]debug(=|&|$)/.test(location.search);
+// 다크 배경에서 코너 텍스트(하드코딩 #000)가 안 보이므로 디버그 모드에서만 흰색으로
+if (DEBUG_DEPTH) document.querySelectorAll('.corner').forEach((el) => { el.style.color = '#fff'; });
+
 // 캔버스 CSS 필터(brightness .94 / contrast 1.12) 통과 후 #FAFAF8이 되도록 사전 보정
-const BG = 0xFCFCFA;
+const BG = DEBUG_DEPTH ? 0x111111 : 0xFCFCFA;
 const DEG = Math.PI / 180;
 
 // ── Renderer / Scene / Camera (고정 카메라 — 드래그 회전 없음) ─────────────
@@ -54,12 +60,18 @@ renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
 renderer.shadowMap.enabled = true;
 renderer.shadowMap.type = THREE.PCFSoftShadowMap;
 renderer.outputEncoding = THREE.sRGBEncoding;
+if (DEBUG_DEPTH) {
+  // 다크 배경에서 화이트 바디가 날아가지(blown out) 않도록 노출을 살짝 낮춤
+  renderer.toneMapping = THREE.ACESFilmicToneMapping;
+  renderer.toneMappingExposure = 0.9;
+}
 
 const scene = new THREE.Scene();
 scene.background = new THREE.Color(BG);
 
 const camera = new THREE.PerspectiveCamera(26, 1, 0.1, 100);
-camera.position.set(0, 5.0, 18.6);
+// 디버그: 살짝 옆에서 봐서 본체 측면 깊이가 드러나도록 — 구도(주제/거리/줌)는 동일, 각도만 미세 조정
+camera.position.set(DEBUG_DEPTH ? 3.4 : 0, 5.0, DEBUG_DEPTH ? 18.0 : 18.6);
 camera.lookAt(0, 1.37, 0);
 
 function onResize() {
@@ -73,10 +85,12 @@ onResize();
 
 // ── Lighting — 밝고 부드러운 키노트 렌더 (좌상단이 살짝 밝음) ──────────────
 // 앰비언트를 낮추고 키 라이트를 올려 면 간 명암 정의(디피니션) 강화
-scene.add(new THREE.HemisphereLight(0xFFFFFF, 0xE2E2E2, 0.70));
+// 디버그 모드: 앰비언트를 더 낮추고 키 라이트를 좌측으로 더 기울여 그림자/깊이가
+// 뚜렷하게 드러나도록(라이트 모드의 "은은한 키노트 룩" 값은 그대로 둠).
+scene.add(new THREE.HemisphereLight(0xFFFFFF, DEBUG_DEPTH ? 0x222222 : 0xE2E2E2, DEBUG_DEPTH ? 0.32 : 0.70));
 
-const keyL = new THREE.DirectionalLight(0xFFFFFF, 0.62);  // 좌상단 키 (거의 머리 위)
-keyL.position.set(-1.2, 18, 10);
+const keyL = new THREE.DirectionalLight(0xFFFFFF, DEBUG_DEPTH ? 0.95 : 0.62);  // 좌상단 키
+keyL.position.set(DEBUG_DEPTH ? -9 : -1.2, DEBUG_DEPTH ? 13 : 18, DEBUG_DEPTH ? 7 : 10);
 keyL.castShadow = true;
 keyL.shadow.mapSize.set(2048, 2048);
 keyL.shadow.camera.near = 1;  keyL.shadow.camera.far = 34;
@@ -94,10 +108,14 @@ const fillF = new THREE.DirectionalLight(0xFFFFFF, 0.12); // 정면 필
 fillF.position.set(0, 3, 12);
 scene.add(fillF);
 
-// 바닥 — Figma 접지 그림자 (키보드·마우스 아래 뚜렷한 소프트 섀도)
+// 바닥 — 기본: Figma 접지 그림자(투명 ShadowMaterial, 배경 위에 그림자만).
+// 디버그: 실제로 보이는 다크 매트 바닥(receiveShadow로 본체/키보드/마우스 접지 그림자가
+// 또렷하게 드러남 — ShadowMaterial은 배경이 이미 어두우면 그림자와 구분이 안 됨).
 const floor = new THREE.Mesh(
   new THREE.PlaneGeometry(80, 80),
-  new THREE.ShadowMaterial({ opacity: 0.24 })
+  DEBUG_DEPTH
+    ? new THREE.MeshStandardMaterial({ color: 0x161616, roughness: 0.95, metalness: 0.0 })
+    : new THREE.ShadowMaterial({ opacity: 0.24 })
 );
 floor.rotation.x = -Math.PI / 2;
 floor.receiveShadow = true;
@@ -137,6 +155,10 @@ const whiteMat = new THREE.MeshStandardMaterial({
 const keyMat = new THREE.MeshStandardMaterial({
   color: 0xA8A8A8, roughness: 0.92, metalness: 0.0,   // Figma 키캡 상면 155–178
 });
+// 디버그 전용: 매킨토시 본체만 살짝 웜톤 오프화이트(키보드/마우스는 whiteMat 그대로 유지)
+const macBodyMat = DEBUG_DEPTH
+  ? new THREE.MeshStandardMaterial({ color: 0xF0E7D8, roughness: 0.92, metalness: 0.0 })
+  : whiteMat;
 const cableMat = new THREE.MeshStandardMaterial({ color: 0xE0E0E0, roughness: 0.9 });
 
 // ── Helpers ────────────────────────────────────────────────────────────────
@@ -199,7 +221,7 @@ new THREE.GLTFLoader().load('src/models/macintosh-classic-body.glb', (gltf) => {
     // 이 GLB는 NORMAL 속성이 아예 없어(export 파이프라인 이슈) MeshStandardMaterial이
     // 조명을 못 받아 새까맣게 나옴 — 지오메트리에서 직접 계산해 채워준다.
     if (!child.geometry.attributes.normal) child.geometry.computeVertexNormals();
-    child.material = whiteMat;
+    child.material = macBodyMat;
     child.castShadow = true;
     child.receiveShadow = true;
   });
