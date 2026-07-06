@@ -18,6 +18,10 @@
   top: 50%;
   transform: translate(-50%, -50%);
   width: min(1282px, calc(100vw - 40px));   /* 1280 콘텐츠 + 보더, 세이프 에어리어 준수 */
+  min-width: 380px;                          /* 리사이즈 하한 (모바일 레이아웃 최소폭) */
+  /* 유저 리사이즈 대응: 내부 레이아웃은 뷰포트가 아닌 창 자신의 폭 기준(@container).
+     높이는 콘텐츠(비디오 비율)가 결정 — 세로 방향은 항상 자동. */
+  container-type: inline-size;
   /* 테마: fetchTracks()의 theme_color/text_color → CSS 변수 (JS가 설정)
      #2A2118/#FFF은 최종 폴백으로만 사용 */
   background: var(--bt-theme, #2A2118);
@@ -254,9 +258,20 @@
 }
 .bt-col-cur .bt-slider { opacity: 0; }   /* Figma: 우측 슬라이더는 투명 자리맞춤 */
 
-/* ═══ 모바일 (<768px) — Figma 115:2964: 플레이리스트 없음, 세로 스택 ═══ */
-@media (max-width: 768px) {
-  .bt-win { width: min(440px, calc(100vw - 40px)); }
+/* 데스크탑 기본: 타이틀/아티스트는 세로 배치 (컨테이너 쿼리가 모바일에서 덮어씀) */
+.bt-cur-titline { display: contents; }
+
+/* 리사이즈 핸들 — 투명 스트립(좌/우 엣지 + 하단 코너), 비주얼 변화 없음.
+   폭만 조절하고 높이는 콘텐츠를 따른다. 미니 창에는 핸들 없음(리사이즈 불가). */
+.bt-win .bt-rs { position: absolute; z-index: 10; touch-action: none; }
+.bt-rs-e  { right: -4px; top: 0; bottom: 0; width: 8px; cursor: ew-resize; }
+.bt-rs-w  { left: -4px;  top: 0; bottom: 0; width: 8px; cursor: ew-resize; }
+.bt-rs-se { right: -6px; bottom: -6px; width: 16px; height: 16px; cursor: nwse-resize; }
+.bt-rs-sw { left: -6px;  bottom: -6px; width: 16px; height: 16px; cursor: nesw-resize; }
+
+/* ═══ 모바일 레이아웃 (창 폭 ≤768px) — Figma 115:2964: 플레이리스트 없음, 세로 스택.
+   뷰포트가 아니라 .bt-win 컨테이너 폭 기준 → 유저가 창을 줄여도 동일하게 전환. ═══ */
+@container (max-width: 768px) {
   .bt-body { flex-direction: column; align-items: center; gap: 0; }
   .bt-col-list { display: none; }
   .bt-col-center { width: 100%; flex: none; }
@@ -270,8 +285,9 @@
   .bt-cur-titline { display: flex; align-items: flex-start; width: 100%; white-space: nowrap; overflow: hidden; }
   .bt-col-cur .bt-slider { opacity: 1; }
 }
-@media (min-width: 769px) {
-  .bt-cur-titline { display: contents; }
+/* 작은 뷰포트(실제 모바일 기기)에서의 기본 창 폭 — 리사이즈 인라인 스타일이 있으면 그쪽 우선 */
+@media (max-width: 768px) {
+  .bt-win { width: min(440px, calc(100vw - 40px)); }
 }
 
 /* ═══ 미니마이즈드 — Figma 107:2745: 320px, 오버레이 버튼 + 단일 리스트 행 ═══ */

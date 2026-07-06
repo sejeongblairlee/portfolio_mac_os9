@@ -263,6 +263,16 @@ function ensureDock() {
   return dock;
 }
 
+/**
+ * 창 드래그/리사이즈 중엔 도크(크로스 오리진 YT iframe)의 pointer-events를 꺼야 한다.
+ * setPointerCapture는 렌더러(Blink) 내부 재타겟팅이라 iframe이 out-of-process일 때
+ * 컴포지터가 입력을 그 프로세스로 먼저 라우팅해버려 무력화될 수 있음 — 실측으로 확인
+ * (헤더 드래그 중 커서가 비디오 위를 지나가면 pointermove가 아예 도달하지 않음).
+ */
+function setDockInteractive(enabled) {
+  if (dock) dock.style.pointerEvents = enabled ? '' : 'none';
+}
+
 /** 미니 오버레이(스크림+컨트롤)는 도크보다 위에 있어야 클릭 가능 — 도크 안팎 이동 */
 function placeMiniOverlay(inDock) {
   const overlay = document.querySelector('.bt-mini-overlay');
@@ -710,6 +720,7 @@ function makeDraggable(win) {
     dragging = true;
     pid = e.pointerId;
     header.setPointerCapture(pid);   // iframe 위를 지나도 이벤트 유지
+    setDockInteractive(false);       // 크로스 오리진 도크가 이벤트를 삼키는 것 방지
     sx = e.clientX; sy = e.clientY;
     ox = r.left; oy = r.top;
     win.classList.add('dragging');
@@ -731,9 +742,57 @@ function makeDraggable(win) {
     if (!dragging || e.pointerId !== pid) return;
     dragging = false;
     win.classList.remove('dragging');
+    setDockInteractive(true);
   };
   header.addEventListener('pointerup', endDrag);
   header.addEventListener('pointercancel', endDrag);
+}
+
+// ═══ 창 리사이즈 — 좌/우 엣지 + 하단 코너 핸들 (풀 플레이어만) ═══════════════
+// 폭만 조절: 높이는 비디오 비율이 결정하므로 자동. 768px 미만이 되면
+// @container 쿼리가 모바일 레이아웃으로 전환. iframe은 도크가 rAF로 따라가므로
+// 리사이즈 중에도 재생성/왜곡 없음.
+
+function makeResizable(win) {
+  const MIN_W = 380;   // 모바일 레이아웃 최소폭 (CSS min-width와 동일)
+  [['e', 'bt-rs-e'], ['w', 'bt-rs-w'], ['e', 'bt-rs-se'], ['w', 'bt-rs-sw']].forEach(([side, cls]) => {
+    const h = document.createElement('div');
+    h.className = `bt-rs ${cls}`;
+    win.appendChild(h);
+    let pid = null, sx = 0, w0 = 0, left0 = 0;
+
+    h.addEventListener('pointerdown', (e) => {
+      const r = win.getBoundingClientRect();
+      // 드래그와 동일: 센터 transform → 픽셀 배치 전환 (점프 없음)
+      win.style.left = r.left + 'px';
+      win.style.top = r.top + 'px';
+      win.style.right = 'auto';
+      win.style.bottom = 'auto';
+      win.style.transform = 'none';
+      pid = e.pointerId;
+      h.setPointerCapture(pid);
+      setDockInteractive(false);   // 크로스 오리진 도크가 이벤트를 삼키는 것 방지
+      sx = e.clientX; w0 = r.width; left0 = r.left;
+      e.preventDefault();
+      e.stopPropagation();   // 타이틀바 드래그와 상호 배타
+    });
+
+    h.addEventListener('pointermove', (e) => {
+      if (pid === null || e.pointerId !== pid) return;
+      const dx = e.clientX - sx;
+      let w = side === 'e' ? w0 + dx : w0 - dx;
+      const maxW = side === 'e'
+        ? window.innerWidth - left0 - 20          // 좌변 고정 → 우측 세이프 에어리어까지
+        : left0 + w0 - 20;                        // 우변 고정 → 좌측 세이프 에어리어까지
+      w = Math.max(MIN_W, Math.min(w, maxW));
+      win.style.width = w + 'px';
+      if (side === 'w') win.style.left = (left0 + w0 - w) + 'px';   // 우변 앵커
+    });
+
+    const end = (e) => { if (e.pointerId === pid) { pid = null; setDockInteractive(true); } };
+    h.addEventListener('pointerup', end);
+    h.addEventListener('pointercancel', end);
+  });
 }
 
 // ═══ 초기화 ════════════════════════════════════════════════════════════════
@@ -745,6 +804,7 @@ async function initBlairTunes() {
 
   makeDraggable(document.getElementById('bt-win'));
   makeDraggable(document.getElementById('bt-mini'));
+  makeResizable(document.getElementById('bt-win'));   // 풀 플레이어만 — 미니는 리사이즈 불가
   initVolumeSlider();
   renderVolume();
 
