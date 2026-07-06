@@ -9,7 +9,7 @@
  * goToAndStop(0). 속도: 재생/정지 여부와 별개로 activitySpeed를 계속 갱신해
  * anim.setSpeed()만 호출 — JSON 리로드도 리마운트도 하지 않는다.
  *
- * 속도 곡선: raw 합산 점수(RAW_BASE + 신호별 기여) × TIGER_SPEED_MULTIPLIER(0.7),
+ * 속도 곡선: raw 합산 점수(RAW_BASE + 신호별 기여) × TIGER_SPEED_MULTIPLIER(0.76),
  * 최종적으로 [0.35, 1.6]로 클램프 — 전체적으로 차분하게 움직이도록 다운스케일.
  * 활동 감지 자체(임계값/스무딩/타이밍)는 바뀌지 않았고, 여기서 바뀐 건 속도 곡선뿐.
  *
@@ -37,7 +37,7 @@ const DOM_SIGNAL_EVERY = 6;     // 창 개수/드래그/리사이즈 DOM 조회 
 
 // 전체를 차분하게: raw 합산 점수를 낸 뒤 배율을 곱하고 최종 범위로 클램프.
 // (활동 감지 로직·타이밍은 그대로 — 여기서 바뀌는 건 속도 곡선뿐)
-const TIGER_SPEED_MULTIPLIER = 0.7;
+const TIGER_SPEED_MULTIPLIER = 0.76;
 const SPEED_MIN = 0.35, SPEED_MAX = 1.6;   // 배율 적용 "후" 최종 한계
 const RAW_BASE = 0.5;
 const W_PLAYER = 0.3, W_DRAG = 1.1, W_RESIZE = 1.45, W_ACTION = 0.3;
