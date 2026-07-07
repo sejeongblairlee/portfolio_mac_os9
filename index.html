@@ -345,14 +345,21 @@ rig.add(kb);
 
 const KB_W = 4.75, KB_D = 2.6;   // Figma 실측: 렌더 폭 = 본체의 1.45배, 깊이 178px
 
-const kbLower = roundedBoxMesh(KB_W, KB_D, 0.28, 0.08, whiteMat, 0.02);
+// 좌측 베젤 보강 — 키 배열(MAIN_X0 이하)은 그대로 두고 베이스만 왼쪽으로 확장.
+// 우측 가장자리는 고정한 채 좌측 가장자리만 KB_LEFT_EXTRA만큼 더 밀어내고,
+// 그만큼 베이스 중심을 왼쪽으로 옮겨서 우측 베젤/전체 폭 변화를 최소화한다
+// (클래식 M0110 키보드의 좌측이 더 여유로운 실루엣을 재현).
+const KB_LEFT_EXTRA = 0.18;
+const KB_X_OFFSET = -KB_LEFT_EXTRA / 2;
+
+const kbLower = roundedBoxMesh(KB_W + KB_LEFT_EXTRA, KB_D, 0.28, 0.08, whiteMat, 0.02);
 kbLower.rotation.x = -Math.PI / 2;
-kbLower.position.y = 0.09;
+kbLower.position.set(KB_X_OFFSET, 0.09, 0);
 kb.add(kbLower);
 
-const kbUpper = roundedBoxMesh(KB_W - 0.12, KB_D - 0.12, 0.07, 0.06, whiteMat, 0.015);
+const kbUpper = roundedBoxMesh(KB_W + KB_LEFT_EXTRA - 0.12, KB_D - 0.12, 0.07, 0.06, whiteMat, 0.015);
 kbUpper.rotation.x = -Math.PI / 2;
-kbUpper.position.y = 0.20;
+kbUpper.position.set(KB_X_OFFSET, 0.20, 0);
 kb.add(kbUpper);
 
 const KU = 0.255, PITCH = 0.305, KEY_H = 0.08;
