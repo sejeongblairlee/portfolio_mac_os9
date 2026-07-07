@@ -338,71 +338,61 @@ mac.add(glow);
 // ═══════════════════════════════════════════════════════════════════════════
 //  키보드 — M0110, 실제 키 입력 반응
 // ═══════════════════════════════════════════════════════════════════════════
-const kb = new THREE.Group();   // 래퍼 — 위치/회전 앵커, 절대 안 건드림(기존 정렬 그대로)
+const kb = new THREE.Group();
 kb.position.set(-0.25, 0.05, 3.22);   // Figma: 모니터 중심 대비 ≈35px 왼쪽
 kb.rotation.x = 6.5 * DEG;
 rig.add(kb);
 
 const KB_W = 4.75, KB_D = 2.6;   // Figma 실측: 렌더 폭 = 본체의 1.45배, 깊이 178px
 
-// 개별 키 프레스 애니메이션은 GLB가 단일 메시라 불가능(눌림 표현할 개별 키 지오메트리가
-// 없음) — 기존에 각 키에 붙어 있던 인터랙션을 이 래퍼 그룹 전체의 미세한 눌림으로
-// 옮김(요청사항: "move them to a wrapper group"). pressedKeys는 눌린 키 코드 집합만 추적.
-const kbModel = new THREE.Group();
-kb.add(kbModel);
-const pressedKeys = new Set();
+const kbLower = roundedBoxMesh(KB_W, KB_D, 0.28, 0.08, whiteMat, 0.02);
+kbLower.rotation.x = -Math.PI / 2;
+kbLower.position.y = 0.09;
+kb.add(kbLower);
 
-new THREE.GLTFLoader().load('src/models/keyboard.glb', (gltf) => {
-  // 이 GLB에는 키보드가 원점 근처("Apple Macintosh keyboard")와 [-9.33, 0, 3.57]만큼
-  // 떨어진 곳("Apple Macintosh keyboard.001")에 통째로 두 벌 들어있다(익스포트 중복)
-  // — three.js가 공백/점을 "_"로 치환하므로 이름 매칭 대신 원점 근처 위치로 판별
-  // (첫 번째 세트만 쓰고 멀리 떨어진 중복은 제외).
-  const root = gltf.scene.children.find((c) => c.position.length() < 0.001) || gltf.scene.children[0] || gltf.scene;
+const kbUpper = roundedBoxMesh(KB_W - 0.12, KB_D - 0.12, 0.07, 0.06, whiteMat, 0.015);
+kbUpper.rotation.x = -Math.PI / 2;
+kbUpper.position.y = 0.20;
+kb.add(kbUpper);
 
-  const maxAniso = renderer.capabilities.getMaxAnisotropy();
-  root.traverse((child) => {
-    if (!child.isMesh) return;
-    if (!child.geometry.attributes.normal) child.geometry.computeVertexNormals();
-    child.castShadow = true;
-    child.receiveShadow = true;
+const KU = 0.255, PITCH = 0.305, KEY_H = 0.08;
+const KEY_Y = 0.30;
+const keyMap = {};   // KeyboardEvent.code → { mesh, baseY, press }
 
-    const mats = Array.isArray(child.material) ? child.material : [child.material];
-    mats.forEach((mat) => {
-      if (!mat) return;
-      ['map', 'normalMap', 'roughnessMap', 'metalnessMap'].forEach((slot) => {
-        const tex = mat[slot];
-        if (!tex) return;
-        tex.wrapS = THREE.ClampToEdgeWrapping;
-        tex.wrapT = THREE.ClampToEdgeWrapping;
-        tex.flipY = false;
-        if (maxAniso) tex.anisotropy = maxAniso;
-        if (slot === 'map') tex.encoding = THREE.sRGBEncoding;   // 컬러 텍스처만 sRGB — 노멀/러프니스는 선형 유지
-        tex.needsUpdate = true;
-      });
-    });
-  });
+function addKey(x, z, wUnits, code) {
+  const w = KU + (wUnits - 1) * PITCH;
+  const key = roundedBoxMesh(w, KU * 0.9, KEY_H, 0.035, keyMat, 0.012);
+  key.rotation.x = -Math.PI / 2;
+  key.position.set(x + (w - KU) / 2, KEY_Y, z);
+  kb.add(key);
+  if (code) keyMap[code] = { mesh: key, baseY: KEY_Y, press: 0 };
+  return wUnits * PITCH;
+}
 
-  // 정규화: 이전 생성 지오메트리 키보드의 가로/세로 풋프린트(KB_W×KB_D)에 맞춰
-  // 등축 스케일(contain) — 카메라/본체/마우스와의 정렬은 kb 래퍼의 기존 위치/회전이
-  // 그대로 유지하므로 자동으로 보존됨.
-  const box = new THREE.Box3().setFromObject(root);
-  const size = new THREE.Vector3();
-  box.getSize(size);
-  const center = new THREE.Vector3();
-  box.getCenter(center);
-
-  const scaleFactor = Math.min(KB_W / size.x, KB_D / size.z);
-  root.scale.setScalar(scaleFactor);
-  root.position.x = -center.x * scaleFactor;
-  root.position.z = -center.z * scaleFactor;
-  root.position.y = -box.min.y * scaleFactor;   // 바닥(y=0)에 접지
-
-  kbModel.add(root);
+// 실제 배열 매핑 — 총 14.5u × 5줄
+const layout = [
+  [['Backquote',1],['Digit1',1],['Digit2',1],['Digit3',1],['Digit4',1],['Digit5',1],['Digit6',1],['Digit7',1],['Digit8',1],['Digit9',1],['Digit0',1],['Minus',1],['Equal',1],['Backspace',1.5]],
+  [['Tab',1.5],['KeyQ',1],['KeyW',1],['KeyE',1],['KeyR',1],['KeyT',1],['KeyY',1],['KeyU',1],['KeyI',1],['KeyO',1],['KeyP',1],['BracketLeft',1],['BracketRight',1],['Backslash',1]],
+  [['CapsLock',1.75],['KeyA',1],['KeyS',1],['KeyD',1],['KeyF',1],['KeyG',1],['KeyH',1],['KeyJ',1],['KeyK',1],['KeyL',1],['Semicolon',1],['Quote',1],['Enter',1.75]],
+  [['ShiftLeft',2.25],['KeyZ',1],['KeyX',1],['KeyC',1],['KeyV',1],['KeyB',1],['KeyN',1],['KeyM',1],['Comma',1],['Period',1],['Slash',1],['ShiftRight',2.25]],
+  [['AltLeft',1.5],['MetaLeft',1.25],['Space',9],['MetaRight',1.25],['AltRight',1.5]],
+];
+const MAIN_X0 = -2.21;
+layout.forEach((row, r) => {
+  let x = MAIN_X0;
+  const z = -KB_D / 2 + 0.45 + r * PITCH;
+  row.forEach(([code, u]) => { x += addKey(x, z, u, code); });
 });
 
-// ── 실제 키 입력 → 키보드 전체의 미세한 눌림 애니메이션 ────────────────────
-window.addEventListener('keydown', (e) => { pressedKeys.add(e.code); });
-window.addEventListener('keyup', (e) => { pressedKeys.delete(e.code); });
+// ── 실제 키 입력 → 키 프레스 애니메이션 ────────────────────────────────────
+window.addEventListener('keydown', (e) => {
+  const k = keyMap[e.code];
+  if (k) k.press = 1;
+});
+window.addEventListener('keyup', (e) => {
+  const k = keyMap[e.code];
+  if (k) k.press = 0;
+});
 
 // ═══════════════════════════════════════════════════════════════════════════
 //  마우스 (M0100) — Figma 비율로 축소
@@ -483,9 +473,12 @@ function animate() {
   state.warm += (warmTarget - state.warm) * 0.08;
   glow.intensity = state.warm * 0.5;
 
-  // ④ 키 프레스 애니메이션 — 개별 키 대신 키보드 래퍼 전체의 미세한 눌림(GLB는 단일 메시)
-  const kbPressTarget = pressedKeys.size > 0 ? -0.015 : 0;
-  kbModel.position.y += (kbPressTarget - kbModel.position.y) * 0.4;
+  // ④ 키 프레스 애니메이션
+  for (const code in keyMap) {
+    const k = keyMap[code];
+    const ty = k.baseY - 0.04 * k.press;
+    k.mesh.position.y += (ty - k.mesh.position.y) * 0.4;
+  }
 
   renderer.render(scene, camera);
 }
