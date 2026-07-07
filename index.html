@@ -352,23 +352,27 @@ const KB_W = 4.75, KB_D = 2.6;   // Figma 실측: 렌더 폭 = 본체의 1.45배
 const KB_LEFT_EXTRA = 0.18;
 const KB_X_OFFSET = -KB_LEFT_EXTRA / 2;
 
-const kbLower = roundedBoxMesh(KB_W + KB_LEFT_EXTRA, KB_D, 0.28, 0.08, whiteMat, 0.02);
+// 베이스 코너/베벨을 살짝 키워 좀 더 부드럽고 정제된 실루엣으로(풋프린트 w/h는 불변 —
+// 라운드box 헬퍼는 r/bevel이 커져도 바운딩은 그대로라 스케일/포지션에 영향 없음)
+const kbLower = roundedBoxMesh(KB_W + KB_LEFT_EXTRA, KB_D, 0.28, 0.11, whiteMat, 0.035);
 kbLower.rotation.x = -Math.PI / 2;
 kbLower.position.set(KB_X_OFFSET, 0.09, 0);
 kb.add(kbLower);
 
-const kbUpper = roundedBoxMesh(KB_W + KB_LEFT_EXTRA - 0.12, KB_D - 0.12, 0.07, 0.06, whiteMat, 0.015);
+const kbUpper = roundedBoxMesh(KB_W + KB_LEFT_EXTRA - 0.12, KB_D - 0.12, 0.07, 0.09, whiteMat, 0.026);
 kbUpper.rotation.x = -Math.PI / 2;
 kbUpper.position.set(KB_X_OFFSET, 0.20, 0);
 kb.add(kbUpper);
 
-const KU = 0.255, PITCH = 0.305, KEY_H = 0.08;
+// 키캡 풋프린트를 PITCH 대비 살짝 줄여(0.255→0.235) 키 사이 간격을 더 또렷하게 하고,
+// 코너 반경/베벨을 키워 각진 느낌을 줄임 — PITCH/MAIN_X0는 그대로라 배열 전체 폭·위치는 불변.
+const KU = 0.235, PITCH = 0.305, KEY_H = 0.08;
 const KEY_Y = 0.30;
 const keyMap = {};   // KeyboardEvent.code → { mesh, baseY, press }
 
 function addKey(x, z, wUnits, code) {
   const w = KU + (wUnits - 1) * PITCH;
-  const key = roundedBoxMesh(w, KU * 0.9, KEY_H, 0.035, keyMat, 0.012);
+  const key = roundedBoxMesh(w, KU * 0.82, KEY_H, 0.05, keyMat, 0.02);
   key.rotation.x = -Math.PI / 2;
   key.position.set(x + (w - KU) / 2, KEY_Y, z);
   kb.add(key);
