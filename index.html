@@ -13,6 +13,15 @@ body {
 }
 /* 밝기↓·대비↑ — 배경은 scene.background 사전 보정으로 순백 유지됨 */
 #c { display:block; filter: brightness(0.94) contrast(1.12); }
+/* 에디토리얼 톤 무드용 아주 옅은 모노크롬 그레인 — 3D 씬·카메라·인터랙션과 완전히
+   무관(비인터랙티브, 캔버스 위에 얹기만 함). 배경 이미지는 JS가 캔버스로 생성해서
+   주입(아래 스크립트) — SVG feTurbulence 데이터URI는 렌더러에 따라 안 나올 수 있어
+   확실하게 그려지는 캔버스 노이즈 타일로 대체. */
+#grain {
+  position:fixed; inset:0; z-index:4; pointer-events:none;
+  opacity:0.05; mix-blend-mode:overlay;
+  background-size: 160px 160px;
+}
 #overlay {
   position:fixed; inset:0; background:#FFFFFF; opacity:0;
   pointer-events:none; transition:opacity .6s ease; z-index:99;
@@ -34,6 +43,7 @@ body {
 <div class="corner left"><b>SEJEONG LEE</b><br>Product Designer</div>
 <div class="corner right">Seoul, Korea<br><b>whynotblair@gmail.com</b></div>
 <canvas id="c"></canvas>
+<div id="grain"></div>
 <div id="overlay"></div>
 
 <script src="https://cdn.jsdelivr.net/npm/three@0.128.0/build/three.min.js"></script>
@@ -41,6 +51,23 @@ body {
 <script>
 (function () {
 'use strict';
+
+// #grain 배경 타일 생성 — 3D 씬/카메라와 무관한 순수 DOM 오버레이(비인터랙티브).
+// CSS만으로는 렌더러별로 결과가 들쭉날쭉해서 캔버스로 노이즈를 직접 그려 data URL로 주입.
+(function paintGrainTile() {
+  const c = document.createElement('canvas');
+  c.width = 160; c.height = 160;
+  const ctx = c.getContext('2d');
+  const img = ctx.createImageData(160, 160);
+  for (let i = 0; i < img.data.length; i += 4) {
+    const v = Math.random() * 255;
+    img.data[i] = img.data[i + 1] = img.data[i + 2] = v;
+    img.data[i + 3] = 255;
+  }
+  ctx.putImageData(img, 0, 0);
+  const grainEl = document.getElementById('grain');
+  if (grainEl) grainEl.style.backgroundImage = `url(${c.toDataURL()})`;
+}());
 
 // ?debug(=depth) 로 방문 시에만 진단용 다크 씬으로 전환 — 기본 랜딩(라이트 키노트 렌더)은
 // 완전히 그대로. 모델 실루엣/깊이/그림자 확인용, 방문자에게 노출되는 기본 화면이 아님.
@@ -347,14 +374,41 @@ const glow = new THREE.PointLight(0xFFE8C4, 0.05, 4.5);
 glow.position.set(0, BODY_CY + 0.79, FRONT_Z + 1.0);
 mac.add(glow);
 
-// 스크린 유리 느낌 — 아주 옅은 스캔라인 + 미세한 플리커(화면 콘텐츠/인터랙션은 그대로 —
-// hitPlane과 별개의 순수 장식용 오버레이라 레이캐스트에 잡히지 않음, 클릭/호버 로직 무영향).
+// 스크린 유리 느낌 — 스캔라인 + 미세 스태틱 그레인 + 은은한 비네트(유리 곡면·깊이감)를
+// 한 텍스처에 결합. 화면 콘텐츠/인터랙션은 그대로 — hitPlane과 별개의 순수 장식용
+// 오버레이라 레이캐스트에 잡히지 않음, 클릭/호버 로직 무영향.
 const scanCanvas = document.createElement('canvas');
-scanCanvas.width = 4; scanCanvas.height = 240;
-(function drawScanlines() {
+scanCanvas.width = 256; scanCanvas.height = 216;
+(function drawScreenGlass() {
   const ctx = scanCanvas.getContext('2d');
-  ctx.fillStyle = 'rgba(0,0,0,0.4)';
-  for (let y = 0; y < 240; y += 2) ctx.fillRect(0, y, 4, 1);
+  const w = scanCanvas.width, h = scanCanvas.height;
+
+  // ① 미세 스태틱 그레인 — 오프스크린에 그려 알파 합성으로 얹음(putImageData는
+  // 기존 레이어를 덮어써서 직접 사용 불가)
+  const grainCanvas = document.createElement('canvas');
+  grainCanvas.width = w; grainCanvas.height = h;
+  const gctx = grainCanvas.getContext('2d');
+  const grain = gctx.createImageData(w, h);
+  for (let i = 0; i < grain.data.length; i += 4) {
+    const v = Math.random() * 255;
+    grain.data[i] = grain.data[i + 1] = grain.data[i + 2] = v;
+    grain.data[i + 3] = 255;
+  }
+  gctx.putImageData(grain, 0, 0);
+  ctx.globalAlpha = 0.5;
+  ctx.drawImage(grainCanvas, 0, 0);
+  ctx.globalAlpha = 1;
+
+  // ② 스캔라인
+  ctx.fillStyle = 'rgba(0,0,0,0.35)';
+  for (let y = 0; y < h; y += 2) ctx.fillRect(0, y, w, 1);
+
+  // ③ 비네트 — 중심은 투명, 가장자리로 갈수록 살짝 어둡게(CRT 유리 곡면 느낌)
+  const vg = ctx.createRadialGradient(w / 2, h / 2, h * 0.15, w / 2, h / 2, h * 0.62);
+  vg.addColorStop(0, 'rgba(0,0,0,0)');
+  vg.addColorStop(1, 'rgba(0,0,0,0.5)');
+  ctx.fillStyle = vg;
+  ctx.fillRect(0, 0, w, h);
 }());
 const scanTex = new THREE.CanvasTexture(scanCanvas);
 const screenGlassMat = new THREE.MeshBasicMaterial({
@@ -505,6 +559,8 @@ canvas.addEventListener('click', () => {
 // ═══════════════════════════════════════════════════════════════════════════
 //  Loop — 60fps, 시간 기반
 // ═══════════════════════════════════════════════════════════════════════════
+let prevWarm = 0;   // 활성화(호버 시작) 순간의 "파워온" 스태틱 플레어 판정용
+
 function animate() {
   requestAnimationFrame(animate);
   const t = performance.now();
@@ -521,8 +577,14 @@ function animate() {
   state.warm += (warmTarget - state.warm) * 0.08;
   glow.intensity = 0.05 + state.warm * 0.45;   // 평상시 아주 옅은 발광 + 호버 시 최대 0.5까지(기존과 동일)
 
-  // ③b 스크린 유리 미세 플리커 — 진폭 매우 작게, 콘텐츠/인터랙션 무관
-  screenGlassMat.opacity = 0.045 + Math.sin(t / 1700) * 0.012;
+  // ③b 스크린 "파워온" 활성화 느낌 — 새 인터랙션이 아니라 기존 호버 신호(state.warm)의
+  // 상승 속도를 그대로 재사용: 호버가 막 시작되는 순간 warm이 빠르게 올라가면서
+  // 짧게 밝아졌다 지수적으로 가라앉는 스태틱 플레어를 만든다("켜지는" 느낌).
+  // 평상시엔 아주 옅은 플리커만, 클릭/부팅 로직에는 전혀 관여하지 않음.
+  const warmRise = Math.max(0, state.warm - prevWarm);
+  prevWarm = state.warm;
+  const activationFlare = warmRise * 6;
+  screenGlassMat.opacity = 0.045 + Math.sin(t / 1700) * 0.012 + activationFlare;
 
   // ④ 키 프레스 애니메이션
   for (const code in keyMap) {
