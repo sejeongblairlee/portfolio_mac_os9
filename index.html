@@ -193,27 +193,64 @@ scene.add(floor);
   scene.add(blob);
 }());
 
-// ── Materials — 저채도 쿨그레이 패밀리, 소프트 매트 + 은은한 반사 ─────────────
-// (빈티지 아이보리/베이지 톤 배제 — 키보드/마우스는 더 밝은 쿨화이트,
-// 모니터 본체는 한 단계 어둡고 차분한 쿨그레이로 같은 패밀리 안에서 톤 대비)
+// ── 환경 반사(IBL) — 절제된 스튜디오 리플렉션 ─────────────────────────────────
+// 라이트만 받는 "원시 CG" 표면이 아니라 레퍼런스의 오브제 같은 표면이 되도록,
+// 소프트 그라디언트 스튜디오 환경(위=소프트박스, 수평선=쿨그레이, 아래=어두운 바닥)을
+// 캔버스로 그려 PMREM으로 굽는다. 재질별 envMapIntensity로 반사량은 절제해서 사용.
+const envMapRT = (function makeStudioEnv() {
+  const c = document.createElement('canvas');
+  c.width = 256; c.height = 128;
+  const ctx = c.getContext('2d');
+  const g = ctx.createLinearGradient(0, 0, 0, 128);
+  g.addColorStop(0.0, '#FFFFFF');
+  g.addColorStop(0.42, '#C9CED8');
+  g.addColorStop(0.55, '#AEB4C0');
+  g.addColorStop(1.0, '#5E646E');
+  ctx.fillStyle = g; ctx.fillRect(0, 0, 256, 128);
+  // 좌상단 와이드 소프트박스 — 키 라이트의 반사원(면 위에 넓고 부드러운 하이라이트)
+  const sb = ctx.createRadialGradient(70, 26, 4, 70, 26, 60);
+  sb.addColorStop(0, 'rgba(255,255,255,0.95)');
+  sb.addColorStop(1, 'rgba(255,255,255,0)');
+  ctx.fillStyle = sb; ctx.fillRect(0, 0, 256, 128);
+  const tex = new THREE.CanvasTexture(c);
+  tex.mapping = THREE.EquirectangularReflectionMapping;
+  const pmrem = new THREE.PMREMGenerator(renderer);
+  const rt = pmrem.fromEquirectangular(tex);
+  tex.dispose(); pmrem.dispose();
+  return rt;
+}());
+const envMap = envMapRT.texture;
+
+// ── Materials — 저채도 쿨그레이 패밀리, 소프트 프로스티드 + 절제된 반사 ────────
 // 씬 조명(헤미스피어+키+필 2개) + 캔버스 contrast(1.12) 필터가 밝은 색을 흰색으로
 // 밀어붙이는 정도가 커서(실측: 원래 계획한 옅은 톤은 렌더 후 배경과 거의 구분 안 됨),
 // 렌더링된 최종 톤이 의도한 만큼 보이도록 베이스 컬러를 그만큼 진하게 잡았다
 // (라이팅 자체는 안 건드림 — 재질 컬러만 보정).
-// 레퍼런스 02/03 기반: 낡은 무광 플라스틱(러프니스 0.8+)이 아니라 "레진/세라믹" 같은
-// 소프트 프로스티드 표면 — 러프니스를 0.5대로 내려 키 라이트가 면 위에서 부드럽게
-// 퍼지는 시인(sheen)을 만들고, 헥스에 블루 린을 줘 쿨톤 패밀리로 통일.
+// 통일 원칙(레퍼런스 02/03): 모니터/키보드/마우스는 하나의 큐레이션된 세트 —
+// 같은 표면 논리(소프트 프로스티드), 같은 블루 린, 같은 반사 처리. 키보드/마우스는
+// 본체보다 살짝만 밝게(패밀리 안에서의 미묘한 대비), "raw 화이트 프리미티브" 배제.
+// envMap은 스페큘러(반사)만 더하지만 러프니스 0.5대에선 로브가 넓어 밝기 기여가
+// 상당함(실측: intensity 0.4 + 밝은 env에서 전 재질이 223~252로 백화) — intensity를
+// 절반 수준으로 줄이고 베이스 컬러를 그만큼 더 진하게 재보정.
+// 실측 기준: 본체 각 면이 189~213으로 렌더될 때 키보드/마우스의 수평면이
+// 243~253까지 날아가면(50포인트 갭) "다른 세계의 흰 프리미티브"로 읽힌다 —
+// 갭이 25포인트 안쪽에 들어오도록 베이스를 본체에 근접시킴(한 톤만 밝게).
 const whiteMat = new THREE.MeshStandardMaterial({
-  color: 0xB7BCC4, roughness: 0.58, metalness: 0.0,
+  color: 0x7C828C, roughness: 0.52, metalness: 0.0,
+  envMap, envMapIntensity: 0.25,
 });
 const keyMat = new THREE.MeshStandardMaterial({
-  color: 0x9298A2, roughness: 0.55, metalness: 0.0,   // 키캡 — 베이스보다 한 톤 진한 쿨그레이
+  color: 0x737983, roughness: 0.5, metalness: 0.0,   // 키캡 — 베이스보다 한 톤 진한 쿨그레이
+  envMap, envMapIntensity: 0.24,
 });
-const cableMat = new THREE.MeshStandardMaterial({ color: 0xAEB3BC, roughness: 0.6 });
-// 모니터 본체(GLB 무채색 셸 전용) — 흰색보다 한 톤 더 어두운 슬리크한 쿨그레이,
+const cableMat = new THREE.MeshStandardMaterial({
+  color: 0x7C828C, roughness: 0.55, envMap, envMapIntensity: 0.2,
+});
+// 모니터 본체(GLB 무채색 셸 전용) — 세트에서 한 톤 어두운 앵커,
 // 세라믹처럼 매끈한 소프트 매트(브라운 TV 레퍼런스의 오브제 표면)
 const macBodyMat = new THREE.MeshStandardMaterial({
-  color: 0x7B818A, roughness: 0.5, metalness: 0.0,
+  color: 0x6A707A, roughness: 0.46, metalness: 0.0,
+  envMap, envMapIntensity: 0.28,
 });
 
 // ── Helpers ────────────────────────────────────────────────────────────────
@@ -457,6 +494,36 @@ const screenGlass = onFront(
 );
 screenGlass.renderOrder = 1;
 
+// ── 엔트리 "파워온" 스태틱 — 모션 레퍼런스의 CRT 스태틱→해상(resolve) 전환 ────
+// 첫 진입 순간에만 스크린 위에서 시안-틸 스태틱이 플리커하며 사그라드는 순수 장식
+// 오버레이. 레이캐스트/클릭/부팅 로직과 완전 무관(hitPlane 별개, pointer 이벤트 없음).
+// 인트로가 끝나면 visible=false로 꺼져 이후 프레임 비용 0.
+const staticCanvas = document.createElement('canvas');
+staticCanvas.width = 128; staticCanvas.height = 104;
+const staticCtx = staticCanvas.getContext('2d');
+const staticTex = new THREE.CanvasTexture(staticCanvas);
+function drawIntroStatic() {
+  const img = staticCtx.createImageData(128, 104);
+  for (let i = 0; i < img.data.length; i += 4) {
+    const v = Math.random() * 255;
+    img.data[i] = v * 0.82;
+    img.data[i + 1] = v;
+    img.data[i + 2] = Math.min(255, v * 1.12);
+    img.data[i + 3] = 255;
+  }
+  staticCtx.putImageData(img, 0, 0);
+  staticTex.needsUpdate = true;
+}
+drawIntroStatic();
+const introStaticMat = new THREE.MeshBasicMaterial({
+  map: staticTex, transparent: true, opacity: 0, depthWrite: false,
+});
+const introStatic = onFront(
+  new THREE.Mesh(new THREE.PlaneGeometry(2.60, 2.20), introStaticMat),
+  0, 0.79, FRONT_Z + 0.093
+);
+introStatic.renderOrder = 2;
+
 // (구) 친(chin) 디테일 일체 제거 — Apple 로고 데칼, 플로피 그루브/슬릿,
 // 우측 인셋 플레이트, 도트, 뒷면 통풍구는 전부 생성 지오메트리 시절 본체용
 // 장식이었다. GLB 본체가 이 형상들을 이미 실제 지오메트리로 갖고 있어서
@@ -570,13 +637,20 @@ mouse3d.add(mBtn);
 // ═══════════════════════════════════════════════════════════════════════════
 const raycaster = new THREE.Raycaster();
 const ndc = new THREE.Vector2();
-let targetRotY = 0, targetRotX = 0;
+
+// 오브제 프레젠테이션 베이스 앵글 — 정면 플랫이 아니라 살짝 돌린 조각적 포즈.
+// 커서 추적 로직은 그대로: 베이스 오프셋 위에 기존 ±4°/±2°가 얹힐 뿐이다.
+const BASE_ROT_Y = -7 * DEG;   // 좌측면이 살짝 보이게 (키 라이트가 면을 스치는 방향)
+const BASE_ROT_X = 1.6 * DEG;  // 아주 살짝 위에서 내려다보는 기울기
+let targetRotY = BASE_ROT_Y, targetRotX = BASE_ROT_X;
+rig.rotation.y = BASE_ROT_Y;
+rig.rotation.x = BASE_ROT_X;
 
 window.addEventListener('pointermove', (e) => {
   const nx = (e.clientX / window.innerWidth) * 2 - 1;   // -1 ~ 1
   const ny = (e.clientY / window.innerHeight) * 2 - 1;
-  targetRotY = nx * 4 * DEG;     // 최대 ±4°
-  targetRotX = ny * 2 * DEG;     // 최대 ±2°
+  targetRotY = BASE_ROT_Y + nx * 4 * DEG;     // 베이스 + 최대 ±4°
+  targetRotX = BASE_ROT_X + ny * 2 * DEG;     // 베이스 + 최대 ±2°
 
   ndc.x = nx;
   ndc.y = -ny;
@@ -598,6 +672,17 @@ canvas.addEventListener('click', () => {
 // ═══════════════════════════════════════════════════════════════════════════
 let prevWarm = 0;   // 활성화(호버 시작) 순간의 "파워온" 스태틱 플레어 판정용
 
+// ── 엔트리 인트로 — 슬로우 돌리인 + CRT 파워온 스태틱 (비주얼 온리) ─────────────
+// 카메라가 z 19.9→18.6으로 우아하게 다가오며(easeOutCubic) 스크린 스태틱이
+// 플리커하며 사그라든다. 종료 시점의 카메라/글로우/스태틱 상태는 인트로가 없을 때와
+// 완전히 동일 — 이후의 모든 인터랙션(호버/클릭/부팅)은 기존 그대로.
+// 디버그 뷰와 모션 축소 설정(prefers-reduced-motion)에서는 인트로 생략.
+const INTRO_MS = 2400;
+const INTRO_ON = !DEBUG_DEPTH &&
+  !(window.matchMedia && window.matchMedia('(prefers-reduced-motion: reduce)').matches);
+const introStart = performance.now();
+let introDone = !INTRO_ON;
+
 function animate() {
   requestAnimationFrame(animate);
   const t = performance.now();
@@ -605,14 +690,36 @@ function animate() {
   // ① 브리딩 — 5.5s ease-in-out, 아주 미세한 상하 이동
   mac.position.y = Math.sin(t / 5500 * Math.PI * 2) * 0.018;
 
-  // ② 커서 추적 회전 (부드러운 lerp, 절대 ±4°/±2° 초과 없음)
+  // ② 커서 추적 회전 (부드러운 lerp, 절대 베이스±4°/±2° 초과 없음)
   rig.rotation.y += (targetRotY - rig.rotation.y) * 0.05;
   rig.rotation.x += (targetRotX - rig.rotation.x) * 0.05;
 
-  // ③ 호버 상태 → 웜 틴트/글로우 lerp
+  // ③ 호버 상태 → 글로우 lerp
   const warmTarget = state.hover ? 1 : 0;
   state.warm += (warmTarget - state.warm) * 0.08;
   glow.intensity = 0.05 + state.warm * 0.45;   // 평상시 아주 옅은 발광 + 호버 시 최대 0.5까지(기존과 동일)
+
+  // ③a 엔트리 인트로 — 돌리인 + 파워온 스태틱
+  if (!introDone) {
+    const introT = Math.min(1, (t - introStart) / INTRO_MS);
+    const e = 1 - Math.pow(1 - introT, 3);            // easeOutCubic
+    camera.position.z = 19.9 - 1.3 * e;               // 최종값 18.6 = 기존 카메라 그대로
+    camera.lookAt(0, 1.37, 0);
+    if (introT < 1) {
+      // 스태틱: 처음 강하게 → 불규칙 플리커 → 지수적으로 소멸 (모션 레퍼런스의 resolve)
+      if (Math.floor(t / 50) % 2 === 0) drawIntroStatic();   // ~10fps로 노이즈 갱신(CRT 질감)
+      const env = (1 - introT) * (1 - introT);
+      const flicker = 0.72 + 0.28 * Math.sin(introT * 34) * Math.sin(introT * 13 + 1.7);
+      introStaticMat.opacity = env * 0.62 * flicker;
+      glow.intensity += env * 0.4;                     // 켜지는 순간의 냉광 스파이크
+    } else {
+      introDone = true;
+      introStaticMat.opacity = 0;
+      introStatic.visible = false;                     // 이후 프레임 비용 0
+      camera.position.z = 18.6;
+      camera.lookAt(0, 1.37, 0);
+    }
+  }
 
   // ③b 스크린 "파워온" 활성화 느낌 — 새 인터랙션이 아니라 기존 호버 신호(state.warm)의
   // 상승 속도를 그대로 재사용: 호버가 막 시작되는 순간 warm이 빠르게 올라가면서
