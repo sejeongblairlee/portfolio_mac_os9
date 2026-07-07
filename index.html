@@ -8,7 +8,7 @@
 <style>
 * { margin:0; padding:0; box-sizing:border-box; }
 body {
-  background:#FAFAF8; overflow:hidden; width:100vw; height:100vh;
+  background:#F1F2F4; overflow:hidden; width:100vw; height:100vh;
   font-family:'Pretendard',-apple-system,'Helvetica Neue',sans-serif;
 }
 /* 밝기↓·대비↑ — 배경은 scene.background 사전 보정으로 순백 유지됨 */
@@ -48,8 +48,9 @@ const DEBUG_DEPTH = /[?&]debug(=|&|$)/.test(location.search);
 // 다크 배경에서 코너 텍스트(하드코딩 #000)가 안 보이므로 디버그 모드에서만 흰색으로
 if (DEBUG_DEPTH) document.querySelectorAll('.corner').forEach((el) => { el.style.color = '#fff'; });
 
-// 캔버스 CSS 필터(brightness .94 / contrast 1.12) 통과 후 #FAFAF8이 되도록 사전 보정
-const BG = DEBUG_DEPTH ? 0x111111 : 0xFCFCFA;
+// 캔버스 CSS 필터(brightness .94 / contrast 1.12) 통과 후 옅은 쿨그레이(#F1F2F4)가
+// 되도록 사전 보정 — 순백 대신 살짝 차분한 톤으로 본체 실루엣 분리감을 준다.
+const BG = DEBUG_DEPTH ? 0x111111 : 0xF3F4F6;
 const DEG = Math.PI / 180;
 
 // ── Renderer / Scene / Camera (고정 카메라 — 드래그 회전 없음) ─────────────
@@ -114,7 +115,7 @@ const floor = new THREE.Mesh(
   new THREE.PlaneGeometry(80, 80),
   DEBUG_DEPTH
     ? new THREE.MeshStandardMaterial({ color: 0x161616, roughness: 0.95, metalness: 0.0 })
-    : new THREE.ShadowMaterial({ opacity: 0.24 })
+    : new THREE.ShadowMaterial({ opacity: 0.28 })   // 살짝 진하게 — 쿨그레이 배경에서 접지감 또렷하게
 );
 floor.rotation.x = -Math.PI / 2;
 floor.receiveShadow = true;
@@ -127,8 +128,8 @@ scene.add(floor);
   c.width = 512; c.height = 256;
   const ctx = c.getContext('2d');
   const g = ctx.createRadialGradient(256, 128, 0, 256, 128, 250);
-  g.addColorStop(0, 'rgba(0,0,0,0.10)');
-  g.addColorStop(0.55, 'rgba(0,0,0,0.045)');
+  g.addColorStop(0, 'rgba(0,0,0,0.13)');
+  g.addColorStop(0.55, 'rgba(0,0,0,0.055)');
   g.addColorStop(1, 'rgba(0,0,0,0)');
   ctx.save();
   ctx.translate(256, 128);
@@ -147,14 +148,24 @@ scene.add(floor);
   scene.add(blob);
 }());
 
-// ── Materials — Figma 실측: 완전 무채색 뉴트럴 그레이 (r=g=b) ───────────────
+// ── Materials — 저채도 쿨그레이 패밀리, 소프트 매트 + 은은한 반사 ─────────────
+// (빈티지 아이보리/베이지 톤 배제 — 키보드/마우스는 더 밝은 쿨화이트,
+// 모니터 본체는 한 단계 어둡고 차분한 쿨그레이로 같은 패밀리 안에서 톤 대비)
+// 씬 조명(헤미스피어+키+필 2개) + 캔버스 contrast(1.12) 필터가 밝은 색을 흰색으로
+// 밀어붙이는 정도가 커서(실측: 원래 계획한 옅은 톤은 렌더 후 배경과 거의 구분 안 됨),
+// 렌더링된 최종 톤이 의도한 만큼 보이도록 베이스 컬러를 그만큼 진하게 잡았다
+// (라이팅 자체는 안 건드림 — 재질 컬러만 보정).
 const whiteMat = new THREE.MeshStandardMaterial({
-  color: 0xE9E9E9, roughness: 0.94, metalness: 0.0,
+  color: 0xB5B8BB, roughness: 0.86, metalness: 0.0,
 });
 const keyMat = new THREE.MeshStandardMaterial({
-  color: 0xA8A8A8, roughness: 0.92, metalness: 0.0,   // Figma 키캡 상면 155–178
+  color: 0x8F9295, roughness: 0.8, metalness: 0.0,   // 키캡 — 베이스보다 한 톤 진한 쿨그레이
 });
-const cableMat = new THREE.MeshStandardMaterial({ color: 0xE0E0E0, roughness: 0.9 });
+const cableMat = new THREE.MeshStandardMaterial({ color: 0xACAFB2, roughness: 0.82 });
+// 모니터 본체(GLB 무채색 셸 전용) — 흰색보다 한 톤 더 어두운 슬리크한 쿨그레이
+const macBodyMat = new THREE.MeshStandardMaterial({
+  color: 0x7A7F82, roughness: 0.88, metalness: 0.0,
+});
 
 // ── Helpers ────────────────────────────────────────────────────────────────
 function roundedRectShape(w, h, r) {
@@ -251,6 +262,13 @@ new THREE.GLTFLoader().load('src/models/macintosh-classic-body.glb', (gltf) => {
     // (0,0,0이든 255,255,255든) 더 이상 드러나지 않는다 — 라벨/로고를 다시 그리는
     // 게 아니라 GLB 원본 텍스처의 알파 채널을 있는 그대로 존중하는 것.
     const mats = Array.isArray(child.material) ? child.material : [child.material];
+    const hasTexture = mats.some((mat) => mat && mat.map);
+    if (!hasTexture) {
+      // 무채색 셸(로고/라벨/스크린 텍스처가 없는 구조 메시)만 모니터 전용 쿨그레이로 —
+      // 텍스처가 있는 메시(로고·라벨·스크린)는 절대 건드리지 않음(이전 지시 그대로 유지).
+      child.material = macBodyMat;
+      return;
+    }
     mats.forEach((mat) => {
       if (!mat || !mat.map) return;
       const tex = mat.map;
@@ -324,10 +342,29 @@ const state = {
   booting: false,      // 부팅 페이드 진행 중
 };
 
-// 호버 시 CRT 글로우 (웜 화이트)
-const glow = new THREE.PointLight(0xFFE8C4, 0, 4.5);
+// 호버 시 CRT 글로우 (웜 화이트) — 평상시에도 아주 옅게 켜둬 은은한 화면 발광감을 준다
+const glow = new THREE.PointLight(0xFFE8C4, 0.05, 4.5);
 glow.position.set(0, BODY_CY + 0.79, FRONT_Z + 1.0);
 mac.add(glow);
+
+// 스크린 유리 느낌 — 아주 옅은 스캔라인 + 미세한 플리커(화면 콘텐츠/인터랙션은 그대로 —
+// hitPlane과 별개의 순수 장식용 오버레이라 레이캐스트에 잡히지 않음, 클릭/호버 로직 무영향).
+const scanCanvas = document.createElement('canvas');
+scanCanvas.width = 4; scanCanvas.height = 240;
+(function drawScanlines() {
+  const ctx = scanCanvas.getContext('2d');
+  ctx.fillStyle = 'rgba(0,0,0,0.4)';
+  for (let y = 0; y < 240; y += 2) ctx.fillRect(0, y, 4, 1);
+}());
+const scanTex = new THREE.CanvasTexture(scanCanvas);
+const screenGlassMat = new THREE.MeshBasicMaterial({
+  map: scanTex, transparent: true, opacity: 0.045, depthWrite: false,
+});
+const screenGlass = onFront(
+  new THREE.Mesh(new THREE.PlaneGeometry(2.66, 2.25), screenGlassMat),
+  0, 0.79, FRONT_Z + 0.091
+);
+screenGlass.renderOrder = 1;
 
 // (구) 친(chin) 디테일 일체 제거 — Apple 로고 데칼, 플로피 그루브/슬릿,
 // 우측 인셋 플레이트, 도트, 뒷면 통풍구는 전부 생성 지오메트리 시절 본체용
@@ -482,7 +519,10 @@ function animate() {
   // ③ 호버 상태 → 웜 틴트/글로우 lerp
   const warmTarget = state.hover ? 1 : 0;
   state.warm += (warmTarget - state.warm) * 0.08;
-  glow.intensity = state.warm * 0.5;
+  glow.intensity = 0.05 + state.warm * 0.45;   // 평상시 아주 옅은 발광 + 호버 시 최대 0.5까지(기존과 동일)
+
+  // ③b 스크린 유리 미세 플리커 — 진폭 매우 작게, 콘텐츠/인터랙션 무관
+  screenGlassMat.opacity = 0.045 + Math.sin(t / 1700) * 0.012;
 
   // ④ 키 프레스 애니메이션
   for (const code in keyMap) {
