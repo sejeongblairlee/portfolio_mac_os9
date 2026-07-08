@@ -223,35 +223,33 @@ const envMapRT = (function makeStudioEnv() {
 }());
 const envMap = envMapRT.texture;
 
-// ── Materials — 저채도 쿨그레이 패밀리, 소프트 프로스티드 + 절제된 반사 ────────
+// ── Materials — 레퍼런스05: 빈티지 오피스머신 아이보리 패밀리 ────────────────
+// 레퍼런스05(커피메이커 아래 빈티지 계산기)의 "구성물"이 아니라 재질 톤만 참조 —
+// 실측(크롭 확대 후 평균): 본체 정면 패널 ≈rgb(226,223,204), 키캡 ≈rgb(218,210,186).
+// 웜 아이보리·매트, 광택 없음, 과하게 노랗지 않음, 지저분하지 않음.
 // 씬 조명(헤미스피어+키+필 2개) + 캔버스 contrast(1.12) 필터가 밝은 색을 흰색으로
-// 밀어붙이는 정도가 커서(실측: 원래 계획한 옅은 톤은 렌더 후 배경과 거의 구분 안 됨),
-// 렌더링된 최종 톤이 의도한 만큼 보이도록 베이스 컬러를 그만큼 진하게 잡았다
-// (라이팅 자체는 안 건드림 — 재질 컬러만 보정).
-// 통일 원칙(레퍼런스 02/03): 모니터/키보드/마우스는 하나의 큐레이션된 세트 —
-// 같은 표면 논리(소프트 프로스티드), 같은 블루 린, 같은 반사 처리. 키보드/마우스는
-// 본체보다 살짝만 밝게(패밀리 안에서의 미묘한 대비), "raw 화이트 프리미티브" 배제.
-// envMap은 스페큘러(반사)만 더하지만 러프니스 0.5대에선 로브가 넓어 밝기 기여가
-// 상당함(실측: intensity 0.4 + 밝은 env에서 전 재질이 223~252로 백화) — intensity를
-// 절반 수준으로 줄이고 베이스 컬러를 그만큼 더 진하게 재보정.
-// 하나의 큐레이션된 세트: 네 재질이 전부 같은 표면 논리(러프니스 0.48, 같은
-// envMapIntensity)를 공유하고, 컬러도 같은 헥스 계열에서 반 톤 차이만 둔다 —
-// 키보드/마우스는 본체보다 "미묘하게만" 밝게(별도 셰이딩으로 보이지 않게).
+// 밀어붙이는 정도가 커서(이전 쿨그레이 패스에서 실측 확인됨), 렌더링된 최종 톤이
+// 레퍼런스와 같은 밝기로 보이도록 베이스 컬러는 그보다 어둡게 잡되, 이전 쿨그레이
+// 앵커(0x6F757F/0x757B85)와 같은 밝기 크기를 유지한 채 색상비만 웜 아이보리로
+// 회전시켰다(라이팅/envMapIntensity 파이프라인은 그대로 — 검증된 밝기 보정 재사용).
+// 하나의 큐레이션된 세트 원칙은 유지: 네 재질이 같은 표면 논리를 공유하고,
+// 키보드/마우스는 본체보다 살짝만 밝게. 러프니스는 "매트, 안 광나는" 요구에 맞춰
+// 이전보다 한 단계 올림(0.48→0.56), envMapIntensity는 살짝 낮춤(글로시함 배제).
 const whiteMat = new THREE.MeshStandardMaterial({
-  color: 0x757B85, roughness: 0.48, metalness: 0.0,
-  envMap, envMapIntensity: 0.26,
+  color: 0x817F75, roughness: 0.58, metalness: 0.0,
+  envMap, envMapIntensity: 0.2,
 });
 const keyMat = new THREE.MeshStandardMaterial({
-  color: 0x6F757F, roughness: 0.48, metalness: 0.0,   // 키캡 — 본체와 같은 톤(세트의 에코)
-  envMap, envMapIntensity: 0.26,
+  color: 0x7B796F, roughness: 0.56, metalness: 0.0,   // 키캡 — 본체와 같은 톤(세트의 에코)
+  envMap, envMapIntensity: 0.2,
 });
 const cableMat = new THREE.MeshStandardMaterial({
-  color: 0x757B85, roughness: 0.5, envMap, envMapIntensity: 0.22,
+  color: 0x817F75, roughness: 0.6, envMap, envMapIntensity: 0.18,
 });
 // 모니터 본체(GLB 무채색 셸 전용) — 세트의 톤 앵커
 const macBodyMat = new THREE.MeshStandardMaterial({
-  color: 0x6F757F, roughness: 0.48, metalness: 0.0,
-  envMap, envMapIntensity: 0.26,
+  color: 0x7B796F, roughness: 0.56, metalness: 0.0,
+  envMap, envMapIntensity: 0.2,
 });
 
 // ── Helpers ────────────────────────────────────────────────────────────────
