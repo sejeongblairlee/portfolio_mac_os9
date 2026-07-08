@@ -8,33 +8,27 @@
 <style>
 * { margin:0; padding:0; box-sizing:border-box; }
 body {
-  /* 씬 배경(쿨 블루그레이)이 CSS 필터를 거친 뒤의 실제 렌더 톤과 일치 — 로드 중 이음새 방지 */
-  background:#E5E9F0; overflow:hidden; width:100vw; height:100vh;
+  /* 레퍼런스04(반투명 블루) 스튜디오 배경 톤과 로드 중 이음새 방지용 사전 일치 */
+  background:#D8E2F0; overflow:hidden; width:100vw; height:100vh;
   font-family:'Pretendard',-apple-system,'Helvetica Neue',sans-serif;
 }
 /* 밝기↓·대비↑ — 배경은 scene.background 사전 보정으로 목표 톤 유지됨 */
 #c { display:block; filter: brightness(0.94) contrast(1.12); }
-/* 에디토리얼 배경 분위기 — 중앙(오브젝트 뒤)은 그대로, 가장자리로 갈수록 아주 옅게
-   어두워지는 비네트. 스튜디오 배지(backdrop) 느낌으로 배경이 "플랫"하게 읽히지
-   않게 한다. 순수 장식 DOM 오버레이 — 씬/인터랙션 무영향. */
+/* 레퍼런스04 전환 이후: 배경 글로우 자체를 scene.background(캔버스 라디얼 그라디언트,
+   중앙 화이트→가장자리 페일블루)로 옮겼기 때문에 이 DOM 비네트는 거의 꺼둔다
+   (과거 에디토리얼 무드용 코너 다크닝 — 새 "클린 스튜디오 글로우" 방향과는 다른
+   레이어라 겹치면 탁해짐). 완전히 지우지 않고 아주 옅게 남겨 프레임 정리감만. */
 #vignette {
   position:fixed; inset:0; z-index:3; pointer-events:none;
   background:
     radial-gradient(ellipse 130% 105% at 50% 42%,
-      rgba(0,0,0,0) 60%, rgba(38,44,58,0.055) 84%, rgba(30,36,50,0.10) 100%);
+      rgba(0,0,0,0) 70%, rgba(60,90,130,0.02) 88%, rgba(50,75,110,0.035) 100%);
 }
-/* 에디토리얼 톤 무드용 아주 옅은 모노크롬 그레인 — 3D 씬·카메라·인터랙션과 완전히
-   무관(비인터랙티브, 캔버스 위에 얹기만 함). 배경 이미지는 JS가 캔버스로 생성해서
-   주입(아래 스크립트) — SVG feTurbulence 데이터URI는 렌더러에 따라 안 나올 수 있어
-   확실하게 그려지는 캔버스 노이즈 타일로 대체.
-   주의: overlay 블렌드의 세기는 베이스 밝기에 좌우됨 — 순백(241) 위에서는 opacity
-   0.05가 사실상 무효과(실측 stdev 0.23/255)였고, 쿨그레이(226) 배경에서는 1.0이
-   과함(stdev 12). 0.28은 "지저분/머디"하다는 피드백을 받아 0.15로 내림 —
-   분위기용 미세 그레인은 남기되 렌더를 노이즈로 덮지 않는 선.
-   배경 톤을 바꾸면 반드시 재실측할 것. */
+/* 레퍼런스04는 "no paper texture / no dirty grain"을 명시 — 메커니즘은 남겨두되
+   (다른 무드로 되돌릴 때를 대비) opacity 0으로 완전히 꺼서 클린한 스튜디오 컷 느낌. */
 #grain {
   position:fixed; inset:0; z-index:4; pointer-events:none;
-  opacity:0.15; mix-blend-mode:overlay;
+  opacity:0; mix-blend-mode:overlay;
   background-size: 160px 160px;
 }
 #overlay {
@@ -116,6 +110,28 @@ if (DEBUG_DEPTH) {
 const scene = new THREE.Scene();
 scene.background = new THREE.Color(BG);
 
+// 레퍼런스04(반투명 블루) 스튜디오 배경 — 순색 배경 대신 "중앙은 거의 흰빛,
+// 가장자리로 갈수록 페일 블루" 라디얼 글로우로 교체. Texture를 scene.background에
+// 직접 대입하면 라이팅과 무관한 화면공간 백드롭 쿼드로 렌더되어(3D 오브젝트/그림자에
+// 전혀 영향 없음) 기존 안개/조명/카메라 로직을 그대로 둔 채 배경만 바뀐다.
+// 디버그 뷰는 완전히 그대로(단색 다크) 유지.
+if (!DEBUG_DEPTH) {
+  const bgCanvas = document.createElement('canvas');
+  bgCanvas.width = 640; bgCanvas.height = 400;   // 가로로 넓은 캔버스 — 와이드 뷰포트로
+  const bgCtx = bgCanvas.getContext('2d');       // 늘어나도 글로우 타원이 과도하게 안 찌그러짐
+  const bw = bgCanvas.width, bh = bgCanvas.height;
+  const glow = bgCtx.createRadialGradient(bw / 2, bh * 0.44, bh * 0.05, bw / 2, bh * 0.5, bh * 0.98);
+  glow.addColorStop(0.0, '#FCFEFF');
+  glow.addColorStop(0.32, '#E7EEF7');
+  glow.addColorStop(0.62, '#CCDAEA');
+  glow.addColorStop(1.0, '#AFC2D9');
+  bgCtx.fillStyle = glow;
+  bgCtx.fillRect(0, 0, bw, bh);
+  const bgTex = new THREE.CanvasTexture(bgCanvas);
+  bgTex.encoding = THREE.sRGBEncoding;
+  scene.background = bgTex;
+}
+
 const camera = new THREE.PerspectiveCamera(26, 1, 0.1, 100);
 // 디버그: 살짝 옆에서 봐서 본체 측면 깊이가 드러나도록 — 구도(주제/거리/줌)는 동일, 각도만 미세 조정
 camera.position.set(DEBUG_DEPTH ? 3.4 : 0, 5.0, DEBUG_DEPTH ? 18.0 : 18.6);
@@ -134,9 +150,13 @@ onResize();
 // 앰비언트를 낮추고 키 라이트를 올려 면 간 명암 정의(디피니션) 강화
 // 디버그 모드: 앰비언트를 더 낮추고 키 라이트를 좌측으로 더 기울여 그림자/깊이가
 // 뚜렷하게 드러나도록(라이트 모드의 "은은한 키노트 룩" 값은 그대로 둠).
-scene.add(new THREE.HemisphereLight(0xFFFFFF, DEBUG_DEPTH ? 0x222222 : 0xE2E2E2, DEBUG_DEPTH ? 0.32 : 0.70));
+// 레퍼런스04(반투명 유리) 대응: 글로시 클리어코트 표면은 강한 단일 방향광을 날카로운
+// 하이라이트로 그대로 노출시켜 "머디/하드섀도"로 읽히기 쉽다 — 앰비언트를 올리고
+// 키 라이트를 살짝 낮춰 소프트박스 스튜디오처럼 고르게 감싸는 빛으로 조정
+// (구도/각도/그림자 캐스팅 로직은 그대로, 강도 비율만 조정).
+scene.add(new THREE.HemisphereLight(0xFFFFFF, DEBUG_DEPTH ? 0x222222 : 0xE2E2E2, DEBUG_DEPTH ? 0.32 : 0.82));
 
-const keyL = new THREE.DirectionalLight(0xFFFFFF, DEBUG_DEPTH ? 0.95 : 0.62);  // 좌상단 키
+const keyL = new THREE.DirectionalLight(0xFFFFFF, DEBUG_DEPTH ? 0.95 : 0.52);  // 좌상단 키
 keyL.position.set(DEBUG_DEPTH ? -9 : -1.2, DEBUG_DEPTH ? 13 : 18, DEBUG_DEPTH ? 7 : 10);
 keyL.castShadow = true;
 keyL.shadow.mapSize.set(2048, 2048);
@@ -147,11 +167,11 @@ keyL.shadow.bias = -0.0004;
 keyL.shadow.radius = 12;
 scene.add(keyL);
 
-const fillR = new THREE.DirectionalLight(0xFFFFFF, 0.16); // 우측 필
+const fillR = new THREE.DirectionalLight(0xFFFFFF, 0.22); // 우측 필
 fillR.position.set(6, 5, 5);
 scene.add(fillR);
 
-const fillF = new THREE.DirectionalLight(0xFFFFFF, 0.12); // 정면 필
+const fillF = new THREE.DirectionalLight(0xFFFFFF, 0.18); // 정면 필
 fillF.position.set(0, 3, 12);
 scene.add(fillF);
 
@@ -162,7 +182,7 @@ const floor = new THREE.Mesh(
   new THREE.PlaneGeometry(80, 80),
   DEBUG_DEPTH
     ? new THREE.MeshStandardMaterial({ color: 0x161616, roughness: 0.95, metalness: 0.0 })
-    : new THREE.ShadowMaterial({ opacity: 0.33 })   // 쿨 블루그레이 배경에서 접지감 또렷하게
+    : new THREE.ShadowMaterial({ opacity: 0.24 })   // 유리 오브젝트 톤에 맞춰 컨택트섀도 더 소프트하게
 );
 floor.rotation.x = -Math.PI / 2;
 floor.receiveShadow = true;
@@ -195,25 +215,32 @@ scene.add(floor);
   scene.add(blob);
 }());
 
-// ── 환경 반사(IBL) — 절제된 스튜디오 리플렉션 ─────────────────────────────────
-// 라이트만 받는 "원시 CG" 표면이 아니라 레퍼런스의 오브제 같은 표면이 되도록,
-// 소프트 그라디언트 스튜디오 환경(위=소프트박스, 수평선=쿨그레이, 아래=어두운 바닥)을
-// 캔버스로 그려 PMREM으로 굽는다. 재질별 envMapIntensity로 반사량은 절제해서 사용.
+// ── 환경 반사(IBL) — 유리질 표면을 지탱하는 스튜디오 리플렉션 ─────────────────
+// 반투명 유리 방향(레퍼런스04)에서는 재질이 "읽히는" 근거가 거의 전적으로 이
+// 반사/하이라이트에 있음(투과 자체는 근사치이므로) — 이전의 절제된 무채색 그라디언트를
+// 더 밝고 쿨블루 톤으로, 소프트박스 하이라이트도 더 크고 선명하게 재보정.
+// 캔버스로 그려 PMREM으로 굽는다. 재질별 envMapIntensity로 반사량은 여전히 조절.
 const envMapRT = (function makeStudioEnv() {
   const c = document.createElement('canvas');
   c.width = 256; c.height = 128;
   const ctx = c.getContext('2d');
   const g = ctx.createLinearGradient(0, 0, 0, 128);
   g.addColorStop(0.0, '#FFFFFF');
-  g.addColorStop(0.42, '#C9CED8');
-  g.addColorStop(0.55, '#AEB4C0');
-  g.addColorStop(1.0, '#5E646E');
+  g.addColorStop(0.38, '#E4ECF7');
+  g.addColorStop(0.6, '#C3D2E6');
+  g.addColorStop(1.0, '#8FA2BC');
   ctx.fillStyle = g; ctx.fillRect(0, 0, 256, 128);
-  // 좌상단 와이드 소프트박스 — 키 라이트의 반사원(면 위에 넓고 부드러운 하이라이트)
-  const sb = ctx.createRadialGradient(70, 26, 4, 70, 26, 60);
-  sb.addColorStop(0, 'rgba(255,255,255,0.95)');
+  // 좌상단 와이드 소프트박스 — 키 라이트의 반사원(면 위에 넓고 부드러운 하이라이트),
+  // 유리 클리어코트가 선명하게 물어야 하므로 이전보다 살짝 크고 진하게
+  const sb = ctx.createRadialGradient(72, 24, 4, 72, 24, 70);
+  sb.addColorStop(0, 'rgba(255,255,255,1)');
   sb.addColorStop(1, 'rgba(255,255,255,0)');
   ctx.fillStyle = sb; ctx.fillRect(0, 0, 256, 128);
+  // 우측 보조 하이라이트 — 반투명 오브젝트가 여러 각도에서 옅게 빛을 받는 느낌
+  const sb2 = ctx.createRadialGradient(196, 40, 2, 196, 40, 40);
+  sb2.addColorStop(0, 'rgba(255,255,255,0.5)');
+  sb2.addColorStop(1, 'rgba(255,255,255,0)');
+  ctx.fillStyle = sb2; ctx.fillRect(0, 0, 256, 128);
   const tex = new THREE.CanvasTexture(c);
   tex.mapping = THREE.EquirectangularReflectionMapping;
   const pmrem = new THREE.PMREMGenerator(renderer);
@@ -223,35 +250,57 @@ const envMapRT = (function makeStudioEnv() {
 }());
 const envMap = envMapRT.texture;
 
-// ── Materials — 저채도 쿨그레이 패밀리, 소프트 프로스티드 + 절제된 반사 ────────
-// 씬 조명(헤미스피어+키+필 2개) + 캔버스 contrast(1.12) 필터가 밝은 색을 흰색으로
-// 밀어붙이는 정도가 커서(실측: 원래 계획한 옅은 톤은 렌더 후 배경과 거의 구분 안 됨),
-// 렌더링된 최종 톤이 의도한 만큼 보이도록 베이스 컬러를 그만큼 진하게 잡았다
-// (라이팅 자체는 안 건드림 — 재질 컬러만 보정).
-// 통일 원칙(레퍼런스 02/03): 모니터/키보드/마우스는 하나의 큐레이션된 세트 —
-// 같은 표면 논리(소프트 프로스티드), 같은 블루 린, 같은 반사 처리. 키보드/마우스는
-// 본체보다 살짝만 밝게(패밀리 안에서의 미묘한 대비), "raw 화이트 프리미티브" 배제.
-// envMap은 스페큘러(반사)만 더하지만 러프니스 0.5대에선 로브가 넓어 밝기 기여가
-// 상당함(실측: intensity 0.4 + 밝은 env에서 전 재질이 223~252로 백화) — intensity를
-// 절반 수준으로 줄이고 베이스 컬러를 그만큼 더 진하게 재보정.
-// 하나의 큐레이션된 세트: 네 재질이 전부 같은 표면 논리(러프니스 0.48, 같은
-// envMapIntensity)를 공유하고, 컬러도 같은 헥스 계열에서 반 톤 차이만 둔다 —
-// 키보드/마우스는 본체보다 "미묘하게만" 밝게(별도 셰이딩으로 보이지 않게).
-const whiteMat = new THREE.MeshStandardMaterial({
-  color: 0x757B85, roughness: 0.48, metalness: 0.0,
-  envMap, envMapIntensity: 0.26,
+// ── Materials — 레퍼런스04: 반투명 아이시블루 유리질 셸 ─────────────────────
+// 이 three.js 버전(r128)은 MeshPhysicalMaterial.transmission 프로퍼티는 파싱하지만
+// 렌더러에 배경-투과 렌더패스가 없어(r13x대에 추가됨) 실제 굴절은 일어나지 않는다 —
+// 그래서 진짜 투과 대신 "opacity + clearcoat + 강한 envMap 반사"로 반투명 유리를
+// 근사한다(요청된 폴백 전략 그대로): 바탕 러프니스는 낮춰 프로스티드 확산광을 만들고,
+// 그 위에 clearcoat 레이어로 표면의 얇고 매끈한 하이라이트를 얹는다. depthWrite는
+// 기본값(true)을 유지 — 꺼버리면 로고/라벨 데칼과 스크린 오버레이의 정확한 컨테인먼트가
+// 깨질 수 있어(이전 세션에서 이미 해결한 스필 문제) 손대지 않음.
+// 통일 원칙: 모니터/키보드/마우스가 같은 반투명 오브젝트 패밀리로 읽히도록 네 재질이
+// 같은 표면 논리(러프니스, clearcoat, 강한 envMapIntensity)를 공유 — 키보드/마우스는
+// 본체보다 아주 살짝만 밝게.
+const GLASS_ROUGHNESS = 0.28;
+const GLASS_CLEARCOAT = 1.0;
+const GLASS_CLEARCOAT_ROUGHNESS = 0.1;
+const GLASS_ENV_INTENSITY = 1.15;   // 투과가 없는 만큼 반사가 "유리감"의 대부분을 담당
+
+const whiteMat = new THREE.MeshPhysicalMaterial({
+  color: 0xDCE7F3, roughness: GLASS_ROUGHNESS, metalness: 0.0,
+  transparent: true, opacity: 0.66,
+  clearcoat: GLASS_CLEARCOAT, clearcoatRoughness: GLASS_CLEARCOAT_ROUGHNESS,
+  envMap, envMapIntensity: GLASS_ENV_INTENSITY,
 });
-const keyMat = new THREE.MeshStandardMaterial({
-  color: 0x6F757F, roughness: 0.48, metalness: 0.0,   // 키캡 — 본체와 같은 톤(세트의 에코)
-  envMap, envMapIntensity: 0.26,
+// 키캡 opacity는 나머지 세트보다 눈에 띄게 높다 — 실측으로 확인한 이유: 60개 키가
+// 촘촘히 붙어 있어 카메라가 이 행을 스치듯(raking angle) 바라볼 때 각 키의 옆면
+// (베벨)이 겹겹이 쌓여 반투명 레이어가 광학적으로 누적되고, 그 결과 몸체보다 훨씬
+// 낮은 opacity(0.62)에서도 키 전체가 하나의 탁한 회색 슬래브로 뭉쳐 보였다(키를
+// 하나씩 숨겨가며 확인 — kbUpper 문제가 아니라 키 자체의 겹침 문제였음). opacity를
+// 올려 레이어당 투과량을 줄이면 이 누적 효과가 옅어진다 — 몸체만큼 투명하진 않지만
+// 클리어코트 하이라이트로 같은 유리질 패밀리 언어는 유지.
+const keyMat = new THREE.MeshPhysicalMaterial({
+  color: 0xCFDCEC, roughness: 0.34, metalness: 0.0,   // 키캡 — 본체와 같은 톤(세트의 에코)
+  transparent: true, opacity: 0.9,
+  clearcoat: GLASS_CLEARCOAT, clearcoatRoughness: 0.16,
+  envMap, envMapIntensity: GLASS_ENV_INTENSITY,
 });
-const cableMat = new THREE.MeshStandardMaterial({
-  color: 0x757B85, roughness: 0.5, envMap, envMapIntensity: 0.22,
+const cableMat = new THREE.MeshPhysicalMaterial({
+  color: 0xCFDCEC, roughness: 0.32, transparent: true, opacity: 0.6,
+  clearcoat: GLASS_CLEARCOAT, clearcoatRoughness: 0.14,
+  envMap, envMapIntensity: 0.95,
 });
-// 모니터 본체(GLB 무채색 셸 전용) — 세트의 톤 앵커
-const macBodyMat = new THREE.MeshStandardMaterial({
-  color: 0x6F757F, roughness: 0.48, metalness: 0.0,
-  envMap, envMapIntensity: 0.26,
+// 모니터 본체(GLB 무채색 셸 전용) — 세트의 톤 앵커, 다른 파츠보다 살짝 더 두껍고
+// 진한 반투명(실제 두꺼운 CRT 셸의 재질감)
+const macBodyMat = new THREE.MeshPhysicalMaterial({
+  color: 0xC7D6E6, roughness: GLASS_ROUGHNESS, metalness: 0.0,
+  transparent: true, opacity: 0.7,
+  clearcoat: GLASS_CLEARCOAT, clearcoatRoughness: GLASS_CLEARCOAT_ROUGHNESS,
+  envMap, envMapIntensity: GLASS_ENV_INTENSITY,
+  // side: DoubleSide를 시도했으나(비수밀 이음새 대비) 실측 결과 스캔 메시 내부의
+  // 뒷면/리세스 벽 지오메트리가 반투명 셸을 뚫고 줄무늬 유령처럼 비쳐 보이는
+  // 아티팩트를 만들었다 — 기본값 FrontSide로 되돌림. 메시가 실제로 수밀하므로
+  // FrontSide만으로 구멍 없이 정상 렌더된다(스크린샷으로 확인).
 });
 
 // ── Helpers ────────────────────────────────────────────────────────────────
@@ -604,14 +653,21 @@ const KB_X_OFFSET = -KB_LEFT_EXTRA / 2;
 
 // 베이스 코너/베벨을 살짝 키워 좀 더 부드럽고 정제된 실루엣으로(풋프린트 w/h는 불변 —
 // 라운드box 헬퍼는 r/bevel이 커져도 바운딩은 그대로라 스케일/포지션에 영향 없음)
+// 반투명(레퍼런스04) 전환 이후: kbLower/kbUpper(넓은 평면 플레이트)와 그 위 60개
+// 키캡이 전부 transparent:true라 three.js의 오브젝트-단위 카메라거리 정렬만으로는
+// "플레이트는 항상 키보다 먼저(뒤에) 그려져야 한다"는 실제 배치를 보장 못해
+// 특정 각도에서 반투명 회색 슬래브가 키 위로 덮이는 정렬 아티팩트가 났다 —
+// renderOrder를 명시해 항상 플레이트(0) → 키(1) 순서로 그리도록 고정.
 const kbLower = roundedBoxMesh(KB_W + KB_LEFT_EXTRA, KB_D, 0.28, 0.11, whiteMat, 0.035);
 kbLower.rotation.x = -Math.PI / 2;
 kbLower.position.set(KB_X_OFFSET, 0.09, 0);
+kbLower.renderOrder = 0;
 kb.add(kbLower);
 
 const kbUpper = roundedBoxMesh(KB_W + KB_LEFT_EXTRA - 0.12, KB_D - 0.12, 0.07, 0.09, whiteMat, 0.026);
 kbUpper.rotation.x = -Math.PI / 2;
 kbUpper.position.set(KB_X_OFFSET, 0.20, 0);
+kbUpper.renderOrder = 0;
 kb.add(kbUpper);
 
 // 키캡 풋프린트를 PITCH 대비 살짝 줄여(0.255→0.235) 키 사이 간격을 더 또렷하게 하고,
@@ -625,6 +681,7 @@ function addKey(x, z, wUnits, code) {
   const key = roundedBoxMesh(w, KU * 0.82, KEY_H, 0.05, keyMat, 0.02);
   key.rotation.x = -Math.PI / 2;
   key.position.set(x + (w - KU) / 2, KEY_Y, z);
+  key.renderOrder = 1;   // 플레이트(renderOrder 0) 다음에 그려지도록 고정 — 위 주석 참조
   kb.add(key);
   if (code) keyMap[code] = { mesh: key, baseY: KEY_Y, press: 0 };
   return wUnits * PITCH;
@@ -666,11 +723,13 @@ rig.add(mouse3d);
 const mouseBody = roundedBoxMesh(0.80, 1.30, 0.34, 0.075, whiteMat, 0.022);
 mouseBody.rotation.x = -Math.PI / 2;
 mouseBody.position.y = 0.19;
+mouseBody.renderOrder = 0;   // 키보드와 동일한 반투명 정렬 고정 — 위 kbLower 주석 참조
 mouse3d.add(mouseBody);
 
 const mBtn = roundedBoxMesh(0.50, 0.30, 0.04, 0.03, keyMat, 0.01);
 mBtn.rotation.x = -Math.PI / 2;
 mBtn.position.set(0, 0.4, -0.35);
+mBtn.renderOrder = 1;
 mouse3d.add(mBtn);
 
 // 마우스 케이블
