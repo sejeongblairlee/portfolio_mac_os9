@@ -3,123 +3,171 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Sejeong Lee — Product Designer</title>
-<link rel="stylesheet" as="style" crossorigin href="https://cdn.jsdelivr.net/gh/orioncactus/pretendard@v1.3.9/dist/web/static/pretendard.css">
+<title>Sejeong Lee — Media Archive</title>
+<!--
+  루트 랜딩 페이지(원래 media-archive.html이었던 실험 페이지를 2026-07-09에
+  index.html로 승격). desktop.html/blair-os.html 및 공용 CSS/JS(script.js,
+  style.css)를 전혀 참조하지 않는다 — 이 파일 하나가 스타일/스크립트를 전부
+  인라인으로 갖고 있어 다른 페이지에 영향을 주지 않는 구조는 그대로 유지.
+  이전 3D 매킨토시 랜딩(구 index.html)은 index-classic-mac-backup.html로
+  보존됨(플로우에서 미사용, 참조용). media-archive.html 경로도 동일 내용의
+  별칭으로 계속 서빙됨.
+
+  헤드라인/코너/부팅 프롬프트 텍스트의 위치·크기·line-height·letter-spacing은
+  Figma dev link 실측값 그대로(근사 아님): node 157:904(desktop) / 160:1309
+  (mobile, ≤768px) — 중앙 텍스트 스택은 165:1027(desktop)/165:1026(mobile),
+  부팅 프롬프트는 162:1024(desktop)/165:1024(mobile, VT323 20px/24px 공통).
+
+  중앙 텍스트는 이제 "Press enter to boot..." 시스템 프롬프트를 겸한다 —
+  Enter 키 또는 프롬프트 텍스트 클릭/탭으로 부팅 시퀀스가 시작되고
+  desktop.html로 이동한다(아래 startBoot() 참고). 일반 캔버스 클릭으로는
+  절대 이동하지 않음 — 드래그/줌은 부팅 전까지 그대로 살아있음.
+
+  이번 패스는 검정 placeholder 사각형만 렌더링한다 — 실제 이미지/영상은 아직
+  매핑하지 않음(요청 범위 밖). 실제 자산 연결 방법:
+  1) data/media-archive-data.js 의 각 항목에 실제 src/width/height를 채운다.
+  2) 이미지: src/images/media-archive/ 에 파일을 넣고 그 경로를 사용.
+  3) 영상: src/video/media-archive/ 에 mp4를 넣고 type:'video'로 바꾼다.
+  4) 아래 buildFragment()의 "TODO: 실제 미디어 매핑" 부분에 TextureLoader/
+     VideoTexture 연결 로직을 추가하면 된다 — 위치/사이즈/애니메이션 골격은
+     이미 완성되어 있어 매핑 코드만 끼워 넣으면 됨.
+  5) public/ 디렉토리에는 절대 실제 자산을 넣지 말 것 — 이 프로젝트에서
+     public/이 생기면 Vercel이 그걸 Output Directory로 오인해 배포 전체가
+     깨진 전례가 있음(레포 히스토리 참고).
+-->
 <style>
 * { margin:0; padding:0; box-sizing:border-box; }
+
+@font-face {
+  font-family: 'EB Garamond';
+  src: url('src/fonts/EBGaramond-Regular.ttf') format('truetype');
+  font-weight: 400; font-style: normal;
+}
+@font-face {
+  font-family: 'VT323';
+  src: url('src/fonts/VT323-Regular.ttf') format('truetype');
+  font-weight: 400; font-style: normal;
+}
+
+html, body {
+  width: 100%; height: 100%; overflow: hidden;
+  background: #fafaf8;   /* Figma: bg-[#fafaf8] */
+}
 body {
-  /* 씬 배경(쿨 블루그레이)이 CSS 필터를 거친 뒤의 실제 렌더 톤과 일치 — 로드 중 이음새 방지 */
-  background:#E5E9F0; overflow:hidden; width:100vw; height:100vh;
-  font-family:'Pretendard',-apple-system,'Helvetica Neue',sans-serif;
+  font-family: 'Pretendard', -apple-system, 'Helvetica Neue', sans-serif;
+  color: #000;
 }
-/* 밝기↓·대비↑ — 배경은 scene.background 사전 보정으로 목표 톤 유지됨 */
-#c { display:block; filter: brightness(0.94) contrast(1.12); }
-/* 에디토리얼 배경 분위기 — 중앙(오브젝트 뒤)은 그대로, 가장자리로 갈수록 아주 옅게
-   어두워지는 비네트. 스튜디오 배지(backdrop) 느낌으로 배경이 "플랫"하게 읽히지
-   않게 한다. 순수 장식 DOM 오버레이 — 씬/인터랙션 무영향. */
-#vignette {
-  position:fixed; inset:0; z-index:3; pointer-events:none;
-  background:
-    radial-gradient(ellipse 130% 105% at 50% 42%,
-      rgba(0,0,0,0) 60%, rgba(38,44,58,0.055) 84%, rgba(30,36,50,0.10) 100%);
+
+#c { position: fixed; inset: 0; display: block; z-index: 0; cursor: grab; }
+#c:active { cursor: grabbing; }
+
+/* 부팅 시퀀스 마지막의 짧은 화이트 플래시/CRT 플리커 — 평소엔 완전히 안 보임 */
+#bootFlash {
+  position: fixed; inset: 0; z-index: 50; pointer-events: none;
+  background: #fff; opacity: 0;
 }
-/* 에디토리얼 톤 무드용 아주 옅은 모노크롬 그레인 — 3D 씬·카메라·인터랙션과 완전히
-   무관(비인터랙티브, 캔버스 위에 얹기만 함). 배경 이미지는 JS가 캔버스로 생성해서
-   주입(아래 스크립트) — SVG feTurbulence 데이터URI는 렌더러에 따라 안 나올 수 있어
-   확실하게 그려지는 캔버스 노이즈 타일로 대체.
-   주의: overlay 블렌드의 세기는 베이스 밝기에 좌우됨 — 순백(241) 위에서는 opacity
-   0.05가 사실상 무효과(실측 stdev 0.23/255)였고, 쿨그레이(226) 배경에서는 1.0이
-   과함(stdev 12). 0.28은 "지저분/머디"하다는 피드백을 받아 0.15로 내림 —
-   분위기용 미세 그레인은 남기되 렌더를 노이즈로 덮지 않는 선.
-   배경 톤을 바꾸면 반드시 재실측할 것. */
-#grain {
-  position:fixed; inset:0; z-index:4; pointer-events:none;
-  opacity:0.15; mix-blend-mode:overlay;
-  background-size: 160px 160px;
-}
-#overlay {
-  position:fixed; inset:0; background:#FFFFFF; opacity:0;
-  pointer-events:none; transition:opacity .6s ease; z-index:99;
-}
-#overlay.go { opacity:1; pointer-events:all; }
-/* ── Figma 1:35 — Pretendard Bold 20/28, #000, top 20px, left/right 24px ── */
+
+/* ── 코너 텍스트 — Figma node 157:908/157:911 (desktop, 2026-07-08 갱신본) ──
+   좌/우 모두 top/left/right 20px(이전 24px에서 변경). Figma export 그대로:
+   좌측 블록은 gap 없음, 우측 블록만 flex gap 2px — 비대칭이지만 실측값 그대로. */
 .corner {
-  position:fixed; top:20px; z-index:10; pointer-events:none;
-  font-size:20px;
-  line-height:28px; color:#000; letter-spacing:0;
-  font-weight:700;
+  position: fixed; top: 20px; z-index: 10; pointer-events: none;
+  font-weight: 500;              /* Pretendard:Medium */
+  font-size: 14px; line-height: 20px;
+  opacity: 0;
 }
-.corner.left  { left:24px;  text-align:left; }
-.corner.right { right:24px; text-align:right; }
-.corner b { font-weight:700; }
+.corner.left { left: 20px; }
+.corner.right { right: 20px; text-align: right; }
+.corner p { margin: 0; }
+.corner.right p:first-child { margin-bottom: 2px; }   /* Figma: 우측 블록만 flex gap 2px */
+
+/* ── 중앙 텍스트 스택 — Figma node 165:1027(desktop) / 165:1026(mobile) ──────
+   헤드라인 + 부팅 프롬프트를 하나의 flex column으로 묶어 전체를 화면 정중앙에
+   배치(gap 20px desktop / 16px mobile). 헤드라인 자체는 두 줄 다 동일 크기
+   (EB Garamond Regular, line-height==font-size, letter-spacing -0.08em —
+   96px/40px 어느 쪽이든 비율 동일해서 em 단위로 자동 스케일됨).
+   .center-stack엔 pointer-events:none(드래그가 캔버스로 그대로 통과) —
+   부팅 프롬프트만 별도로 pointer-events:auto로 켜서 그 텍스트만 클릭 가능. */
+.center-stack {
+  position: fixed; top: 50%; left: 50%; transform: translate(-50%, -50%);
+  z-index: 5; pointer-events: none;
+  display: flex; flex-direction: column; align-items: center; gap: 20px;
+  text-align: center; width: 653px; opacity: 0;
+}
+.headline { white-space: nowrap; }
+.headline p {
+  margin: 0;
+  font-family: 'EB Garamond', Georgia, 'Times New Roman', serif;
+  font-weight: 400;
+  font-size: 96px; line-height: 96px;
+  letter-spacing: -0.08em;
+}
+/* ── 부팅 프롬프트 — Figma node 162:1024(desktop) / 165:1024(mobile), 두
+   브레이크포인트 모두 20px/24px로 동일(글꼴만 VT323 — 이 프로젝트에서 이미
+   태그라인/라벨/창 타이틀에 쓰던 폰트, src/fonts/VT323-Regular.ttf 재사용). */
+.boot-prompt {
+  margin: 0; pointer-events: auto; cursor: pointer;
+  font-family: 'VT323', 'Courier New', monospace;
+  font-weight: 400;
+  font-size: 20px; line-height: 24px;
+  letter-spacing: -0.03em;   /* Figma: -0.6px / 20px */
+  white-space: nowrap;
+  background: none; border: none; color: inherit; padding: 0;
+}
+.boot-cursor { display: inline-block; margin-left: 1px; animation: boot-blink 1s steps(1) infinite; }
+@keyframes boot-blink { 0%, 49% { opacity: 1; } 50%, 100% { opacity: 0; } }
+
+@media (max-width: 768px) {
+  .corner { top: 16px; font-size: 12px; line-height: 16px; }
+  .corner.left { left: 16px; }
+  .corner.right { right: 16px; }
+  .center-stack { width: auto; gap: 16px; }
+  .headline p { font-size: 40px; line-height: 40px; }
+}
 </style>
 </head>
 <body>
-<div class="corner left"><b>SEJEONG LEE</b><br>Product Designer</div>
-<div class="corner right">Seoul, Korea<br><b>whynotblair@gmail.com</b></div>
+
+<div class="corner left"><p>SEJEONG LEE</p><p>Product Designer</p></div>
+<div class="corner right"><p>Seoul, Korea</p><p>whynotblair@gmail.com</p></div>
+
+<div class="center-stack">
+  <div class="headline">
+    <p>Hello world</p>
+    <p>Welcome to my space.</p>
+  </div>
+  <div class="boot-prompt" id="bootPrompt" role="button" tabindex="0" aria-label="Press enter to boot"><span id="bootPromptText"></span><span class="boot-cursor" aria-hidden="true">_</span></div>
+</div>
+
 <canvas id="c"></canvas>
-<div id="vignette"></div>
-<div id="grain"></div>
-<div id="overlay"></div>
+<div id="bootFlash"></div>
 
 <script src="https://cdn.jsdelivr.net/npm/three@0.128.0/build/three.min.js"></script>
-<script src="https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/loaders/GLTFLoader.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/controls/OrbitControls.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/gsap@3.12.5/dist/gsap.min.js"></script>
+<script src="data/media-archive-data.js"></script>
 <script>
 (function () {
 'use strict';
 
-// #grain 배경 타일 생성 — 3D 씬/카메라와 무관한 순수 DOM 오버레이(비인터랙티브).
-// CSS만으로는 렌더러별로 결과가 들쭉날쭉해서 캔버스로 노이즈를 직접 그려 data URL로 주입.
-(function paintGrainTile() {
-  const c = document.createElement('canvas');
-  c.width = 160; c.height = 160;
-  const ctx = c.getContext('2d');
-  const img = ctx.createImageData(160, 160);
-  for (let i = 0; i < img.data.length; i += 4) {
-    const v = Math.random() * 255;
-    img.data[i] = img.data[i + 1] = img.data[i + 2] = v;
-    img.data[i + 3] = 255;
-  }
-  ctx.putImageData(img, 0, 0);
-  const grainEl = document.getElementById('grain');
-  if (grainEl) grainEl.style.backgroundImage = `url(${c.toDataURL()})`;
-}());
+if (!window.MEDIA_ARCHIVE_DATA || !window.MEDIA_ARCHIVE_DATA.length) {
+  console.error('media-archive: window.MEDIA_ARCHIVE_DATA missing — check data/media-archive-data.js load order');
+  return;
+}
 
-// ?debug(=depth) 로 방문 시에만 진단용 다크 씬으로 전환 — 기본 랜딩(라이트 키노트 렌더)은
-// 완전히 그대로. 모델 실루엣/깊이/그림자 확인용, 방문자에게 노출되는 기본 화면이 아님.
-const DEBUG_DEPTH = /[?&]debug(=|&|$)/.test(location.search);
-// 다크 배경에서 코너 텍스트(하드코딩 #000)가 안 보이므로 디버그 모드에서만 흰색으로
-if (DEBUG_DEPTH) document.querySelectorAll('.corner').forEach((el) => { el.style.color = '#fff'; });
-
-// 캔버스 CSS 필터(brightness .94 / contrast 1.12) 통과 후 옅은 쿨그레이(#F1F2F4)가
-// 되도록 사전 보정 — 순백 대신 살짝 차분한 톤으로 본체 실루엣 분리감을 준다.
-// 에디토리얼 레퍼런스(02/03) 실측 기반 쿨 블루그레이 배경 — 순백(242)이 아니라
-// 렌더 후 약 rgb(229,233,240)가 되도록 CSS 필터(brightness .94 / contrast 1.12)를
-// 역보정한 값. "나이트타임 그레이"가 아니라 밝고 클린한 쿨그레이 — 오브젝트
-// 실루엣 분리는 유지하면서 무드는 가볍게.
-const BG = DEBUG_DEPTH ? 0x111111 : 0xE8ECF3;
-const DEG = Math.PI / 180;
-
-// ── Renderer / Scene / Camera (고정 카메라 — 드래그 회전 없음) ─────────────
+// ── Renderer / Scene / Camera ───────────────────────────────────────────
 const canvas = document.getElementById('c');
 const renderer = new THREE.WebGLRenderer({ canvas, antialias: true });
 renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
-renderer.shadowMap.enabled = true;
-renderer.shadowMap.type = THREE.PCFSoftShadowMap;
 renderer.outputEncoding = THREE.sRGBEncoding;
-if (DEBUG_DEPTH) {
-  // 다크 배경에서 화이트 바디가 날아가지(blown out) 않도록 노출을 살짝 낮춤
-  renderer.toneMapping = THREE.ACESFilmicToneMapping;
-  renderer.toneMappingExposure = 0.9;
-}
 
+const BG = 0xfafaf8;   // Figma: #fafaf8
 const scene = new THREE.Scene();
 scene.background = new THREE.Color(BG);
 
-const camera = new THREE.PerspectiveCamera(26, 1, 0.1, 100);
-// 디버그: 살짝 옆에서 봐서 본체 측면 깊이가 드러나도록 — 구도(주제/거리/줌)는 동일, 각도만 미세 조정
-camera.position.set(DEBUG_DEPTH ? 3.4 : 0, 5.0, DEBUG_DEPTH ? 18.0 : 18.6);
-camera.lookAt(0, 1.37, 0);
+const camera = new THREE.PerspectiveCamera(50, window.innerWidth / window.innerHeight, 0.1, 100);
+camera.position.set(0, 0, 17);   // GSAP가 14로 돌리인 — 아래 인트로 참고(이전 22→18보다 훨씬 가깝게)
+camera.lookAt(0, 0, 0);
 
 function onResize() {
   const w = window.innerWidth, h = window.innerHeight;
@@ -130,678 +178,346 @@ function onResize() {
 window.addEventListener('resize', onResize);
 onResize();
 
-// ── Lighting — 밝고 부드러운 키노트 렌더 (좌상단이 살짝 밝음) ──────────────
-// 앰비언트를 낮추고 키 라이트를 올려 면 간 명암 정의(디피니션) 강화
-// 디버그 모드: 앰비언트를 더 낮추고 키 라이트를 좌측으로 더 기울여 그림자/깊이가
-// 뚜렷하게 드러나도록(라이트 모드의 "은은한 키노트 룩" 값은 그대로 둠).
-scene.add(new THREE.HemisphereLight(0xFFFFFF, DEBUG_DEPTH ? 0x222222 : 0xE2E2E2, DEBUG_DEPTH ? 0.32 : 0.70));
+// ── OrbitControls — 드래그 회전 + 스크롤 줌, 범위 제한 + 댐핑 ──────────────
+// 줌아웃 최대치를 크게 낮췄다(26→18) — 이전엔 최대로 줌아웃하면 파티클 필드가
+// 화면 안에서 너무 작아져 백지에 가까워지는 문제가 있었음(실측 확인 필요 사항).
+const controls = new THREE.OrbitControls(camera, renderer.domElement);
+controls.enableDamping = true;
+controls.dampingFactor = 0.07;
+controls.enablePan = false;              // 타깃 고정 — 구도가 화면 밖으로 안 밀림
+controls.minDistance = 8;
+controls.maxDistance = 18;
+controls.minPolarAngle = Math.PI * 0.28; // 너무 위/아래로 뒤집혀 길 잃지 않도록 제한
+controls.maxPolarAngle = Math.PI * 0.72;
+controls.rotateSpeed = 0.45;
+controls.zoomSpeed = 0.6;
+controls.target.set(0, 0, 0);
+// 유휴 상태에서도 "은은하게 살아있는" 느낌을 주는 아주 느린 자동 공전 —
+// 사용자가 드래그하면 OrbitControls가 그 입력을 우선하고, 손을 떼면 다시
+// 이 느린 자동 회전으로 돌아온다(라이브러리 기본 동작, 별도 상태 관리 불필요).
+controls.autoRotate = true;
+controls.autoRotateSpeed = 0.12;
 
-const keyL = new THREE.DirectionalLight(0xFFFFFF, DEBUG_DEPTH ? 0.95 : 0.62);  // 좌상단 키
-keyL.position.set(DEBUG_DEPTH ? -9 : -1.2, DEBUG_DEPTH ? 13 : 18, DEBUG_DEPTH ? 7 : 10);
-keyL.castShadow = true;
-keyL.shadow.mapSize.set(2048, 2048);
-keyL.shadow.camera.near = 1;  keyL.shadow.camera.far = 34;
-keyL.shadow.camera.left = -9; keyL.shadow.camera.right = 9;
-keyL.shadow.camera.top = 9;   keyL.shadow.camera.bottom = -9;
-keyL.shadow.bias = -0.0004;
-keyL.shadow.radius = 12;
-scene.add(keyL);
+// ── 미디어 파티클 — 검정 PlaneGeometry, 항상 카메라를 향하는 빌보드 ─────────
+// 색/기울임 있는 파스텔 카드는 전부 제거 — 지금은 순수 검정 사각형만.
+// 회전은 절대 랜덤으로 주지 않는다: 매 프레임 카메라 쿼터니언을 그대로 복사해
+// "빌보드"로 만들어, OrbitControls로 궤도를 돌려도 사각형이 항상 정면을
+// 보고 반듯하게 서 있다(perspective로 인한 크기 변화는 자연스러운 원근일 뿐
+// 의도적인 기울임이 아님).
+//
+// 헤드라인/코너 텍스트를 실제로 가리지 않도록, 후보 위치를 실제 카메라로
+// 투영(project)해 화면 비율 좌표로 바꾼 뒤 "UI가 있는 영역"이면 재추첨한다.
+//
+// 실측으로 발견한 버그 1: 빌드 시점 카메라 거리 하나만으로 검사하면, 사용자가
+// 최대로 줌인(가까운 거리)했을 때 카메라 각도에 따라 같은 월드 좌표가 화면
+// 코너 쪽으로 더 밀려나 코너 텍스트를 가리는 경우가 실제로 발생했다(스크린샷
+// 확인). 그래서 minDistance/기본거리/maxDistance 세 지점 모두에서 화면상
+// 겹치지 않는지 확인 — 하나라도 겹치면 재추첨한다.
+//
+// 실측으로 발견한 버그 2: 하드코딩한 화면비율 값(예: sx<0.2)은 넓은 데스크톱
+// 프레임 기준으로 잡은 것이라, 좁은 모바일 세로 화면(예: 390px)에서는 코너
+// 텍스트 블록이 차지하는 비율 자체가 훨씬 커져서 보호구역이 실제 텍스트보다
+// 좁아지는 문제가 있었다(모바일 스크린샷에서 코너 텍스트가 파티클에 가려짐을
+// 확인). 그래서 하드코딩 대신 실제 DOM 요소의 getBoundingClientRect()를
+// 읽어 화면 비율로 변환 — 뷰포트 크기/비율이 뭐든 실제 텍스트 박스 그대로 보호.
+camera.updateMatrixWorld(true);
+const _proj = new THREE.Vector3();
+const _savedCamPos = new THREE.Vector3();
 
-const fillR = new THREE.DirectionalLight(0xFFFFFF, 0.16); // 우측 필
-fillR.position.set(6, 5, 5);
-scene.add(fillR);
+function elRectFraction(el, marginPx) {
+  const r = el.getBoundingClientRect();
+  return {
+    x0: (r.left - marginPx) / window.innerWidth,
+    x1: (r.right + marginPx) / window.innerWidth,
+    y0: (r.top - marginPx) / window.innerHeight,
+    y1: (r.bottom + marginPx) / window.innerHeight,
+  };
+}
+// 커스텀 폰트(EB Garamond/VT323) 로딩 전 폴백 폰트 크기로 잴 수 있어 여유를
+// 넉넉히 둔다(24px) — 실제 텍스트 자체는 처음에 opacity:0라 안 보이므로,
+// 보호구역이 약간 넓게 잡히는 쪽은 무해하고 좁게 잡히는 쪽만 문제가 된다.
+const MARGIN = 24;
+const headlineBox = elRectFraction(document.querySelector('.center-stack'), MARGIN);
+const cornerLeftBox = elRectFraction(document.querySelector('.corner.left'), MARGIN);
+const cornerRightBox = elRectFraction(document.querySelector('.corner.right'), MARGIN);
 
-const fillF = new THREE.DirectionalLight(0xFFFFFF, 0.12); // 정면 필
-fillF.position.set(0, 3, 12);
-scene.add(fillF);
-
-// 바닥 — 기본: Figma 접지 그림자(투명 ShadowMaterial, 배경 위에 그림자만).
-// 디버그: 실제로 보이는 다크 매트 바닥(receiveShadow로 본체/키보드/마우스 접지 그림자가
-// 또렷하게 드러남 — ShadowMaterial은 배경이 이미 어두우면 그림자와 구분이 안 됨).
-const floor = new THREE.Mesh(
-  new THREE.PlaneGeometry(80, 80),
-  DEBUG_DEPTH
-    ? new THREE.MeshStandardMaterial({ color: 0x161616, roughness: 0.95, metalness: 0.0 })
-    : new THREE.ShadowMaterial({ opacity: 0.33 })   // 쿨 블루그레이 배경에서 접지감 또렷하게
-);
-floor.rotation.x = -Math.PI / 2;
-floor.receiveShadow = true;
-scene.add(floor);
-
-// 그라운딩 블롭 섀도 — 애플 제품 렌더식: 넓고 매우 부드러운 저농도 타원,
-// 본체+키보드 아래 중앙 배치 (가우시안 폴오프)
-(function addBlobShadow() {
-  const c = document.createElement('canvas');
-  c.width = 512; c.height = 256;
-  const ctx = c.getContext('2d');
-  const g = ctx.createRadialGradient(256, 128, 0, 256, 128, 250);
-  g.addColorStop(0, 'rgba(0,0,0,0.13)');
-  g.addColorStop(0.55, 'rgba(0,0,0,0.055)');
-  g.addColorStop(1, 'rgba(0,0,0,0)');
-  ctx.save();
-  ctx.translate(256, 128);
-  ctx.scale(1, 0.5);
-  ctx.translate(-256, -128);
-  ctx.fillStyle = g;
-  ctx.fillRect(0, -128, 512, 512);
-  ctx.restore();
-  const tex = new THREE.CanvasTexture(c);
-  const blob = new THREE.Mesh(
-    new THREE.PlaneGeometry(9.5, 4.75),
-    new THREE.MeshBasicMaterial({ map: tex, transparent: true, depthWrite: false })
-  );
-  blob.rotation.x = -Math.PI / 2;
-  blob.position.set(0, 0.002, 1.9);
-  scene.add(blob);
-}());
-
-// ── 환경 반사(IBL) — 절제된 스튜디오 리플렉션 ─────────────────────────────────
-// 라이트만 받는 "원시 CG" 표면이 아니라 레퍼런스의 오브제 같은 표면이 되도록,
-// 소프트 그라디언트 스튜디오 환경(위=소프트박스, 수평선=쿨그레이, 아래=어두운 바닥)을
-// 캔버스로 그려 PMREM으로 굽는다. 재질별 envMapIntensity로 반사량은 절제해서 사용.
-const envMapRT = (function makeStudioEnv() {
-  const c = document.createElement('canvas');
-  c.width = 256; c.height = 128;
-  const ctx = c.getContext('2d');
-  const g = ctx.createLinearGradient(0, 0, 0, 128);
-  g.addColorStop(0.0, '#FFFFFF');
-  g.addColorStop(0.42, '#C9CED8');
-  g.addColorStop(0.55, '#AEB4C0');
-  g.addColorStop(1.0, '#5E646E');
-  ctx.fillStyle = g; ctx.fillRect(0, 0, 256, 128);
-  // 좌상단 와이드 소프트박스 — 키 라이트의 반사원(면 위에 넓고 부드러운 하이라이트)
-  const sb = ctx.createRadialGradient(70, 26, 4, 70, 26, 60);
-  sb.addColorStop(0, 'rgba(255,255,255,0.95)');
-  sb.addColorStop(1, 'rgba(255,255,255,0)');
-  ctx.fillStyle = sb; ctx.fillRect(0, 0, 256, 128);
-  const tex = new THREE.CanvasTexture(c);
-  tex.mapping = THREE.EquirectangularReflectionMapping;
-  const pmrem = new THREE.PMREMGenerator(renderer);
-  const rt = pmrem.fromEquirectangular(tex);
-  tex.dispose(); pmrem.dispose();
-  return rt;
-}());
-const envMap = envMapRT.texture;
-
-// ── Materials — 저채도 쿨그레이 패밀리, 소프트 프로스티드 + 절제된 반사 ────────
-// 씬 조명(헤미스피어+키+필 2개) + 캔버스 contrast(1.12) 필터가 밝은 색을 흰색으로
-// 밀어붙이는 정도가 커서(실측: 원래 계획한 옅은 톤은 렌더 후 배경과 거의 구분 안 됨),
-// 렌더링된 최종 톤이 의도한 만큼 보이도록 베이스 컬러를 그만큼 진하게 잡았다
-// (라이팅 자체는 안 건드림 — 재질 컬러만 보정).
-// 통일 원칙(레퍼런스 02/03): 모니터/키보드/마우스는 하나의 큐레이션된 세트 —
-// 같은 표면 논리(소프트 프로스티드), 같은 블루 린, 같은 반사 처리. 키보드/마우스는
-// 본체보다 살짝만 밝게(패밀리 안에서의 미묘한 대비), "raw 화이트 프리미티브" 배제.
-// envMap은 스페큘러(반사)만 더하지만 러프니스 0.5대에선 로브가 넓어 밝기 기여가
-// 상당함(실측: intensity 0.4 + 밝은 env에서 전 재질이 223~252로 백화) — intensity를
-// 절반 수준으로 줄이고 베이스 컬러를 그만큼 더 진하게 재보정.
-// 하나의 큐레이션된 세트: 네 재질이 전부 같은 표면 논리(러프니스 0.48, 같은
-// envMapIntensity)를 공유하고, 컬러도 같은 헥스 계열에서 반 톤 차이만 둔다 —
-// 키보드/마우스는 본체보다 "미묘하게만" 밝게(별도 셰이딩으로 보이지 않게).
-const whiteMat = new THREE.MeshStandardMaterial({
-  color: 0x757B85, roughness: 0.48, metalness: 0.0,
-  envMap, envMapIntensity: 0.26,
-});
-const keyMat = new THREE.MeshStandardMaterial({
-  color: 0x6F757F, roughness: 0.48, metalness: 0.0,   // 키캡 — 본체와 같은 톤(세트의 에코)
-  envMap, envMapIntensity: 0.26,
-});
-const cableMat = new THREE.MeshStandardMaterial({
-  color: 0x757B85, roughness: 0.5, envMap, envMapIntensity: 0.22,
-});
-// 모니터 본체(GLB 무채색 셸 전용) — 세트의 톤 앵커
-const macBodyMat = new THREE.MeshStandardMaterial({
-  color: 0x6F757F, roughness: 0.48, metalness: 0.0,
-  envMap, envMapIntensity: 0.26,
-});
-
-// ── Helpers ────────────────────────────────────────────────────────────────
-function roundedRectShape(w, h, r) {
-  const s = new THREE.Shape();
-  const x = -w / 2, y = -h / 2;
-  s.moveTo(x + r, y);
-  s.lineTo(x + w - r, y);
-  s.quadraticCurveTo(x + w, y, x + w, y + r);
-  s.lineTo(x + w, y + h - r);
-  s.quadraticCurveTo(x + w, y + h, x + w - r, y + h);
-  s.lineTo(x + r, y + h);
-  s.quadraticCurveTo(x, y + h, x, y + h - r);
-  s.lineTo(x, y + r);
-  s.quadraticCurveTo(x, y, x + r, y);
-  return s;
+function inBox(sx, sy, box) {
+  return sx > box.x0 && sx < box.x1 && sy > box.y0 && sy < box.y1;
+}
+function isClearOfUI(wx, wy, wz) {
+  _proj.set(wx, wy, wz).project(camera);
+  const sx = (_proj.x + 1) / 2;        // 0..1, 왼쪽→오른쪽
+  const sy = (1 - _proj.y) / 2;        // 0..1, 위→아래(CSS 좌표계로 변환)
+  return !inBox(sx, sy, headlineBox) && !inBox(sx, sy, cornerLeftBox) && !inBox(sx, sy, cornerRightBox);
+}
+const CHECK_DISTANCES = [8, 14, 18];   // controls.minDistance / 기본 정착 거리 / controls.maxDistance
+// 실측으로 발견한 버그 3: 중심점 하나만 검사하면 큰 anchor 파티클(최대 2.3
+// 유닛)은 중심이 보호구역 밖이어도 실제 렌더된 사각형의 가장자리가 여전히
+// 텍스트 위를 덮는 경우가 있었다(모바일 스크린샷에서 확인). 그래서 중심 +
+// 네 모서리(halfW/halfH만큼 오프셋) 총 5개 지점을 전부 검사한다 — 빌보드가
+// 카메라를 향하므로 카메라 정면에 가까운 배치에서는 월드 X/Y 오프셋이
+// 화면상 좌우/상하 오프셋의 합리적인 근사치가 된다.
+function isClearAtAllZoomLevels(wx, wy, wz, halfW, halfH) {
+  _savedCamPos.copy(camera.position);
+  let clear = true;
+  const points = [
+    [wx, wy, wz],
+    [wx - halfW, wy - halfH, wz], [wx + halfW, wy - halfH, wz],
+    [wx - halfW, wy + halfH, wz], [wx + halfW, wy + halfH, wz],
+  ];
+  outer:
+  for (const d of CHECK_DISTANCES) {
+    camera.position.set(0, 0, d);
+    camera.updateMatrixWorld(true);
+    for (const p of points) {
+      if (!isClearOfUI(p[0], p[1], p[2])) { clear = false; break outer; }
+    }
+  }
+  camera.position.copy(_savedCamPos);
+  camera.updateMatrixWorld(true);
+  return clear;
 }
 
-function roundedBoxMesh(w, h, depth, r, mat, bevel) {
-  const geo = new THREE.ExtrudeGeometry(roundedRectShape(w, h, r), {
-    depth, bevelEnabled: true,
-    bevelThickness: bevel, bevelSize: bevel, bevelSegments: 4, curveSegments: 10,
+const group = new THREE.Group();
+scene.add(group);
+
+const fragments = [];
+
+function randRange(a, b) { return a + Math.random() * (b - a); }
+
+// 크기 티어 — "적은 수의 큰 앵커 + 많은 중/소형"으로 밀도감을 만든다.
+// 앵커는 카메라에 가깝게, 소형은 멀게 둬서 "큰 게 가깝다"는 자연스러운
+// 원근 상관관계를 만들고(별도 near/far 플래그가 필요 없어짐), 평균 크기는
+// 이전 대비 약 1.6배, 최대 크기는 약 2배로 커졌다.
+const SIZE_TIERS = [
+  { weight: 0.16, size: [1.8, 2.3], z: [4, 9] },     // anchor — 소수의 큰 파티클
+  { weight: 0.42, size: [0.9, 1.5], z: [-3, 6] },    // medium
+  { weight: 1.00, size: [0.45, 0.85], z: [-11, -2] }, // small — 그래도 "티끌"처럼 작진 않게
+];
+function pickTier() {
+  const r = Math.random();
+  for (const t of SIZE_TIERS) if (r < t.weight) return t;
+  return SIZE_TIERS[SIZE_TIERS.length - 1];
+}
+
+function buildFragment(item) {
+  const tier = pickTier();
+  const sizeScale = randRange(tier.size[0], tier.size[1]);
+
+  // 사이즈/종횡비를 위치보다 먼저 정한다 — 아래 배치 검사가 파티클의 실제
+  // 크기(halfW/halfH)까지 감안해야 큰 anchor 파티클의 가장자리가 텍스트를
+  // 덮는 걸 막을 수 있다(중심점만 보던 이전 방식의 버그, 위 주석 참고).
+  const aspect = item.width / item.height;
+  const dims = {
+    w: aspect >= 1 ? sizeScale : sizeScale * aspect,
+    h: aspect >= 1 ? sizeScale / aspect : sizeScale,
+  };
+
+  // 헤드라인을 "고리(halo)"처럼 감싸도록, 완전 균일 랜덤 대신 극좌표로 뽑아
+  // 반경을 보호구역 바로 바깥쪽에 몰아준다(rBias 지수<1 → 작은 반경 쪽으로 편향).
+  // 그래도 최종적으로는 항상 isClearOfUI로 화면상 실제 겹침 여부를 재확인한다 —
+  // "텍스트 위에 놓고 안 보이게 처리"가 아니라 애초에 그 자리에 놓지 않는 방식.
+  let x, y, z;
+  let tries = 0;
+  do {
+    const angle = Math.random() * Math.PI * 2;
+    const rBias = Math.pow(Math.random(), 0.55);
+    const r = 2.6 + rBias * 8.6;
+    x = Math.cos(angle) * r * 1.2;
+    y = Math.sin(angle) * r * 0.7;
+    z = randRange(tier.z[0], tier.z[1]);
+    tries++;
+  } while (!isClearAtAllZoomLevels(x, y, z, dims.w / 2, dims.h / 2) && tries < 20);
+
+  const finalPos = { x, y, z };
+  // "3D 아카이브 공간으로 퍼져나가는" 인트로 모션을 위한 시작 위치 — 최종
+  // 위치보다 훨씬 중심(원점)에 가깝게 시작해서 인트로 동안 바깥으로 퍼진다.
+  const startPos = { x: x * 0.18, y: y * 0.18, z: z * 0.18 };
+
+  const geo = new THREE.PlaneGeometry(1, 1);   // 실제 크기는 mesh.scale로 표현(아래)
+  const mat = new THREE.MeshBasicMaterial({
+    color: 0x000000,   // 요청대로 순검정 — 미래 미디어 매핑 전 placeholder
+    transparent: true, opacity: 0,
+    side: THREE.DoubleSide, depthWrite: false,
   });
-  geo.center();
-  const m = new THREE.Mesh(geo, mat);
-  m.castShadow = true;
-  m.receiveShadow = true;
-  return m;
+  const mesh = new THREE.Mesh(geo, mat);
+  mesh.position.set(startPos.x, startPos.y, startPos.z);
+  mesh.scale.set(0.0001, 0.0001, 1);
+  group.add(mesh);
+
+  // TODO: 실제 미디어 매핑 시점에 여기서 item.type에 따라
+  // THREE.TextureLoader(이미지) 또는 <video>+THREE.VideoTexture(비디오)를
+  // 로드해 mat.map에 연결하면 된다. 지금은 검정 placeholder만 렌더링.
+
+  const proxy = { p: 0 };   // GSAP 인트로(0→1)가 구동 — scale/opacity/position 전부 여기서 파생
+
+  // 유휴 시 아주 은은하게 떠 있는 느낌을 주는 개별 bob(위아래 미세 흔들림) 파라미터 —
+  // 인트로가 끝난 뒤에만 적용(아래 animate 루프 참고), 진폭이 작아 산만하지 않음.
+  const bob = { amp: randRange(0.03, 0.09), speed: randRange(0.12, 0.3), phase: randRange(0, Math.PI * 2) };
+
+  return { mesh, mat, proxy, dims, startPos, finalPos, targetOpacity: 1, bob, introDone: false };
 }
 
-// ── 전체 세트 그룹 (마우스 추적 회전용) ────────────────────────────────────
-const rig = new THREE.Group();
-scene.add(rig);
+window.MEDIA_ARCHIVE_DATA.forEach((item) => {
+  fragments.push(buildFragment(item));
+});
 
-// ═══════════════════════════════════════════════════════════════════════════
-//  MACINTOSH 본체 — Figma 실측 비율
-//  body 3.5 → recess 2.99(0.85) → CRT 2.70×2.025(0.77, 4:3)
-// ═══════════════════════════════════════════════════════════════════════════
-const mac = new THREE.Group();
-rig.add(mac);
+// ── 부팅 프롬프트 — 타이핑 효과 + Enter/클릭 트리거 + 부팅 시퀀스 ───────────
+const PROMPT_TEXT = 'Press enter to boot...';
+const BOOTING_TEXT = 'booting workspace...';
+const bootPromptEl = document.getElementById('bootPrompt');
+const bootPromptTextEl = document.getElementById('bootPromptText');
+const bootFlashEl = document.getElementById('bootFlash');
+let booting = false;
 
-const BODY_W = 3.5, BODY_H = 4.4, BODY_D = 3.3, BODY_BEVEL = 0.05;
-const BODY_CY = BODY_H / 2 + 0.02;
+// 한 글자씩 타이핑 — 터미널/시스템 프롬프트 느낌, 절제된 속도.
+function typePrompt() {
+  let i = 0;
+  bootPromptTextEl.textContent = '';
+  (function step() {
+    if (booting) return;   // 타이핑 도중 부팅이 시작되면 즉시 중단(아래서 텍스트를 직접 교체함)
+    bootPromptTextEl.textContent = PROMPT_TEXT.slice(0, i);
+    i++;
+    if (i <= PROMPT_TEXT.length) setTimeout(step, 26);
+  }());
+}
 
-// 생성 지오메트리 본체 → GLB 스캔 모델로 교체 (screen/recess/logo 등 전면 디테일은
-// FRONT_Z/BODY_CY 기준 그대로 유지 — 본체 쉘만 교체).
-const macBody = new THREE.Group();
-macBody.position.set(0, BODY_CY, 0);
-mac.add(macBody);
+// 부팅 시퀀스 — Enter 또는 프롬프트 클릭/탭으로 트리거. 총 소요시간 약 1.05초.
+// ①인터랙션 차단 ②프롬프트 텍스트 전환(플리커) ③파티클이 잠깐 멈췄다 중심/안쪽
+// 으로 빨려들며 축소+페이드 ④헤드라인 은은하게 페이드+축소 ⑤짧은 화이트
+// 플리커 ⑥desktop.html 이동. 검정 사각형은 절대 회전하지 않고 계속 빌보드
+// 유지(아래 animate 루프에서 매 프레임 카메라 쿼터니언을 계속 복사함).
+function startBoot() {
+  if (booting) return;
+  booting = true;
 
-new THREE.GLTFLoader().load('src/models/macintosh-classic-body.glb', (gltf) => {
-  const model = gltf.scene;
+  // ① 인터랙션 차단 — 드래그/줌/자동공전/유휴 bob 전부 정지
+  controls.enabled = false;
+  controls.autoRotate = false;
 
-  // GLB에 내장된 원본 재질/텍스처(레인보우 애플 로고, "Macintosh Classic" 라벨,
-  // 스크린 텍스처 포함)를 그대로 사용 — 머티리얼 오버라이드도, 숨김 처리도 하지 않는다.
-  const maxAniso = renderer.capabilities.getMaxAnisotropy();
-  model.traverse((child) => {
-    if (!child.isMesh) return;
-    // 이 GLB는 NORMAL 속성이 아예 없어(export 파이프라인 이슈) 조명을 전혀 못 받아
-    // 새까맣게 나옴 — 지오메트리에서 직접 계산해 채워준다(재질/텍스처는 원본 그대로).
-    if (!child.geometry.attributes.normal) child.geometry.computeVertexNormals();
-    child.castShadow = true;
-    child.receiveShadow = true;
+  // ② 프롬프트 텍스트를 짧은 플리커와 함께 "booting workspace..."로 교체
+  gsap.timeline()
+    .to(bootPromptEl, { opacity: 0.12, duration: 0.05 })
+    .call(() => { bootPromptTextEl.textContent = BOOTING_TEXT; })
+    .to(bootPromptEl, { opacity: 1, duration: 0.12 });
 
-    // UV 아일랜드 정규화 — 이 GLB의 "Emissive"(스크린) 메시는 U가 [2.10, 2.89]처럼
-    // 정수만큼 밀려 저장돼 있다(SketchUp 익스포트 특성으로 보임). 실측 확인:
-    // 원래 기본 샘플러(REPEAT)에서는 이 오프셋이 우연히 랩어라운드로 상쇄돼
-    // 화면이 맞게 보였지만, ClampToEdge에서는 전부 가장자리 1픽셀로 뭉개진다.
-    // "샘플링이 UV 아일랜드 밖으로 나가지 않게" 하려면 오프셋 자체를 제거해야
-    // 하므로, 정수부만 빼서 각 축을 [0,1] 근방으로 되돌린다(비율/모양은 불변 —
-    // 라벨/로고 재생성이 전혀 아니고 순수 좌표 정규화).
-    if (child.geometry.attributes.uv) {
-      const uv = child.geometry.attributes.uv;
-      let uMin = Infinity, vMin = Infinity;
-      for (let i = 0; i < uv.count; i++) {
-        uMin = Math.min(uMin, uv.getX(i));
-        vMin = Math.min(vMin, uv.getY(i));
-      }
-      const uShift = Math.floor(uMin), vShift = Math.floor(vMin);
-      if (uShift !== 0 || vShift !== 0) {
-        for (let i = 0; i < uv.count; i++) {
-          uv.setXY(i, uv.getX(i) - uShift, uv.getY(i) - vShift);
-        }
-        uv.needsUpdate = true;
-      }
-    }
-
-    // 텍스처 샘플링 보정 — "Macintosh Classic" 라벨 뒤에 검은/회색 사각 아티팩트가
-    // 보이던 진짜 원인: 이 재질은 glTF alphaMode 기본값(OPAQUE)이라 material.transparent
-    // 가 false였다. 브라우저의 PNG 디코더가 완전 투명(alpha=0) 픽셀의 RGB를 (0,0,0)으로
-    // 정리해버리는데(원본 PNG 자체엔 흰색으로 저장돼 있음 — 파일 자체는 정상),
-    // 알파를 무시하는 오파크 렌더링이라 그 "안 보여야 할" 검정이 그대로 그려져
-    // 조명을 받아 회색 사각으로 나타났다. transparent:true로 알파 블렌딩을 켜면
-    // alpha=0 영역은 밑에 있는 색과 100% 블렌딩되어 RGB 값 자체가 무의미해지므로
-    // (0,0,0이든 255,255,255든) 더 이상 드러나지 않는다 — 라벨/로고를 다시 그리는
-    // 게 아니라 GLB 원본 텍스처의 알파 채널을 있는 그대로 존중하는 것.
-    const mats = Array.isArray(child.material) ? child.material : [child.material];
-    const hasTexture = mats.some((mat) => mat && mat.map);
-    if (!hasTexture) {
-      // 무채색 셸(로고/라벨/스크린 텍스처가 없는 구조 메시)만 모니터 전용 쿨그레이로 —
-      // 텍스처가 있는 메시(로고·라벨·스크린)는 절대 건드리지 않음(이전 지시 그대로 유지).
-      child.material = macBodyMat;
-      return;
-    }
-    mats.forEach((mat) => {
-      if (!mat || !mat.map) return;
-      const tex = mat.map;
-      tex.wrapS = THREE.ClampToEdgeWrapping;
-      tex.wrapT = THREE.ClampToEdgeWrapping;
-      tex.flipY = false;               // glTF 텍스처는 flipY 없이 저장됨
-      tex.encoding = THREE.sRGBEncoding; // (r128 API명 — r152+의 colorSpace/SRGBColorSpace에 해당)
-      if (maxAniso) tex.anisotropy = maxAniso;
-      tex.needsUpdate = true;
-      mat.transparent = true;
-      mat.alphaTest = 0.02;   // 완전透명 경계의 미세한 블렌딩 잔상 방지
-      mat.needsUpdate = true;
+  // ③ 파티클 — 잠깐 정지 후 중심/뒤쪽으로 빨려들며 축소+페이드
+  // ("보관소가 워크스페이스로 흡수되는" 느낌 — 인트로의 startPos→finalPos 확산을
+  // 거꾸로 되감는 것과 개념적으로 대응되는 모션).
+  fragments.forEach((f) => {
+    const p = { v: 0 };
+    const pause = 0.08 + Math.random() * 0.1;
+    gsap.to(p, {
+      v: 1, duration: 0.45 + Math.random() * 0.15, delay: pause, ease: 'power2.in',
+      onUpdate: () => {
+        f.mesh.position.set(
+          THREE.MathUtils.lerp(f.finalPos.x, f.finalPos.x * 0.08, p.v),
+          THREE.MathUtils.lerp(f.finalPos.y, f.finalPos.y * 0.08, p.v),
+          THREE.MathUtils.lerp(f.finalPos.z, f.finalPos.z * 0.08 - 5, p.v)
+        );
+        const s = 1 - p.v * 0.6;
+        f.mesh.scale.set(f.dims.w * s, f.dims.h * s, 1);
+        f.mat.opacity = f.targetOpacity * (1 - p.v);
+      },
     });
   });
 
-  // 정규화: 회전을 먼저 정하고, 그 자세 기준으로 바운딩 박스를 다시 재서 중심 이동+스케일
-  // (회전을 나중에 적용하면 이미 계산된 center가 안 맞아 시각 중심이 틀어짐)
-  function normalizeAndPlace(rotY) {
-    model.rotation.set(0, rotY, 0);
-    model.position.set(0, 0, 0);
-    model.scale.set(1, 1, 1);
-    model.updateMatrixWorld(true);
+  // ④ 헤드라인 — 아주 은은하게 페이드+축소(과하게 애니메이션하지 않음)
+  gsap.to('.headline', { opacity: 0.15, scale: 0.97, duration: 0.5, ease: 'power2.in' });
 
-    const box = new THREE.Box3().setFromObject(model);
-    const size = new THREE.Vector3();
-    box.getSize(size);
-    const center = new THREE.Vector3();
-    box.getCenter(center);
+  // ⑤ 화이트 플래시/CRT 플리커 — 아주 짧게, 공포 글리치가 아니라 "부팅" 느낌으로
+  gsap.timeline({ delay: 0.55 })
+    .to(bootFlashEl, { opacity: 0.5, duration: 0.045 })
+    .to(bootFlashEl, { opacity: 0.08, duration: 0.05 })
+    .to(bootFlashEl, { opacity: 0.85, duration: 0.06 })
+    .to(bootFlashEl, { opacity: 1, duration: 0.18 });
 
-    const scaleFactor = Math.min(BODY_W / size.x, BODY_H / size.y, BODY_D / size.z);
-    model.scale.setScalar(scaleFactor);
-    // position은 부모 공간(스케일 적용 후) 기준 평행이동이라 center에도 scaleFactor를 곱해야 한다
-    model.position.copy(center).multiplyScalar(-scaleFactor);
-    model.updateMatrixWorld(true);
-  }
-  // rotY=0 = CRT 전면이 +Z(카메라)를 향함 — 카메라 궤도 렌더로 실측 확인 완료
-  normalizeAndPlace(0);
-
-  macBody.add(model);
-
-  // 본체가 실제로 화면에 존재하는 시점부터 엔트리 인트로(돌리인+파워온 스태틱) 시작 —
-  // 로드 전에 시작하면 스크린 오버레이가 허공에 뜬 채 보이는 레이스가 생김.
-  screenGlass.visible = true;
-  introStart = performance.now();
-});
-
-const FRONT_Z = BODY_D / 2 + BODY_BEVEL;
-
-function onFront(mesh, x, y, z) {
-  mesh.position.set(x, BODY_CY + y, z);
-  mac.add(mesh);
-  return mesh;
+  // ⑥ 이동 — 총 900~1200ms 목표 구간 안에서 desktop.html로.
+  setTimeout(() => { window.location.href = 'desktop.html'; }, 1050);
 }
 
-// (구) 스크린 리세스 패널 제거 — GLB 본체 자체에 리세스가 조형되어 있어
-// 이 평면 패널을 남겨두면 GLB 리세스와 어긋나며 겹쳐 보임 (본체 교체 후 정리).
-
-// (구) 캔버스로 그리던 커스텀 CRT 스크린("Sejeong LEE" 워드마크 + 호랑이 +
-// 타이핑 시뮬레이션)과 회색 Apple 로고 데칼 전부 제거 — GLB가 이미 원본
-// 레인보우 애플 로고·"Macintosh Classic" 라벨·스크린 텍스처를 내장하고 있어
-// 화면 콘텐츠는 이후 별도 작업에서 GLB 쪽을 기준으로 다시 다룬다.
-// 호버/부팅 클릭 판정만은 계속 필요해서, 같은 화면 자리에 안 보이는
-// 히트테스트용 평면만 남겨둔다(렌더 안 됨 — 레이캐스트 전용).
-const hitPlane = onFront(
-  new THREE.Mesh(
-    new THREE.PlaneGeometry(2.66, 2.25),
-    new THREE.MeshBasicMaterial({ transparent: true, opacity: 0, depthWrite: false })
-  ),
-  0, 0.79, FRONT_Z + 0.09
-);
-
-// ── 인터랙션 상태 ──────────────────────────────────────────────────────────
-const state = {
-  hover: false,        // 스크린 호버
-  warm: 0,             // 0→1 (호버 시 색온도/글로우)
-  booting: false,      // 부팅 페이드 진행 중
-};
-
-// 호버 시 CRT 글로우 — 모션/오브제 레퍼런스 실측(≈rgb(221,234,242))에 맞춰
-// 웜 화이트에서 쿨 시안-화이트로 교체. CRT가 "켜져 있는" 냉광 무드.
-// 평상시에도 아주 옅게 켜둬 은은한 화면 발광감을 준다.
-const glow = new THREE.PointLight(0xD9EAF5, 0.05, 4.5);
-glow.position.set(0, BODY_CY + 0.79, FRONT_Z + 1.0);
-mac.add(glow);
-
-// 스크린 이펙트 컨테인먼트 — 모든 스크린 오버레이(유리/스태틱)는 반드시 CRT의
-// 검은 라운드 보더 "안쪽"에만 존재해야 한다. 이전 구현은 2.66×2.25 직사각 평면이
-// 디스플레이(2.70×2.025)보다 세로로 커서 위아래 베젤로 새어 나갔고 모서리도 각졌음.
-// → 평면을 보더 안쪽 크기로 줄이고, 캔버스 알파 마스크(라운드 CRT 형상)로 잘라낸다.
-const SCREEN_FX_W = 2.56, SCREEN_FX_H = 1.92;   // 검은 보더 안쪽에 딱 들어가는 크기
-// 라운드 CRT 마스크 — destination-in 합성용 (희게 채운 라운드렉트가 알파 마스크가 됨)
-function makeCrtMask(w, h) {
-  const m = document.createElement('canvas');
-  m.width = w; m.height = h;
-  const mc = m.getContext('2d');
-  const r = h * 0.13;   // CRT 유리 모서리 곡률
-  mc.beginPath();
-  mc.moveTo(r, 0);
-  mc.lineTo(w - r, 0);  mc.quadraticCurveTo(w, 0, w, r);
-  mc.lineTo(w, h - r);  mc.quadraticCurveTo(w, h, w - r, h);
-  mc.lineTo(r, h);      mc.quadraticCurveTo(0, h, 0, h - r);
-  mc.lineTo(0, r);      mc.quadraticCurveTo(0, 0, r, 0);
-  mc.closePath();
-  mc.fillStyle = '#FFF';
-  mc.fill();
-  return m;
-}
-
-// 스크린 유리 느낌 — 스캔라인 + 미세 스태틱 그레인 + 은은한 비네트(유리 곡면·깊이감)를
-// 한 텍스처에 결합. 화면 콘텐츠/인터랙션은 그대로 — hitPlane과 별개의 순수 장식용
-// 오버레이라 레이캐스트에 잡히지 않음, 클릭/호버 로직 무영향.
-const scanCanvas = document.createElement('canvas');
-scanCanvas.width = 256; scanCanvas.height = 192;
-(function drawScreenGlass() {
-  const ctx = scanCanvas.getContext('2d');
-  const w = scanCanvas.width, h = scanCanvas.height;
-
-  // ① 미세 스태틱 그레인 — 오프스크린에 그려 알파 합성으로 얹음(putImageData는
-  // 기존 레이어를 덮어써서 직접 사용 불가)
-  const grainCanvas = document.createElement('canvas');
-  grainCanvas.width = w; grainCanvas.height = h;
-  const gctx = grainCanvas.getContext('2d');
-  const grain = gctx.createImageData(w, h);
-  for (let i = 0; i < grain.data.length; i += 4) {
-    // 모션 레퍼런스의 CRT 스태틱은 무채색이 아니라 시안-틸 계열 — 채널별 가중치로 틴트
-    const v = Math.random() * 255;
-    grain.data[i] = v * 0.82;
-    grain.data[i + 1] = v * 1.0;
-    grain.data[i + 2] = Math.min(255, v * 1.12);
-    grain.data[i + 3] = 255;
-  }
-  gctx.putImageData(grain, 0, 0);
-  ctx.globalAlpha = 0.5;
-  ctx.drawImage(grainCanvas, 0, 0);
-  ctx.globalAlpha = 1;
-
-  // ② 스캔라인
-  ctx.fillStyle = 'rgba(0,0,0,0.35)';
-  for (let y = 0; y < h; y += 2) ctx.fillRect(0, y, w, 1);
-
-  // ③ 비네트 — 중심은 투명, 가장자리로 갈수록 살짝 어둡게(CRT 유리 곡면 느낌)
-  const vg = ctx.createRadialGradient(w / 2, h / 2, h * 0.15, w / 2, h / 2, h * 0.62);
-  vg.addColorStop(0, 'rgba(0,0,0,0)');
-  vg.addColorStop(1, 'rgba(0,0,0,0.5)');
-  ctx.fillStyle = vg;
-  ctx.fillRect(0, 0, w, h);
-
-  // ④ 유리 반사 스트릭 — 오브제 레퍼런스(브라운 TV)의 곡면 유리 하이라이트.
-  // 좌상단에서 우하단으로 지나가는 아주 옅은 사선 밴드 하나.
-  const rg = ctx.createLinearGradient(0, 0, w * 0.9, h * 0.9);
-  rg.addColorStop(0.18, 'rgba(255,255,255,0)');
-  rg.addColorStop(0.34, 'rgba(255,255,255,0.30)');
-  rg.addColorStop(0.44, 'rgba(255,255,255,0.06)');
-  rg.addColorStop(0.58, 'rgba(255,255,255,0)');
-  ctx.fillStyle = rg;
-  ctx.fillRect(0, 0, w, h);
-
-  // ⑤ 라운드 CRT 마스크 — 직사각 모서리/베젤 스필 제거
-  ctx.globalCompositeOperation = 'destination-in';
-  ctx.drawImage(makeCrtMask(w, h), 0, 0);
-  ctx.globalCompositeOperation = 'source-over';
-}());
-const scanTex = new THREE.CanvasTexture(scanCanvas);
-const screenGlassMat = new THREE.MeshBasicMaterial({
-  map: scanTex, transparent: true, opacity: 0.055, depthWrite: false,
-});
-// 컨테인먼트의 핵심: GLB 바이너리 실측 결과 CRT 유리면은 X축 -4.9° 틸트된
-// 평면(z≈1.21(상단)~1.39(하단))이고 리세스 벽이 그 주위를 감싼다. 오버레이를
-// 유리와 "평행하게"(같은 틸트) 유리 바로 앞(법선 방향 +0.015)에 밀착시키면,
-// 평면 가장자리가 전부 리세스 벽 뒤로 들어가 뎁스 테스트가 실제 CRT 형상
-// 그대로 잘라준다(스필 원천 차단). 수직 평면을 캐비티 중간에 세우던 방식은
-// 벽의 안쪽 경사면(오버레이보다 깊은 지점) 위로 노이즈가 새어 보였음.
-const SCREEN_TILT_X = -0.0862;   // GLB 스크린 노드 쿼터니언 실측(-4.94°)
-const screenGlass = onFront(
-  new THREE.Mesh(new THREE.PlaneGeometry(SCREEN_FX_W, SCREEN_FX_H), screenGlassMat),
-  0, 0.79, FRONT_Z - 0.385
-);
-screenGlass.rotation.x = SCREEN_TILT_X;
-screenGlass.renderOrder = 1;
-screenGlass.visible = false;   // 본체(GLB) 로드 완료 시점에 켜짐 — 허공 오버레이 방지
-
-// ── 엔트리 "파워온" 스태틱 — 모션 레퍼런스의 CRT 스태틱→해상(resolve) 전환 ────
-// 첫 진입 순간에만 스크린 위에서 시안-틸 스태틱이 플리커하며 사그라드는 순수 장식
-// 오버레이. 레이캐스트/클릭/부팅 로직과 완전 무관(hitPlane 별개, pointer 이벤트 없음).
-// 인트로가 끝나면 visible=false로 꺼져 이후 프레임 비용 0.
-const staticCanvas = document.createElement('canvas');
-staticCanvas.width = 128; staticCanvas.height = 96;
-const staticCtx = staticCanvas.getContext('2d');
-const staticTex = new THREE.CanvasTexture(staticCanvas);
-// putImageData는 알파 마스크까지 덮어써 버리므로: 노이즈는 오프스크린에 생성하고,
-// 메인 캔버스에서 drawImage 후 destination-in으로 라운드 CRT 마스크를 매 프레임 적용.
-const staticNoise = document.createElement('canvas');
-staticNoise.width = 128; staticNoise.height = 96;
-const staticNoiseCtx = staticNoise.getContext('2d');
-const staticMask = makeCrtMask(128, 96);
-function drawIntroStatic() {
-  const img = staticNoiseCtx.createImageData(128, 96);
-  for (let i = 0; i < img.data.length; i += 4) {
-    const v = Math.random() * 255;
-    img.data[i] = v * 0.82;
-    img.data[i + 1] = v;
-    img.data[i + 2] = Math.min(255, v * 1.12);
-    img.data[i + 3] = 255;
-  }
-  staticNoiseCtx.putImageData(img, 0, 0);
-  staticCtx.clearRect(0, 0, 128, 96);
-  staticCtx.drawImage(staticNoise, 0, 0);
-  staticCtx.globalCompositeOperation = 'destination-in';
-  staticCtx.drawImage(staticMask, 0, 0);
-  staticCtx.globalCompositeOperation = 'source-over';
-  staticTex.needsUpdate = true;
-}
-drawIntroStatic();
-const introStaticMat = new THREE.MeshBasicMaterial({
-  map: staticTex, transparent: true, opacity: 0, depthWrite: false,
-});
-const introStatic = onFront(
-  new THREE.Mesh(new THREE.PlaneGeometry(SCREEN_FX_W - 0.04, SCREEN_FX_H - 0.03), introStaticMat),
-  0, 0.79, FRONT_Z - 0.382
-);
-introStatic.rotation.x = SCREEN_TILT_X;
-introStatic.renderOrder = 2;
-
-// (구) 친(chin) 디테일 일체 제거 — Apple 로고 데칼, 플로피 그루브/슬릿,
-// 우측 인셋 플레이트, 도트, 뒷면 통풍구는 전부 생성 지오메트리 시절 본체용
-// 장식이었다. GLB 본체가 이 형상들을 이미 실제 지오메트리로 갖고 있어서
-// (리세스·플로피 슬릿·배지·통풍구·애플 로고 몰딩 전부 포함), 남겨두면 위치가
-// 미세하게 어긋난 채 이중으로 겹쳐 보인다 — 전부 제거하고 GLB 쪽만 남김.
-
-// ═══════════════════════════════════════════════════════════════════════════
-//  키보드 — M0110, 실제 키 입력 반응
-// ═══════════════════════════════════════════════════════════════════════════
-const kb = new THREE.Group();
-kb.position.set(-0.25, 0.05, 3.22);   // Figma: 모니터 중심 대비 ≈35px 왼쪽
-kb.rotation.x = 6.5 * DEG;
-rig.add(kb);
-
-const KB_W = 4.75, KB_D = 2.6;   // Figma 실측: 렌더 폭 = 본체의 1.45배, 깊이 178px
-
-// 좌측 베젤 보강 — 키 배열(MAIN_X0 이하)은 그대로 두고 베이스만 왼쪽으로 확장.
-// 우측 가장자리는 고정한 채 좌측 가장자리만 KB_LEFT_EXTRA만큼 더 밀어내고,
-// 그만큼 베이스 중심을 왼쪽으로 옮겨서 우측 베젤/전체 폭 변화를 최소화한다
-// (클래식 M0110 키보드의 좌측이 더 여유로운 실루엣을 재현).
-const KB_LEFT_EXTRA = 0.18;
-const KB_X_OFFSET = -KB_LEFT_EXTRA / 2;
-
-// 베이스 코너/베벨을 살짝 키워 좀 더 부드럽고 정제된 실루엣으로(풋프린트 w/h는 불변 —
-// 라운드box 헬퍼는 r/bevel이 커져도 바운딩은 그대로라 스케일/포지션에 영향 없음)
-const kbLower = roundedBoxMesh(KB_W + KB_LEFT_EXTRA, KB_D, 0.28, 0.11, whiteMat, 0.035);
-kbLower.rotation.x = -Math.PI / 2;
-kbLower.position.set(KB_X_OFFSET, 0.09, 0);
-kb.add(kbLower);
-
-const kbUpper = roundedBoxMesh(KB_W + KB_LEFT_EXTRA - 0.12, KB_D - 0.12, 0.07, 0.09, whiteMat, 0.026);
-kbUpper.rotation.x = -Math.PI / 2;
-kbUpper.position.set(KB_X_OFFSET, 0.20, 0);
-kb.add(kbUpper);
-
-// 키캡 풋프린트를 PITCH 대비 살짝 줄여(0.255→0.235) 키 사이 간격을 더 또렷하게 하고,
-// 코너 반경/베벨을 키워 각진 느낌을 줄임 — PITCH/MAIN_X0는 그대로라 배열 전체 폭·위치는 불변.
-const KU = 0.235, PITCH = 0.305, KEY_H = 0.08;
-const KEY_Y = 0.30;
-const keyMap = {};   // KeyboardEvent.code → { mesh, baseY, press }
-
-function addKey(x, z, wUnits, code) {
-  const w = KU + (wUnits - 1) * PITCH;
-  const key = roundedBoxMesh(w, KU * 0.82, KEY_H, 0.05, keyMat, 0.02);
-  key.rotation.x = -Math.PI / 2;
-  key.position.set(x + (w - KU) / 2, KEY_Y, z);
-  kb.add(key);
-  if (code) keyMap[code] = { mesh: key, baseY: KEY_Y, press: 0 };
-  return wUnits * PITCH;
-}
-
-// 실제 배열 매핑 — 총 14.5u × 5줄
-const layout = [
-  [['Backquote',1],['Digit1',1],['Digit2',1],['Digit3',1],['Digit4',1],['Digit5',1],['Digit6',1],['Digit7',1],['Digit8',1],['Digit9',1],['Digit0',1],['Minus',1],['Equal',1],['Backspace',1.5]],
-  [['Tab',1.5],['KeyQ',1],['KeyW',1],['KeyE',1],['KeyR',1],['KeyT',1],['KeyY',1],['KeyU',1],['KeyI',1],['KeyO',1],['KeyP',1],['BracketLeft',1],['BracketRight',1],['Backslash',1]],
-  [['CapsLock',1.75],['KeyA',1],['KeyS',1],['KeyD',1],['KeyF',1],['KeyG',1],['KeyH',1],['KeyJ',1],['KeyK',1],['KeyL',1],['Semicolon',1],['Quote',1],['Enter',1.75]],
-  [['ShiftLeft',2.25],['KeyZ',1],['KeyX',1],['KeyC',1],['KeyV',1],['KeyB',1],['KeyN',1],['KeyM',1],['Comma',1],['Period',1],['Slash',1],['ShiftRight',2.25]],
-  [['AltLeft',1.5],['MetaLeft',1.25],['Space',9],['MetaRight',1.25],['AltRight',1.5]],
-];
-const MAIN_X0 = -2.21;
-layout.forEach((row, r) => {
-  let x = MAIN_X0;
-  const z = -KB_D / 2 + 0.45 + r * PITCH;
-  row.forEach(([code, u]) => { x += addKey(x, z, u, code); });
-});
-
-// ── 실제 키 입력 → 키 프레스 애니메이션 ────────────────────────────────────
 window.addEventListener('keydown', (e) => {
-  const k = keyMap[e.code];
-  if (k) k.press = 1;
+  if (e.key !== 'Enter' || booting) return;
+  startBoot();
 });
-window.addEventListener('keyup', (e) => {
-  const k = keyMap[e.code];
-  if (k) k.press = 0;
-});
+bootPromptEl.addEventListener('click', () => { startBoot(); });
 
-// ═══════════════════════════════════════════════════════════════════════════
-//  마우스 (M0100) — Figma 비율로 축소
-// ═══════════════════════════════════════════════════════════════════════════
-const mouse3d = new THREE.Group();
-mouse3d.position.set(2.74, 0, 4.10);   // Figma: 키보드 우측 17px 갭, 바닥선 정렬
-mouse3d.rotation.y = -0.06;
-rig.add(mouse3d);
+// ── GSAP 인트로 — ①코너 페이드 ②헤드라인+프롬프트 스택 정착 ③프롬프트 텍스트
+// 타이핑 ④(헤드라인 이후) 검정 파티클이 스태거로 스케일/페이드/위치와 함께
+// 퍼져나감 ⑤카메라 돌리인 ──────────────────────────────────────────────────
+const HEADLINE_SETTLE = 1.5;   // 헤드라인 스택 애니메이션이 대략 끝나는 시점(초)
 
-const mouseBody = roundedBoxMesh(0.80, 1.30, 0.34, 0.075, whiteMat, 0.022);
-mouseBody.rotation.x = -Math.PI / 2;
-mouseBody.position.y = 0.19;
-mouse3d.add(mouseBody);
+const tl = gsap.timeline({ defaults: { ease: 'power2.out' } });
+tl.to('.corner', { opacity: 1, duration: 0.7 }, 0)
+  .to('.center-stack', { opacity: 1, duration: 1.3 }, 0.2)
+  .to(camera.position, { z: 14, duration: 2.6, ease: 'power2.out' }, 0.3)
+  .call(() => { typePrompt(); }, null, 1.2);
 
-const mBtn = roundedBoxMesh(0.50, 0.30, 0.04, 0.03, keyMat, 0.01);
-mBtn.rotation.x = -Math.PI / 2;
-mBtn.position.set(0, 0.4, -0.35);
-mouse3d.add(mBtn);
-
-// 마우스 케이블
-(function addCable() {
-  const pts = [
-    [2.42, 0.09, 3.6],
-    [2.2, 0.05, 2.9],
-    [1.95, 0.1, 2.2],
-    [1.75, 0.25, 1.6],
-  ].map(p => new THREE.Vector3(...p));
-  const curve = new THREE.CatmullRomCurve3(pts);
-  const tube = new THREE.Mesh(new THREE.TubeGeometry(curve, 48, 0.022, 8), cableMat);
-  tube.castShadow = true;
-  rig.add(tube);
-}());
-
-// ═══════════════════════════════════════════════════════════════════════════
-//  인터랙션 — 커서 추적(±4°/±2°) + 스크린 호버/클릭
-// ═══════════════════════════════════════════════════════════════════════════
-const raycaster = new THREE.Raycaster();
-const ndc = new THREE.Vector2();
-
-// 오브제 프레젠테이션 베이스 앵글 — 정면 플랫이 아니라 살짝 돌린 조각적 포즈.
-// 커서 추적 로직은 그대로: 베이스 오프셋 위에 기존 ±4°/±2°가 얹힐 뿐이다.
-const BASE_ROT_Y = -7 * DEG;   // 좌측면이 살짝 보이게 (키 라이트가 면을 스치는 방향)
-const BASE_ROT_X = 1.6 * DEG;  // 아주 살짝 위에서 내려다보는 기울기
-let targetRotY = BASE_ROT_Y, targetRotX = BASE_ROT_X;
-rig.rotation.y = BASE_ROT_Y;
-rig.rotation.x = BASE_ROT_X;
-
-window.addEventListener('pointermove', (e) => {
-  const nx = (e.clientX / window.innerWidth) * 2 - 1;   // -1 ~ 1
-  const ny = (e.clientY / window.innerHeight) * 2 - 1;
-  targetRotY = BASE_ROT_Y + nx * 4 * DEG;     // 베이스 + 최대 ±4°
-  targetRotX = BASE_ROT_X + ny * 2 * DEG;     // 베이스 + 최대 ±2°
-
-  ndc.x = nx;
-  ndc.y = -ny;
-  raycaster.setFromCamera(ndc, camera);
-  state.hover = !state.booting && raycaster.intersectObject(hitPlane).length > 0;
-  canvas.style.cursor = state.hover ? 'pointer' : 'default';
+fragments.forEach((f) => {
+  const delay = HEADLINE_SETTLE + Math.random() * 1.4;
+  tl.to(f.proxy, {
+    p: 1, duration: 1.2 + Math.random() * 0.4, ease: 'power2.out',
+    onUpdate: () => {
+      if (booting) return;   // 부팅이 먼저 시작되면 인트로가 더 이상 transform을 건드리지 않음
+      const p = f.proxy.p;
+      f.mesh.scale.set(f.dims.w * p, f.dims.h * p, 1);
+      f.mat.opacity = f.targetOpacity * p;
+      f.mesh.position.set(
+        THREE.MathUtils.lerp(f.startPos.x, f.finalPos.x, p),
+        THREE.MathUtils.lerp(f.startPos.y, f.finalPos.y, p),
+        THREE.MathUtils.lerp(f.startPos.z, f.finalPos.z, p)
+      );
+    },
+    onComplete: () => { f.introDone = true; },
+  }, delay);
 });
 
-// 스크린 클릭 → 부팅: 화이트 페이드 후 데스크탑(desktop.html)으로
-canvas.addEventListener('click', () => {
-  if (!state.hover || state.booting) return;
-  state.booting = true;
-  document.getElementById('overlay').classList.add('go');
-  setTimeout(() => { window.location.href = 'desktop.html'; }, 650);
-});
-
-// ═══════════════════════════════════════════════════════════════════════════
-//  Loop — 60fps, 시간 기반
-// ═══════════════════════════════════════════════════════════════════════════
-let prevWarm = 0;   // 활성화(호버 시작) 순간의 "파워온" 스태틱 플레어 판정용
-
-// ── 엔트리 인트로 — 슬로우 돌리인 + CRT 파워온 스태틱 (비주얼 온리) ─────────────
-// 카메라가 z 19.9→18.6으로 우아하게 다가오며(easeOutCubic) 스크린 스태틱이
-// 플리커하며 사그라든다. 종료 시점의 카메라/글로우/스태틱 상태는 인트로가 없을 때와
-// 완전히 동일 — 이후의 모든 인터랙션(호버/클릭/부팅)은 기존 그대로.
-// 디버그 뷰와 모션 축소 설정(prefers-reduced-motion)에서는 인트로 생략.
-const INTRO_MS = 2400;
-const INTRO_ON = !DEBUG_DEPTH &&
-  !(window.matchMedia && window.matchMedia('(prefers-reduced-motion: reduce)').matches);
-// GLB 본체가 로드되기 전에 스태틱/줌이 시작되면 "허공에 뜬 스크린"이 잠깐
-// 보일 수 있어(비동기 로드 레이스), 인트로 시계는 본체 로드 완료 시점부터 시작.
-// introStart는 GLTFLoader 콜백에서 세팅됨(위 로더 참조).
-let introStart = -1;
-let introDone = !INTRO_ON;
+// ── Loop — 매 프레임 파티클이 카메라 쿼터니언을 복사(빌보드) + 인트로가 끝난
+// 파티클만 아주 작은 진폭으로 위아래 bob(유휴 모션) ───────────────────────
+let rafId = null;
+let renderPaused = false;
 
 function animate() {
-  requestAnimationFrame(animate);
-  const t = performance.now();
-
-  // ① 브리딩 — 5.5s ease-in-out, 아주 미세한 상하 이동
-  mac.position.y = Math.sin(t / 5500 * Math.PI * 2) * 0.018;
-
-  // ② 커서 추적 회전 (부드러운 lerp, 절대 베이스±4°/±2° 초과 없음)
-  rig.rotation.y += (targetRotY - rig.rotation.y) * 0.05;
-  rig.rotation.x += (targetRotX - rig.rotation.x) * 0.05;
-
-  // ③ 호버 상태 → 글로우 lerp
-  const warmTarget = state.hover ? 1 : 0;
-  state.warm += (warmTarget - state.warm) * 0.08;
-  glow.intensity = 0.05 + state.warm * 0.45;   // 평상시 아주 옅은 발광 + 호버 시 최대 0.5까지(기존과 동일)
-
-  // ③a 엔트리 인트로 — 돌리인 + 파워온 스태틱 (본체 로드 전에는 시작점에서 홀드만;
-  // 키보드/커서 추적 등 나머지 애니메이션은 그대로 돈다)
-  if (!introDone && introStart < 0) {
-    camera.position.z = 19.9;
-    camera.lookAt(0, 1.37, 0);
-  } else if (!introDone) {
-    const introT = Math.min(1, (t - introStart) / INTRO_MS);
-    const e = 1 - Math.pow(1 - introT, 3);            // easeOutCubic
-    camera.position.z = 19.9 - 1.3 * e;               // 최종값 18.6 = 기존 카메라 그대로
-    camera.lookAt(0, 1.37, 0);
-    if (introT < 1) {
-      // 스태틱: 처음 강하게 → 불규칙 플리커 → 지수적으로 소멸 (모션 레퍼런스의 resolve)
-      if (Math.floor(t / 50) % 2 === 0) drawIntroStatic();   // ~10fps로 노이즈 갱신(CRT 질감)
-      const env = (1 - introT) * (1 - introT);
-      const flicker = 0.72 + 0.28 * Math.sin(introT * 34) * Math.sin(introT * 13 + 1.7);
-      introStaticMat.opacity = env * 0.62 * flicker;
-      glow.intensity += env * 0.4;                     // 켜지는 순간의 냉광 스파이크
-    } else {
-      introDone = true;
-      introStaticMat.opacity = 0;
-      introStatic.visible = false;                     // 이후 프레임 비용 0
-      camera.position.z = 18.6;
-      camera.lookAt(0, 1.37, 0);
+  rafId = requestAnimationFrame(animate);
+  if (renderPaused) return;   // 탭이 백그라운드일 때는 렌더/업데이트를 완전히 건너뜀
+  controls.update();
+  const t = performance.now() * 0.001;
+  for (let i = 0; i < fragments.length; i++) {
+    const f = fragments[i];
+    f.mesh.quaternion.copy(camera.quaternion);   // 부팅 중에도 계속 빌보드 유지(요청사항)
+    if (f.introDone && !booting) {
+      const offset = Math.sin(t * f.bob.speed + f.bob.phase) * f.bob.amp;
+      f.mesh.position.set(f.finalPos.x, f.finalPos.y + offset, f.finalPos.z);
     }
   }
-
-  // ③b 스크린 "파워온" 활성화 느낌 — 새 인터랙션이 아니라 기존 호버 신호(state.warm)의
-  // 상승 속도를 그대로 재사용: 호버가 막 시작되는 순간 warm이 빠르게 올라가면서
-  // 짧게 밝아졌다 지수적으로 가라앉는 스태틱 플레어를 만든다("켜지는" 느낌).
-  // 평상시엔 아주 옅은 플리커만, 클릭/부팅 로직에는 전혀 관여하지 않음.
-  const warmRise = Math.max(0, state.warm - prevWarm);
-  prevWarm = state.warm;
-  const activationFlare = warmRise * 6;
-  screenGlassMat.opacity = 0.055 + Math.sin(t / 1700) * 0.012 + activationFlare;
-
-  // ④ 키 프레스 애니메이션
-  for (const code in keyMap) {
-    const k = keyMap[code];
-    const ty = k.baseY - 0.04 * k.press;
-    k.mesh.position.y += (ty - k.mesh.position.y) * 0.4;
-  }
-
   renderer.render(scene, camera);
 }
 animate();
+
+// ── 성능/리소스 정리 ─────────────────────────────────────────────────────
+// 이 페이지가 실제 3D 씬(50개 메시 + OrbitControls + rAF 루프)을 계속 돌리기
+// 때문에, 백그라운드 탭으로 방치되거나 다른 페이지로 이동할 때 자원을 확실히
+// 놓아주지 않으면 브라우저 전체 성능에 영향을 줄 수 있다 — 아래 두 핸들러로 대응.
+document.addEventListener('visibilitychange', () => {
+  renderPaused = document.hidden;   // 백그라운드 탭에서는 렌더 루프를 정지(재생 중에도 리소스 절약)
+});
+
+function disposeScene() {
+  if (rafId !== null) { cancelAnimationFrame(rafId); rafId = null; }
+  gsap.globalTimeline.clear();   // 진행 중이던 인트로/부팅 트윈 전부 정리
+  controls.dispose();
+  scene.traverse((obj) => {
+    if (obj.isMesh) {
+      obj.geometry?.dispose();
+      const mats = Array.isArray(obj.material) ? obj.material : [obj.material];
+      mats.forEach((m) => { m?.map?.dispose(); m?.dispose(); });
+    }
+  });
+  renderer.dispose();
+}
+// pagehide는 일반 내비게이션(location.href 이동 포함)과 탭 종료 모두에서 발생 —
+// beforeunload보다 bfcache와 호환성이 좋아 이쪽을 사용.
+window.addEventListener('pagehide', disposeScene);
 
 })();
 </script>

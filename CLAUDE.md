@@ -6,8 +6,13 @@ https://www.figma.com/design/nOOniYoXTbhuQ0FxO4ifAV/Untitled
 
 ## 페이지 구조 / 플로우
 
-- `index.html` — **3D 매킨토시 랜딩** (Three.js r128, CDN 로드). Figma 노드 `1:35`.
-  스크린 클릭 → 화이트 페이드 → `desktop.html`로 이동.
+- `index.html` — **미디어 아카이브 랜딩** (2026-07-09부터 루트, 구
+  media-archive.html 승격본. Three.js r128 파티클 필드, CDN 로드, 완전
+  인라인 self-contained). "Hello world / Welcome to my space." +
+  "Press enter to boot..." 프롬프트 → Enter/클릭 → 부팅 시퀀스 →
+  `desktop.html`로 이동. `media-archive.html` 경로도 동일 내용 별칭으로 유지.
+- `index-classic-mac-backup.html` — **구 3D 매킨토시 랜딩**(이전 index.html,
+  Figma 노드 `1:35`). 플로우에서 미사용, 백업/참조용으로만 보존.
 - `desktop.html` — **OS9 스타일 데스크탑** (Figma 노드 `99:2332`).
   메뉴바 + 데스크탑 아이콘 + CU-SeeMe 창 2개:
   - "SEJEONG LEE (Local)": `src/CU-SeeME/hello-halftone.mp4` 재생 (흑백 하프톤)
