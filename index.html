@@ -309,6 +309,74 @@ const fragments = [];
 
 function randRange(a, b) { return a + Math.random() * (b - a); }
 
+// ── 실제 미디어 로딩 — 이미지는 TextureLoader, 영상은 <video>+VideoTexture ──
+// 검정 placeholder(mat.color 0x000000, map 없음)로 시작해서, 로드에 성공한
+// 프래그먼트만 map/color를 갈아끼운다. 파일이 없거나(404) 로드 실패하면
+// 아무것도 하지 않고 검정 placeholder를 그대로 둔다 — 빈 상태 문구 없음.
+const textureLoader = new THREE.TextureLoader();
+const videoEls = [];
+
+const FRAG_ASPECT_MIN = 0.55;   // 9:16(0.5625) 세로 영상/사진까지 클램프 없이 커버
+const FRAG_ASPECT_MAX = 1.8;    // 16:9(1.778) 가로 영상까지 클램프 없이 커버
+function clamp(v, min, max) { return Math.min(max, Math.max(min, v)); }
+
+// 크롭(cover) 대신 프레임 자체를 미디어 실측 비율에 맞춘다 — 가장 긴 변은
+// buildFragment에서 정한 sizeScale(티어별 크기)을 그대로 유지하고, 짧은 변만
+// 비율에 맞게 다시 계산한다(= buildFragment의 dims 계산식과 동일한 공식,
+// item.width/height 대신 실측 mediaAspect를 사용). 너무 극단적인 비율(예:
+// 초와이드 영상)은 레이아웃이 깨지지 않게 clamp한다.
+function applyAspectToFragment(frag, mediaAspect) {
+  const aspect = clamp(mediaAspect, FRAG_ASPECT_MIN, FRAG_ASPECT_MAX);
+  const scale = frag.sizeScale;
+  frag.dims.w = aspect >= 1 ? scale : scale * aspect;
+  frag.dims.h = aspect >= 1 ? scale / aspect : scale;
+  // 인트로 트윈이 이미 끝났거나 진행 중이어도(proxy.p가 0~1 사이 어떤 값이든)
+  // 즉시 새 비율을 반영 — 진행 중인 트윈은 다음 tick부터 새 dims를 계속 사용.
+  frag.mesh.scale.set(frag.dims.w * frag.proxy.p, frag.dims.h * frag.proxy.p, 1);
+}
+
+function applyTextureToFragment(frag, texture, mediaAspect) {
+  texture.encoding = THREE.sRGBEncoding;
+  texture.minFilter = THREE.LinearFilter;
+  texture.wrapS = texture.wrapT = THREE.ClampToEdgeWrapping;
+  applyAspectToFragment(frag, mediaAspect);
+  frag.mat.map = texture;
+  frag.mat.color.set(0xffffff);   // 텍스처가 원색 그대로 보이도록(검정 곱연산 방지)
+  frag.mat.needsUpdate = true;
+}
+
+function loadFragmentMedia(item, frag) {
+  if (!item.src) return;   // src 없음 — 검정 placeholder 유지
+  if (item.type === 'video') {
+    const video = document.createElement('video');
+    video.muted = true;
+    video.loop = true;
+    video.playsInline = true;
+    video.autoplay = true;
+    video.addEventListener('loadedmetadata', () => {
+      const texture = new THREE.VideoTexture(video);
+      applyTextureToFragment(frag, texture, video.videoWidth / video.videoHeight);
+      video.play().catch(() => {});   // 자동재생 정책으로 막혀도 조용히 무시(검정 유지)
+    });
+    video.addEventListener('error', () => { /* 로드 실패 — 검정 placeholder 유지 */ });
+    video.src = item.src;
+    video.load();
+    frag.videoEl = video;
+    videoEls.push(video);
+  } else {
+    textureLoader.load(
+      item.src,
+      (texture) => {
+        const img = texture.image;
+        const mediaAspect = (img && img.naturalWidth) ? img.naturalWidth / img.naturalHeight : item.width / item.height;
+        applyTextureToFragment(frag, texture, mediaAspect);
+      },
+      undefined,
+      () => { /* 로드 실패 — 검정 placeholder 유지 */ }
+    );
+  }
+}
+
 // 크기 티어 — "적은 수의 큰 앵커 + 많은 중/소형"으로 밀도감을 만든다.
 // 앵커는 카메라에 가깝게, 소형은 멀게 둬서 "큰 게 가깝다"는 자연스러운
 // 원근 상관관계를 만들고(별도 near/far 플래그가 필요 없어짐), 평균 크기는
@@ -360,7 +428,7 @@ function buildFragment(item) {
 
   const geo = new THREE.PlaneGeometry(1, 1);   // 실제 크기는 mesh.scale로 표현(아래)
   const mat = new THREE.MeshBasicMaterial({
-    color: 0x000000,   // 요청대로 순검정 — 미래 미디어 매핑 전 placeholder
+    color: 0x000000,   // 미디어 로드 전/실패 시 계속 유지되는 검정 placeholder
     transparent: true, opacity: 0,
     side: THREE.DoubleSide, depthWrite: false,
   });
@@ -369,17 +437,15 @@ function buildFragment(item) {
   mesh.scale.set(0.0001, 0.0001, 1);
   group.add(mesh);
 
-  // TODO: 실제 미디어 매핑 시점에 여기서 item.type에 따라
-  // THREE.TextureLoader(이미지) 또는 <video>+THREE.VideoTexture(비디오)를
-  // 로드해 mat.map에 연결하면 된다. 지금은 검정 placeholder만 렌더링.
-
   const proxy = { p: 0 };   // GSAP 인트로(0→1)가 구동 — scale/opacity/position 전부 여기서 파생
 
   // 유휴 시 아주 은은하게 떠 있는 느낌을 주는 개별 bob(위아래 미세 흔들림) 파라미터 —
   // 인트로가 끝난 뒤에만 적용(아래 animate 루프 참고), 진폭이 작아 산만하지 않음.
   const bob = { amp: randRange(0.03, 0.09), speed: randRange(0.12, 0.3), phase: randRange(0, Math.PI * 2) };
 
-  return { mesh, mat, proxy, dims, startPos, finalPos, targetOpacity: 1, bob, introDone: false };
+  const frag = { mesh, mat, proxy, dims, sizeScale, startPos, finalPos, targetOpacity: 1, bob, introDone: false, videoEl: null };
+  loadFragmentMedia(item, frag);
+  return frag;
 }
 
 window.MEDIA_ARCHIVE_DATA.forEach((item) => {
@@ -597,6 +663,7 @@ function disposeScene() {
       mats.forEach((m) => { m?.map?.dispose(); m?.dispose(); });
     }
   });
+  videoEls.forEach((video) => { video.pause(); video.removeAttribute('src'); video.load(); });
   renderer.dispose();
 }
 // pagehide는 일반 내비게이션(location.href 이동 포함)과 탭 종료 모두에서 발생 —
