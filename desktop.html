@@ -13,6 +13,12 @@
   src: url('src/fonts/VT323-Regular.ttf') format('truetype');
   font-display: block;
 }
+@font-face {
+  font-family: 'EB Garamond';
+  src: url('src/fonts/EBGaramond-Regular.ttf') format('truetype');
+  font-weight: 400; font-style: normal;
+  font-display: block;
+}
 * { margin:0; padding:0; box-sizing:border-box; }
 body {
   background:#FFFFFF; width:100vw; height:100vh; overflow:hidden;
@@ -33,6 +39,7 @@ body {
   cursor:default; user-select:none;
 }
 .mb-item:hover { background:rgba(0,0,0,0.06); }
+.mb-item.clickable { cursor:pointer; }
 
 /* ══ Desktop Icons — 우측 상단 / 좌측 하단 ══ */
 .icon-col {
@@ -111,6 +118,71 @@ body {
 .cu-btn.primary { background:#000CEE; color:#fff; padding:4px 10px; }
 .cu-btn.primary:active { background:#0008a8; }
 
+/* ══ About Me Window — Figma 77:530, 헤더 "About ME" 클릭 시 등장 ══
+   design.md 팝업 규칙을 따르되, 이 창은 화면 정중앙 고정(드래그 불가) —
+   Figma 원본이 모달형 소개 카드라 CU-SeeMe식 스태거 배치 대상이 아님. */
+.about-win {
+  position:fixed; top:50%; left:50%; transform:translate(-50%, -50%);
+  z-index:600;
+  width:min(320px, calc(100vw - 40px)); max-width:320px;
+  max-height:calc(100vh - 40px); overflow-y:auto;
+  background:#00F; border:1px solid #000; color:#fff;
+  display:flex; flex-direction:column; align-items:center; gap:16px;
+  padding-bottom:24px;
+  /* design.md: 레트로 OS 하드 픽셀 오프셋 섀도 — 포커스(강) 고정, 모달형이라 항상 최상단 느낌 */
+  box-shadow: 4px 4px 0 rgba(0,0,0,0.28), 8px 8px 0 rgba(0,0,0,0.08);
+}
+.about-header {
+  height:24px; width:100%; display:flex; align-items:center; justify-content:center;
+  flex-shrink:0;
+}
+.about-header-title {
+  flex:1; min-width:1px; text-align:center;
+  font-family:'VT323',monospace; font-size:16px; line-height:16px;
+  letter-spacing:-1.6px; color:#fff;
+}
+.about-close {
+  width:24px; height:24px; flex-shrink:0; background:none; border:none;
+  cursor:pointer; display:flex; align-items:center; justify-content:center; padding:0;
+}
+.about-close svg { display:block; }
+.about-photo {
+  width:213.333px; height:160px; flex-shrink:0; position:relative;
+  border:1px solid #000; overflow:hidden;
+}
+.about-photo img {
+  position:absolute; left:-10.11%; top:-2.78%; width:119.76%; height:119.76%;
+  max-width:none;
+}
+.about-con {
+  width:100%; display:flex; flex-direction:column; align-items:center; gap:24px;
+  padding:0 20px;
+}
+.about-tit { width:100%; display:flex; flex-direction:column; gap:8px; text-align:center; }
+.about-name {
+  font-family:'EB Garamond', Georgia, 'Times New Roman', serif; font-weight:400;
+  font-size:40px; line-height:40px; letter-spacing:-3.2px; color:#fff; width:100%;
+}
+.about-role {
+  font-family:'VT323',monospace; font-size:16px; line-height:16px;
+  letter-spacing:-1.6px; color:#fff; width:100%;
+}
+.about-body {
+  width:100%; font-family:'Pretendard',-apple-system,sans-serif; font-size:12px;
+  line-height:18px; letter-spacing:-0.36px; color:#fff; text-align:center;
+}
+.about-body p { margin:0; }
+.about-btn {
+  background:#fff; border:1px solid #000; padding:4px 8px; cursor:pointer;
+  font-family:'VT323',monospace; font-size:20px; line-height:24px;
+  color:#000; text-transform:uppercase; white-space:nowrap;
+}
+.about-btn:active { background:#000; color:#fff; }
+.about-updated {
+  width:100%; font-family:'VT323',monospace; font-size:16px; line-height:0.98;
+  letter-spacing:-1.6px; color:#fff; text-align:center;
+}
+
 /* ── 이펙트: Photo Booth 스타일 하트/새 (픽셀 스프라이트) ── */
 .fx { position:absolute; pointer-events:none; z-index:5; }
 
@@ -160,7 +232,7 @@ body {
 <nav id="menu-bar">
   <div class="mb-lead">
     <div class="mb-tiger" id="mb-tiger" role="img" aria-label="tiger"></div>
-    <span class="mb-item">About ME</span>
+    <span class="mb-item clickable" id="mb-about">About ME</span>
     <span class="mb-item">Works</span>
     <span class="mb-item">Contact</span>
   </div>
@@ -247,6 +319,43 @@ body {
       <button class="cu-btn" id="btn-filter">FILTER</button>
     </div>
     <button class="cu-btn primary" id="btn-mute">MUTE CAM</button>
+  </div>
+</div>
+
+<!-- ▐▌ WINDOW: About Me — 헤더 "About ME" 클릭 시 화면 정중앙에 등장 ▐▌ -->
+<div class="about-win" id="win-about" style="display:none;">
+  <div class="about-header">
+    <span class="about-header-title">Let me introduce..</span>
+    <button class="about-close" id="about-close" aria-label="닫기">
+      <svg width="24" height="24" viewBox="0 0 24 24" fill="none">
+        <path d="M7 7L17 17M7 17L17 7" stroke="#fff" stroke-linecap="square"/>
+      </svg>
+    </button>
+  </div>
+  <div class="about-photo">
+    <img src="src/images/desktop/about-me-photo.jpg" alt="Sejeong Lee as a child">
+  </div>
+  <div class="about-con">
+    <div class="about-tit">
+      <p class="about-name">Sejeong LEE</p>
+      <p class="about-role">Product Designer, Seoul</p>
+    </div>
+    <div class="about-body">
+      <p>여기까지 와주신 당신... 반갑습니다</p>
+      <p>&nbsp;</p>
+      <p>도대체 포폴이란 뭘까요?</p>
+      <p>정리하는게 엄두가 나질 않아</p>
+      <p>'그냥 맥북 열어 보여주고 싶다..'<br>라는 생각으로 이 공간을 만들어봤어요</p>
+      <p>&nbsp;</p>
+      <p>디자인도 디자인이지만 제가 좋아하는 컨텐츠들을</p>
+      <p>한 곳에 아카이브하고 싶은 욕심도 있었습니다ㅎㅎ</p>
+      <p>&nbsp;</p>
+      <p>보고 듣을 것이 넘쳐나는 세상이지만</p>
+      <p>이 곳에서 취향에 맞는 컨텐츠 하나쯤은</p>
+      <p>발견하셨기를 바라며..*</p>
+    </div>
+    <button class="about-btn" id="about-say-hi">WANNA TALK?</button>
+    <p class="about-updated">Last updated 26-07-09</p>
   </div>
 </div>
 
@@ -552,6 +661,22 @@ document.getElementById('btn-gimme').addEventListener('click', () => spawnHearts
 
 // ── SAY HI! → 이메일 ───────────────────────────────────────────────────────
 document.getElementById('btn-sayhi').addEventListener('click', () => {
+  window.location.href = 'mailto:whynotblair@gmail.com';
+});
+
+// ── "About ME" 메뉴 → 소개 창(About Me) 정중앙에 열기 ───────────────────────
+// 이 창은 드래그 대상이 아니라 항상 화면 정중앙(CSS fixed + translate) —
+// z-index만 다른 창들과 공유하는 topZ 카운터에 태워서 맨 앞으로 오게 한다.
+const winAbout = document.getElementById('win-about');
+document.getElementById('mb-about').addEventListener('click', () => {
+  winAbout.style.display = 'flex';
+  winAbout.style.zIndex = ++topZ;
+});
+winAbout.addEventListener('pointerdown', () => { winAbout.style.zIndex = ++topZ; });
+document.getElementById('about-close').addEventListener('click', () => {
+  winAbout.style.display = 'none';
+});
+document.getElementById('about-say-hi').addEventListener('click', () => {
   window.location.href = 'mailto:whynotblair@gmail.com';
 });
 
