@@ -147,11 +147,14 @@
   position: absolute; inset: 0; width: 100%; height: 100%;
   object-fit: cover;
 }
-/* 비디오 도크 — 단일 YT iframe이 사는 고정 레이어. 플레이어 창(500)·미니(510) 위,
-   메뉴바(9999) 아래. 위치/표시는 JS(syncDock)가 활성 창의 .bt-video에 rAF 동기화. */
+/* 비디오 도크 — 단일 YT iframe이 사는 고정 레이어. 위치/크기/z-index 전부
+   JS(syncDock)가 매 프레임 활성 창(.bt-win/.bt-mini)의 실측값을 따라 동기화
+   한다 — 이 창들은 desktop.html의 공용 topZ 포커스 스택에 참여해서 z-index가
+   동적으로 바뀌므로 여기 고정값을 두지 않는다(JS가 즉시 덮어씀, 이 값은 JS
+   실행 전 첫 프레임용 폴백일 뿐). */
 #bt-yt-dock {
   position: fixed;
-  z-index: 511;
+  z-index: 1;
   overflow: hidden;
   border-radius: 3px;   /* .bt-video 4px 보더 안쪽 라운드 */
   background: #000;

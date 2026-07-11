@@ -288,6 +288,17 @@ function syncDock() {
   dock.style.visibility = show ? 'visible' : 'hidden';   // display 전환 없음 — 재생 유지
   placeMiniOverlay(show && state.isMinimized);
   if (!show) return;
+  // 호스트 창이 desktop.html의 공용 topZ 포커스 스택(window.__bringToFront)에
+  // 참여하면서 z-index가 매번 동적으로 바뀌므로, 도크도 매 프레임 그 실측값을
+  // 따라가야 한다 — 그러지 않으면(예: 예전처럼 511 고정) 창이 다른 팝업 뒤로
+  // 밀려도 iframe만 하드코딩된 z-index 때문에 계속 위에 떠서 "창과 분리된
+  // 영상"처럼 보이는 문제가 생긴다. +1만 더해서 자기 창 바로 위에만 둔다 —
+  // desktop.html의 topZ 카운터가 포커스마다 10씩 증가하도록 맞춰져 있어서
+  // (nextZ()) +1~+9 구간은 다음 포커스 값과 절대 겹치지 않는 안전한 여유다.
+  // (예전에 +1000처럼 큰 오프셋을 썼다가, 플레이어가 뒤로 밀려도 영상만 다른
+  // 창 위에 계속 떠 있는 반대 방향 버그가 나서 이 방식으로 정정함.)
+  const hostZ = parseInt(getComputedStyle(host).zIndex, 10) || 0;
+  dock.style.zIndex = hostZ + 1;
   const r = host.querySelector('.bt-video').getBoundingClientRect();
   dock.style.left = (r.left + 1) + 'px';    // +1/-2 = .bt-video 보더 안쪽
   dock.style.top = (r.top + 1) + 'px';

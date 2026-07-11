@@ -644,16 +644,23 @@ window.addEventListener('resize', layoutWindows);
 requestAnimationFrame(() => focusWin(document.getElementById('win-local')));
 
 // ── 창 드래그 + 포커스 z-index (포인터 이벤트 — 마우스/터치 공용) ──────────
+// 10씩 증가 — blairtunes.js가 자기 YT iframe 도크를 "호스트 창 z-index + 1"에
+// 둬야 해서(도크는 항상 자기 창 바로 위, 하지만 다른 창을 앞으로 가져오면
+// 그 창보다는 아래여야 함), 1씩만 증가하면 바로 다음 포커스가 정확히
+// "호스트+1"과 같은 값을 받아버려 동점이 나는 걸 실측으로 확인함(동점이면
+// DOM 순서로 도크가 이겨서 방금 앞으로 온 다른 창 위에 잘못 뜸). 10씩 띄우면
+// +1~+9 사이는 항상 안전한 여유 구간이 된다.
 let topZ = 100;
+function nextZ() { return (topZ += 10); }
 function focusWin(win) {
   document.querySelectorAll('.cu-win').forEach((w) => w.classList.remove('focused'));
   win.classList.add('focused');
-  win.style.zIndex = ++topZ;
+  win.style.zIndex = nextZ();
 }
 // blairtunes.js(별도 스크립트, .bt-win/.bt-mini에 z-index:500/510이 하드코딩돼
 // 있었음)처럼 이 파일 밖에서도 같은 "클릭한 창이 맨 위로" 스택에 참여할 수 있게
 // 전역으로 노출 — window.__tigerRun 패턴과 동일한 컨벤션(옵셔널 체이닝으로 호출).
-window.__bringToFront = (el) => { el.style.zIndex = ++topZ; };
+window.__bringToFront = (el) => { el.style.zIndex = nextZ(); };
 document.querySelectorAll('.cu-win').forEach((win) => {
   // 창 아무 곳이나 클릭/탭 → 맨 앞으로 + 포커스 섀도
   win.addEventListener('pointerdown', () => focusWin(win));
@@ -876,7 +883,7 @@ const winAbout = document.getElementById('win-about');
 document.getElementById('mb-about').addEventListener('click', () => {
   openCenteredDraggableWin(winAbout);
 });
-winAbout.addEventListener('pointerdown', () => { winAbout.style.zIndex = ++topZ; });
+winAbout.addEventListener('pointerdown', () => { winAbout.style.zIndex = nextZ(); });
 document.getElementById('about-close').addEventListener('click', () => {
   winAbout.style.display = 'none';
 });
@@ -957,7 +964,7 @@ window.addEventListener('resize', updateWorksScrollbar);
 // CU-SeeMe처럼 작은 카드로 뜨기 때문에 계속 드래그 가능해야 공통 사용성이 맞음.
 function openCenteredDraggableWin(win) {
   win.style.display = 'flex';
-  win.style.zIndex = ++topZ;
+  win.style.zIndex = nextZ();
 }
 function makeCenteredWinDraggable(win, headerEl, closeSelector, disableOnMobile) {
   let dragging = false, pid = null, startX = 0, startY = 0, origX = 0, origY = 0;
@@ -1005,7 +1012,7 @@ document.getElementById('icon-works').addEventListener('click', () => {
   openCenteredDraggableWin(winWorks);
   requestAnimationFrame(updateWorksScrollbar);
 });
-winWorks.addEventListener('pointerdown', () => { winWorks.style.zIndex = ++topZ; });
+winWorks.addEventListener('pointerdown', () => { winWorks.style.zIndex = nextZ(); });
 document.getElementById('works-close').addEventListener('click', () => {
   winWorks.style.display = 'none';
 });
@@ -1041,7 +1048,7 @@ document.getElementById('icon-film').addEventListener('click', () => {
   openCenteredDraggableWin(winFilm);
   requestAnimationFrame(updateFilmScrollbar);
 });
-winFilm.addEventListener('pointerdown', () => { winFilm.style.zIndex = ++topZ; });
+winFilm.addEventListener('pointerdown', () => { winFilm.style.zIndex = nextZ(); });
 document.getElementById('film-close').addEventListener('click', () => {
   winFilm.style.display = 'none';
 });
