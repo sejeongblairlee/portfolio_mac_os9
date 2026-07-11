@@ -24,6 +24,19 @@ and popup depth on the desktop page (`desktop.html`).
   The video area scales down with the popup width. No horizontal overflow.
 - Other popup types may define different max widths and content ratios.
 
+### Current popup types
+
+| Popup | Desktop size | Mobile (≤768px) |
+|---|---|---|
+| CU-SeeMe (Local/Remote) | `min(320px, 100vw-40px)` | vertical stack, centered (see below) |
+| About Me | `min(320px, 100vw-40px)`, `max-height: 100vh-40px` | same as desktop (small centered card, never fullscreen) |
+| Works | `min(960px, 100vw-40px)` square (width = height) | **fullscreen** (`100vw`/`100vh`), grid collapses to 1 column |
+| and my film | `min(720px, 100vw-40px)` square (width = height) | **fullscreen** (`100vw`/`100vh`), 2-column masonry collapses to 1 column |
+
+Works/Film fullscreen mode sits above the menu bar (`z-index: 10000 !important`,
+higher than the menu bar's `9999`) so menu bar text never bleeds through the
+popup on mobile.
+
 ```css
 .cu-win  { width: min(320px, calc(100vw - 40px)); max-width: 320px; }
 .cu-video { width: 100%; aspect-ratio: 3 / 2; overflow: hidden; }
@@ -63,11 +76,24 @@ Shared helper: `clampToSafeArea(x, y, windowWidth, windowHeight, viewportWidth, 
 
 ## Resize / drag behavior
 
-- Draggable by title bar only (pointer events, mouse + touch).
+- **Every popup is draggable by its title bar — this is shared, common
+  usability across all popup types** (CU-SeeMe, About Me, Works, and my
+  film), not just CU-SeeMe. Pointer events, mouse + touch.
 - Clicking or tapping a window brings it to front (z-index raised on focus).
+- Centered-modal popups (About/Works/Film) render at CSS-centered position
+  (`top: 50%; left: 50%; transform: translate(-50%, -50%)`) until the user
+  starts an actual drag. Only at drag-start does the popup convert to an
+  absolute `left`/`top` (px) position and drop the transform — so an
+  undragged popup always re-centers correctly for the current viewport on
+  every open, while a dragged popup keeps its exact position across
+  close/reopen (mirrors CU-SeeMe's `dataset.dragged` behavior below).
 - On viewport resize: recompute initial positions **only if the user has not
   manually dragged the window**. A dragged window keeps its position,
   clamped back into the safe area only when it would become inaccessible.
+- **Exception:** Works and Film switch to a fullscreen mobile layout
+  (see "Current popup types" above) — there is no space to drag into, so
+  dragging is disabled there specifically on mobile (`width <= 768px`).
+  This is the only case where a popup is not draggable.
 
 ## Popup shadow / depth
 

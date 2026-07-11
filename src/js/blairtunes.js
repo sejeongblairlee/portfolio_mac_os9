@@ -814,6 +814,18 @@ async function initBlairTunes() {
   initVolumeSlider();
   renderVolume();
 
+  // desktop.html의 다른 팝업(About/Works/Film/CU-SeeMe)과 같은 "클릭한 창이
+  // 맨 위로" z-index 스택에 참여 — .bt-win/.bt-mini는 원래 CSS에 z-index가
+  // 하드코딩돼 있어서(500/510) 그 값이 topZ 카운터와 무관하게 고정이었고,
+  // 그래서 재생 중 다른 폴더를 열어도 플레이어가 항상 위에 남는 문제가 있었음.
+  // window.__bringToFront는 desktop.html이 노출한 공용 헬퍼(옵셔널 체이닝 —
+  // 이 스크립트가 desktop.html 없이 단독으로 쓰일 일은 없지만 방어적으로 처리).
+  ['bt-win', 'bt-mini'].forEach((id) => {
+    document.getElementById(id).addEventListener('pointerdown', () => {
+      window.__bringToFront?.(document.getElementById(id));
+    });
+  });
+
   // 미니마이즈/복원 — 창만 전환. 도크(syncDock)가 다음 프레임에 영상을 미니 위로 옮겨 얹는다.
   const setMinimized = (min) => {
     state.isMinimized = min;
@@ -822,7 +834,10 @@ async function initBlairTunes() {
     window.__tigerRun?.reportWindowAction();   // 타이거 활동 펄스 (옵셔널 — 없어도 무해)
   };
   document.getElementById('bt-minimize').addEventListener('click', () => setMinimized(true));
-  document.getElementById('bt-restore').addEventListener('click', () => setMinimized(false));
+  document.getElementById('bt-restore').addEventListener('click', () => {
+    setMinimized(false);
+    window.__bringToFront?.(document.getElementById('bt-win'));
+  });
 
   document.getElementById('bt-close').addEventListener('click', () => {
     document.getElementById('bt-win').hidden = true;
@@ -858,6 +873,7 @@ async function initBlairTunes() {
       const wasClosed = win.hidden && !state.isMinimized;
       if (state.isMinimized) setMinimized(false);   // 미니 → 풀 플레이어 (재생 유지)
       win.hidden = false;
+      window.__bringToFront?.(win);
       window.__tigerRun?.reportWindowAction();
       const t = tracks[currentIndexOf()];
       if (wasClosed && t?.youtube_video_id && t.youtube_video_id !== currentVideoId) {

@@ -444,12 +444,20 @@ function buildFragment(item) {
   const bob = { amp: randRange(0.03, 0.09), speed: randRange(0.12, 0.3), phase: randRange(0, Math.PI * 2) };
 
   const frag = { mesh, mat, proxy, dims, sizeScale, startPos, finalPos, targetOpacity: 1, bob, introDone: false, videoEl: null };
-  loadFragmentMedia(item, frag);
   return frag;
 }
 
-window.MEDIA_ARCHIVE_DATA.forEach((item) => {
-  fragments.push(buildFragment(item));
+// 파티클/텍스처 개수가 많아서(현재 30여 개 이미지 + 영상 여러 개) 페이지 로드
+// 시점에 전부 한꺼번에 fetch+decode+GPU 업로드를 시작하면 초기 버벅거림과
+// "이미지가 뒤늦게 팝인"하는 현상이 생긴다. 그래서 미디어 로드 시작 자체를
+// 아이템당 조금씩(스태거) 늦춰서 네트워크/디코드 부하를 첫 몇 초에 걸쳐
+// 분산시킨다 — 파티클 생성(배치/애니메이션 골격)은 여전히 즉시 전부 이루어짐,
+// 늦어지는 건 오직 "실제 미디어를 언제부터 불러오기 시작하느냐"뿐이다.
+const MEDIA_LOAD_STAGGER_MS = 55;
+window.MEDIA_ARCHIVE_DATA.forEach((item, i) => {
+  const frag = buildFragment(item);
+  fragments.push(frag);
+  setTimeout(() => loadFragmentMedia(item, frag), i * MEDIA_LOAD_STAGGER_MS);
 });
 
 // ── 부팅 프롬프트 — 타이핑 효과 + Enter/클릭 트리거 + 부팅 시퀀스 ───────────
