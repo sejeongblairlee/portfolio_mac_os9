@@ -188,8 +188,8 @@ body {
 .works-win {
   position:fixed; top:50%; left:50%; transform:translate(-50%, -50%);
   z-index:600;
-  width:min(720px, calc(100vw - 40px));
-  height:min(720px, calc(100vh - 40px));
+  width:min(960px, calc(100vw - 40px));
+  height:min(960px, calc(100vh - 40px));
   background:#000; border:1px solid #000; color:#fff;
   display:flex; flex-direction:column; align-items:center;
   box-shadow: 4px 4px 0 rgba(0,0,0,0.28), 8px 8px 0 rgba(0,0,0,0.08);
@@ -197,7 +197,9 @@ body {
 .works-header {
   height:24px; width:100%; display:flex; align-items:center; justify-content:center;
   flex-shrink:0;
+  cursor:grab; touch-action:none; user-select:none; -webkit-user-select:none;
 }
+.works-win.dragging .works-header { cursor:grabbing; }
 .works-header-title {
   flex:1; min-width:1px; text-align:center;
   font-family:'VT323',monospace; font-size:16px; line-height:16px;
@@ -264,7 +266,9 @@ body {
 .film-header {
   height:24px; width:100%; display:flex; align-items:center; justify-content:center;
   flex-shrink:0;
+  cursor:grab; touch-action:none; user-select:none; -webkit-user-select:none;
 }
+.film-win.dragging .film-header { cursor:grabbing; }
 .film-header-title {
   flex:1; min-width:1px; text-align:center;
   font-family:'VT323',monospace; font-size:16px; line-height:16px;
@@ -929,16 +933,70 @@ function updateWorksScrollbar() {
 worksScroll.addEventListener('scroll', updateWorksScrollbar);
 window.addEventListener('resize', updateWorksScrollbar);
 
+// 중앙 고정 모달(Works/Film)을 CU-SeeMe와 같은 방식으로 드래그 가능하게 만드는
+// 공용 헬퍼 — 사용성은 모든 팝업이 공통이어야 한다는 요청에 따라 CU-SeeMe의
+// 포인터 드래그 로직(경계 클램프 포함)을 그대로 재사용. 드래그를 시작하기
+// 전까지는 CSS(top:50%+transform)가 계속 중앙 정렬을 담당 — 그래서 한 번도
+// 안 끌고 닫았다 다시 열면 매번 그 시점 뷰포트 기준으로 재중앙정렬된다.
+// 드래그를 시작하는 순간에만 그 렌더 위치를 절대 px(left/top)로 굳히고
+// transform을 제거한다(위치는 시각적으로 동일, dataset.dragged로 표시).
+// 이후로는 CU-SeeMe처럼 닫았다 열어도 마지막으로 끌어놓은 자리를 유지한다.
+// 모바일 풀스크린 레이아웃에서는 드래그를 붙이지 않는다(움직일 공간이 없음).
+function openCenteredDraggableWin(win) {
+  win.style.display = 'flex';
+  win.style.zIndex = ++topZ;
+}
+function makeCenteredWinDraggable(win, headerEl, closeSelector) {
+  let dragging = false, pid = null, startX = 0, startY = 0, origX = 0, origY = 0;
+  headerEl.addEventListener('pointerdown', (e) => {
+    if (window.innerWidth <= 768) return;   // 모바일 풀스크린에서는 드래그 비활성
+    if (e.target.closest(closeSelector)) return;
+    if (!win.dataset.dragged) {
+      const rect = win.getBoundingClientRect();
+      win.style.transform = 'none';
+      win.style.left = rect.left + 'px';
+      win.style.top = rect.top + 'px';
+      win.dataset.dragged = '1';
+    }
+    dragging = true;
+    pid = e.pointerId;
+    headerEl.setPointerCapture(pid);
+    startX = e.clientX;
+    startY = e.clientY;
+    origX = win.offsetLeft;
+    origY = win.offsetTop;
+    win.classList.add('dragging');
+    e.preventDefault();
+  });
+  headerEl.addEventListener('pointermove', (e) => {
+    if (!dragging || e.pointerId !== pid) return;
+    let nx = origX + (e.clientX - startX);
+    let ny = origY + (e.clientY - startY);
+    const minVisible = 60;
+    nx = Math.max(-win.offsetWidth + minVisible, Math.min(nx, window.innerWidth - minVisible));
+    ny = Math.max(0, Math.min(ny, window.innerHeight - 24));
+    win.style.left = nx + 'px';
+    win.style.top = ny + 'px';
+  });
+  const endDrag = (e) => {
+    if (!dragging || e.pointerId !== pid) return;
+    dragging = false;
+    win.classList.remove('dragging');
+  };
+  headerEl.addEventListener('pointerup', endDrag);
+  headerEl.addEventListener('pointercancel', endDrag);
+}
+
 const winWorks = document.getElementById('win-works');
 document.getElementById('icon-works').addEventListener('click', () => {
-  winWorks.style.display = 'flex';
-  winWorks.style.zIndex = ++topZ;
+  openCenteredDraggableWin(winWorks);
   requestAnimationFrame(updateWorksScrollbar);
 });
 winWorks.addEventListener('pointerdown', () => { winWorks.style.zIndex = ++topZ; });
 document.getElementById('works-close').addEventListener('click', () => {
   winWorks.style.display = 'none';
 });
+makeCenteredWinDraggable(winWorks, winWorks.querySelector('.works-header'), '.works-close');
 
 // ── "and my film" 아이콘 → 필름 사진 창(Film) 화면 정중앙에 열기 ────────────
 // Figma 107:2680 — 2열 매손리(모바일 1열) + 우측 픽셀 스타일 커스텀 스크롤바
@@ -967,14 +1025,14 @@ window.addEventListener('resize', updateFilmScrollbar);
 
 const winFilm = document.getElementById('win-film');
 document.getElementById('icon-film').addEventListener('click', () => {
-  winFilm.style.display = 'flex';
-  winFilm.style.zIndex = ++topZ;
+  openCenteredDraggableWin(winFilm);
   requestAnimationFrame(updateFilmScrollbar);
 });
 winFilm.addEventListener('pointerdown', () => { winFilm.style.zIndex = ++topZ; });
 document.getElementById('film-close').addEventListener('click', () => {
   winFilm.style.display = 'none';
 });
+makeCenteredWinDraggable(winFilm, winFilm.querySelector('.film-header'), '.film-close');
 
 // ── "If you want to ...SEE ME?" 아이콘 → CU-SeeMe 창 다시 열기 ─────────────
 document.getElementById('icon-seeme').addEventListener('click', () => {
