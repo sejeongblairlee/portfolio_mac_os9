@@ -302,7 +302,7 @@ const macBody = new THREE.Group();
 macBody.position.set(0, BODY_CY, 0);
 mac.add(macBody);
 
-new THREE.GLTFLoader().load('src/models/macintosh-classic-body.glb', (gltf) => {
+new THREE.GLTFLoader().load('../src/models/macintosh-classic-body.glb', (gltf) => {
   const model = gltf.scene;
 
   // GLB에 내장된 원본 재질/텍스처(레인보우 애플 로고, "Macintosh Classic" 라벨,

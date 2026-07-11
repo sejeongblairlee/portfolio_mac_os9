@@ -601,7 +601,7 @@ function windowHTML() {
     <div class="bt-body">
       <div class="bt-col-list">
         <div class="bt-list" id="bt-list"></div>
-        <div class="bt-slider"><div class="bt-slider-handle"></div></div>
+        <div class="pixel-scrollbar" id="bt-list-scrollbar"><div class="pixel-scrollbar-handle" id="bt-list-scrollbar-handle" hidden></div></div>
       </div>
       <div class="bt-col-center">
         <div class="bt-video">
@@ -624,7 +624,7 @@ function windowHTML() {
           </div>
           <div class="bt-cur-des" id="bt-cur-des"></div>
         </div>
-        <div class="bt-slider"><div class="bt-slider-handle"></div></div>
+        <div class="pixel-scrollbar"><div class="pixel-scrollbar-handle"></div></div>
       </div>
     </div>
   </div>
@@ -871,6 +871,22 @@ async function initBlairTunes() {
   renderList();
   renderCurrent();
   refreshThemeFor(tracks[0]);             // 열기 전에 미리 테마 파생
+
+  // 트랙리스트 왼쪽 픽셀 스크롤바 — 예전엔 항상 고정 86px 높이로 뜨는 순수
+  // 장식이라 실제로 스크롤할 게 없어도(트랙 수가 적어 리스트가 뷰포트 안에
+  // 다 들어갈 때) 핸들이 계속 보였음. desktop.html이 노출한 공용 헬퍼
+  // (window.__syncPixelScrollbar, Works/Film과 완전히 동일한 로직)로 실제
+  // #bt-list 스크롤 상태에 맞춰 높이/위치를 계산하고, 스크롤이 필요 없으면
+  // 핸들 자체를 숨긴다.
+  const btList = document.getElementById('bt-list');
+  const btListTrack = document.getElementById('bt-list-scrollbar');
+  const btListHandle = document.getElementById('bt-list-scrollbar-handle');
+  const syncListScrollbar = () => {
+    window.__syncPixelScrollbar?.(btListTrack, btListHandle, btList.clientHeight, btList.scrollHeight, btList.scrollTop);
+  };
+  btList.addEventListener('scroll', syncListScrollbar);
+  window.addEventListener('resize', syncListScrollbar);
+  syncListScrollbar();
 
   document.querySelectorAll('.bt-play').forEach((b) => b.addEventListener('click', togglePlay));
   document.querySelectorAll('.bt-prev').forEach((b) => b.addEventListener('click', () => stepTrack(-1)));

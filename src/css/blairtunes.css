@@ -117,21 +117,12 @@
   font-size: 12px; line-height: 18px; letter-spacing: -0.36px; white-space: nowrap;
 }
 
-/* 픽셀 스크롤바 슬라이더 (장식) — 8px 트랙, 6px 도트 핸들 */
-.bt-slider {
-  width: 8px; padding: 4px 1px; flex-shrink: 0; align-self: stretch;
-  position: relative;
-}
-.bt-slider .bt-slider-handle {
-  width: 6px; height: 86px;
-  background-image:
-    repeating-linear-gradient(to bottom,
-      #fff 0, #fff 2px, transparent 2px, transparent 4px);
-  -webkit-mask-image: repeating-linear-gradient(to right,
-      #000 0, #000 2px, transparent 2px, transparent 4px);
-  mask-image: repeating-linear-gradient(to right,
-      #000 0, #000 2px, transparent 2px, transparent 4px);
-}
+/* 트랙리스트 픽셀 스크롤바 — 박스/도트 패턴은 desktop.html의 공용
+   .pixel-scrollbar/.pixel-scrollbar-handle(Figma 71:3350, design.md 문서화)를
+   그대로 쓴다. 왼쪽(트랙리스트) 핸들은 window.__syncPixelScrollbar로 실제
+   스크롤 상태에 동기화되고, 오른쪽(현재 재생 패널)은 순수 레이아웃
+   자리맞춤용이라 스크롤과 무관하게 항상 그려지며 opacity로만 데스크탑/
+   모바일 표시 여부를 바꾼다(아래 .bt-col-cur .pixel-scrollbar 규칙). */
 
 /* 02 — 중앙 플레이어 */
 .bt-col-center {
@@ -259,7 +250,7 @@
   font-size: 12px; line-height: 18px; letter-spacing: -0.36px;
   color: var(--bt-text, #fff); transition: color 300ms ease;
 }
-.bt-col-cur .bt-slider { opacity: 0; }   /* Figma: 우측 슬라이더는 투명 자리맞춤 */
+.bt-col-cur .pixel-scrollbar { opacity: 0; }   /* Figma: 우측 슬라이더는 투명 자리맞춤 */
 
 /* 데스크탑 기본: 타이틀/아티스트는 세로 배치 (컨테이너 쿼리가 모바일에서 덮어씀) */
 .bt-cur-titline { display: contents; }
@@ -286,7 +277,7 @@
   /* 모바일 타이틀: "Smooth operator /Sade" 한 줄 */
   .bt-cur-tit .bt-t1 { display: inline; }
   .bt-cur-titline { display: flex; align-items: flex-start; width: 100%; white-space: nowrap; overflow: hidden; }
-  .bt-col-cur .bt-slider { opacity: 1; }
+  .bt-col-cur .pixel-scrollbar { opacity: 1; }
 }
 /* 작은 뷰포트(실제 모바일 기기)에서의 기본 창 폭 — 리사이즈 인라인 스타일이 있으면 그쪽 우선 */
 @media (max-width: 768px) {

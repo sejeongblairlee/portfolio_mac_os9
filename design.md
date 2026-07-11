@@ -108,6 +108,40 @@ box-shadow: 4px 4px 0 rgba(0,0,0,0.28), 8px 8px 0 rgba(0,0,0,0.08);
 box-shadow: 3px 3px 0 rgba(0,0,0,0.20), 6px 6px 0 rgba(0,0,0,0.06);
 ```
 
+## Pixel Scrollbar (shared component)
+
+Figma: node `71:3350` (reusable `Slider` component, vertical/horizontal
+variants). **One shared implementation** — Works, Film, and the
+Blair-tunes track list (`#bt-list`) all use the exact same CSS classes and
+JS sync helper. Do not fork a per-window copy.
+
+- **Markup**: `<div class="pixel-scrollbar"><div class="pixel-scrollbar-handle" hidden></div></div>`
+  — no extra "track" wrapper div needed.
+- **Track**: `width: 8px`, `padding: 4px 1px` (top/bottom inset is the
+  handle's travel range; left/right inset centers the 6px handle).
+- **Handle**: `width: 6px`. The dot pattern is a background + mask combo,
+  not a solid dashed bar: a vertical 2px-on/2px-off `background-image`
+  masked by a horizontal 2px-on/2px-off `mask-image`. Because the handle is
+  exactly 6px wide (2+2+2), the mask naturally splits it into two 2px dot
+  columns with a 2px gap between them — matches the Figma component's 44
+  individual 2×2px rectangles exactly (verified pixel-for-pixel against a
+  zoomed screenshot).
+- **Visibility rule**: if the scrollable content fits inside its viewport
+  (`scrollHeight <= clientHeight`), the handle gets the `hidden` attribute
+  and renders nothing — never show a handle when there's nothing to scroll
+  (this was the bug: Blair-tunes' track-list handle used to be a static
+  86px-tall decoration regardless of whether the list actually overflowed).
+- **JS**: `syncPixelScrollbar(track, handle, viewportHeight, contentHeight,
+  scrollTop)`, defined in `desktop.html` and exposed as
+  `window.__syncPixelScrollbar` (same cross-script convention as
+  `window.__bringToFront` / `window.__tigerRun`) so `blairtunes.js` can call
+  it without duplicating the math. Call it on the scroll container's
+  `scroll` event, on window `resize`, and once after any content re-render
+  that could change `scrollHeight` (e.g. after the track list renders).
+- Only the vertical orientation is implemented. Figma also defines a
+  horizontal variant (`type: "horizontal"`) for a future use case that
+  doesn't exist in this codebase yet — same technique, transposed.
+
 ## Out of scope (do not change)
 
 Menu bar, desktop icons, window visual style, typography, colors,
