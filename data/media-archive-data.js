@@ -47,6 +47,7 @@
     '/images/media-archive/fragment-12.jpg',
     '/images/media-archive/fragment-13.JPG',
     '/images/media-archive/fragment-14.JPG',
+    '/images/media-archive/fragment-15.png',
     '/images/media-archive/fragment-16.png',
     '/images/media-archive/fragment-17.jpg',
     '/images/media-archive/fragment-18.jpg',
@@ -57,9 +58,11 @@
     '/images/media-archive/fragment-23.png',
     '/images/media-archive/fragment-24.png',
     '/images/media-archive/fragment-25.png',
+    '/images/media-archive/fragment-26.jpg',
     '/images/media-archive/fragment-27.JPG',
     '/images/media-archive/fragment-28.png',
     '/images/media-archive/fragment-29.png',
+    '/images/media-archive/fragment-30.png',
   ];
 
   // videos/media-archive/ 에 실제로 들어있는 영상 목록 — 마찬가지로 파일 추가/교체 시
