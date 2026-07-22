@@ -1292,8 +1292,24 @@ function makeCenteredWinDraggable(win, headerEl, closeSelector, disableOnMobile)
 // 상태 공유). 리사이즈 중에도 onResize 콜백으로 스크롤바 등을 즉시 갱신.
 function makeCenteredWinResizable(win, handleEl, minW, minH, disableOnMobile, onResize) {
   let resizing = false, pid = null, startX = 0, startY = 0, origX = 0, origY = 0, w0 = 0, h0 = 0;
-  handleEl.addEventListener('pointerdown', (e) => {
+  // 별도 자식 엘리먼트(handleEl)에 픽셀 단위로 정확히 맞혀야만 동작하던 이전 방식은
+  // 히트 영역을 아무리 키워도(18→36px) 실사용에서 계속 "리사이즈가 안 된다"는
+  // 리포트가 있었음 — 원인이 z-index/occlusion/좌표계 어느 쪽이든, 자식 엘리먼트
+  // 하나에 의존하는 구조 자체를 없애는 게 가장 확실한 해결책. 이제 창(win) 자신의
+  // getBoundingClientRect() 코너 좌표에 직접 히트테스트를 걸어서, 그 사이에 어떤
+  // 엘리먼트가 있든(스크롤 콘텐츠, 스크롤바 등) 상관없이 항상 반응한다. handleEl은
+  // 순수 비주얼(그립 점 + hover 커서 아이콘) 용도로만 남는다.
+  const GRAB = 28;   // 코너에서 이 픽셀 안쪽(창 경계 기준)이면 리사이즈로 판정
+  function inCorner(e) {
+    const rect = win.getBoundingClientRect();
+    return e.clientX >= rect.right - GRAB && e.clientX <= rect.right + 12 &&
+           e.clientY >= rect.bottom - GRAB && e.clientY <= rect.bottom + 12;
+  }
+  // 캡처 단계 — works-item 클릭/헤더 드래그 등 그 자리의 다른 핸들러보다 먼저
+  // 판정해서, 코너 안이면 stopImmediatePropagation으로 확실히 가로챈다.
+  win.addEventListener('pointerdown', (e) => {
     if (disableOnMobile && window.innerWidth <= 768) return;   // 모바일 풀스크린에서는 리사이즈 비활성
+    if (!inCorner(e)) return;
     if (!win.dataset.dragged) {
       const rect = win.getBoundingClientRect();
       win.style.transform = 'none';
@@ -1306,7 +1322,11 @@ function makeCenteredWinResizable(win, handleEl, minW, minH, disableOnMobile, on
     win.style.height = rect.height + 'px';
     resizing = true;
     pid = e.pointerId;
-    handleEl.setPointerCapture(pid);
+    // setPointerCapture가 (일부 환경/엣지케이스에서) 실패해도 나머지 상태(startX 등)는
+    // 반드시 세팅되게 try/catch로 감싼다 — 여기서 그냥 던지면 아래 대입들이 전부
+    // 스킵되고 startX/w0 등이 초기값 0에 머물러서, 다음 pointermove가 델타가 아니라
+    // e.clientX 자체를 새 너비로 써버리는(등) 훨씬 이상한 2차 버그로 이어진다.
+    try { win.setPointerCapture(pid); } catch (err) {}
     startX = e.clientX;
     startY = e.clientY;
     w0 = rect.width;
@@ -1315,9 +1335,9 @@ function makeCenteredWinResizable(win, handleEl, minW, minH, disableOnMobile, on
     origY = win.offsetTop;
     win.classList.add('resizing');
     e.preventDefault();
-    e.stopPropagation();   // 헤더 드래그와 상호 배타
-  });
-  handleEl.addEventListener('pointermove', (e) => {
+    e.stopImmediatePropagation();   // 헤더 드래그/카드 클릭 등 그 자리의 다른 반응을 막음
+  }, { capture: true });
+  win.addEventListener('pointermove', (e) => {
     if (!resizing || e.pointerId !== pid) return;
     const maxW = window.innerWidth - origX - 20;    // 우측 세이프 에어리어까지
     const maxH = window.innerHeight - origY - 20;   // 하단 세이프 에어리어까지
@@ -1332,8 +1352,8 @@ function makeCenteredWinResizable(win, handleEl, minW, minH, disableOnMobile, on
     resizing = false;
     win.classList.remove('resizing');
   };
-  handleEl.addEventListener('pointerup', endResize);
-  handleEl.addEventListener('pointercancel', endResize);
+  win.addEventListener('pointerup', endResize);
+  win.addEventListener('pointercancel', endResize);
 }
 
 const winWorks = document.getElementById('win-works');
