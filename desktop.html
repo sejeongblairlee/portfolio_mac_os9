@@ -121,10 +121,13 @@ body {
 .cu-btn.primary { background:#000CEE; color:#fff; padding:4px 10px; }
 .cu-btn.primary:active { background:#0008a8; }
 
-/* ══ About Me Window — Figma 77:530, 헤더 "About me" 클릭 시 등장 ══
+/* ══ About Me Window — Figma 77:530(최초 구현) / 169:1053(2026-07-22 재동기화),
+   헤더 "About me" 클릭 시 등장 ══
    design.md 팝업 규칙을 따름 — 처음엔 항상 화면 정중앙(CSS fixed+translate)에
    뜨지만(Figma 원본이 모달형 소개 카드라 CU-SeeMe식 스태거 배치 대상은 아님),
-   헤더를 끌면 다른 팝업들과 동일하게 드래그로 옮길 수 있다(공통 사용성). */
+   헤더를 끌면 다른 팝업들과 동일하게 드래그로 옮길 수 있다(공통 사용성).
+   169:1053 기준으로 본문 카피/버튼 라벨(WANNA TALK?→STILL CURIOUS?)/사진/
+   일부 자간 값 갱신 — 자간 변경분은 .about-name/.about-body 옆 주석 참조. */
 .about-win {
   position:fixed; top:50%; left:50%; transform:translate(-50%, -50%);
   z-index:600;
@@ -163,16 +166,24 @@ body {
 }
 .about-tit { width:100%; display:flex; flex-direction:column; gap:8px; text-align:center; }
 .about-name {
+  /* Figma 169:1053 재동기화(2026-07-22): 자간이 -3.2px → -2.4px로 바뀜.
+     EB Garamond 40px는 Blair-tunes 타이틀(.bt-cur-tit)도 같은 -3.2px를
+     쓰던 공용 토큰이었는데, 이 창만 새 값으로 갱신하면서 둘이 갈라짐 —
+     design.md Typography 표 기준 의도적 예외로 기록해둘 것. */
   font-family:'EB Garamond', Georgia, 'Times New Roman', serif; font-weight:400;
-  font-size:40px; line-height:40px; letter-spacing:-3.2px; color:#fff; width:100%;
+  font-size:40px; line-height:40px; letter-spacing:-2.4px; color:#fff; width:100%;
 }
 .about-role {
   font-family:'VT323',monospace; font-size:16px; line-height:16px;
   letter-spacing:-1.6px; color:#fff; width:100%;
 }
 .about-body {
+  /* Figma 169:1053 재동기화(2026-07-22): 자간 -0.36px → -0.24px, opacity 80%
+     추가됨. Pretendard 12px는 원래 about-body/bt-row-txt/bt-dur/bt-cur-des가
+     전부 -0.36px로 통일돼 있던 공용 토큰이었는데, 이 창만 새 값으로 갱신하며
+     갈라짐 — design.md Typography 표 기준 의도적 예외로 기록해둘 것. */
   width:100%; font-family:'Pretendard',-apple-system,sans-serif; font-size:12px;
-  line-height:18px; letter-spacing:-0.36px; color:#fff; text-align:center;
+  line-height:18px; letter-spacing:-0.24px; color:#fff; text-align:center; opacity:0.8;
 }
 .about-body p { margin:0; }
 .about-btn {
@@ -624,18 +635,14 @@ body {
     <div class="about-body">
       <p>여기까지 와주신 당신... 반갑습니다</p>
       <p>&nbsp;</p>
-      <p>도대체 포폴이란 뭘까요?</p>
-      <p>정리하는게 엄두가 나질 않아</p>
-      <p>'그냥 맥북 열어 보여주고 싶다..'<br>라는 생각으로 이 공간을 만들어봤어요</p>
+      <p>이 공간은 포트폴리오라고 하기에는 다소 개인적이고</p>
+      <p>OS라는 컨셉으로 제가 듣고 경험한 것들을</p>
+      <p>모아둔  블로그에 가까운 것 같네요ㅎㅎ<br>그냥 언제부턴가 이런걸 만들어보고 싶었어요</p>
       <p>&nbsp;</p>
-      <p>디자인도 디자인이지만 제가 좋아하는 컨텐츠들을</p>
-      <p>한 곳에 아카이브하고 싶은 욕심도 있었습니다ㅎㅎ</p>
-      <p>&nbsp;</p>
-      <p>보고 듣을 것이 넘쳐나는 세상이지만</p>
-      <p>이 곳에서 취향에 맞는 컨텐츠 하나쯤은</p>
-      <p>발견하셨기를 바라며..*</p>
+      <p>보고 들을 것이 넘쳐나는 세상이지만</p>
+      <p>이 곳에서 취향에 맞는 컨텐츠 하나 쯤은 <br>발견하셨기를 바라며...*</p>
     </div>
-    <button class="about-btn" id="about-say-hi">WANNA TALK?</button>
+    <button class="about-btn" id="about-say-hi">STILL CURIOUS?</button>
     <p class="about-updated">Last updated 26-07-09</p>
   </div>
 </div>

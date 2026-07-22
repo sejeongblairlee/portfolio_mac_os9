@@ -196,11 +196,21 @@ introduce a third value for a pair that already has one.
 | VT323 | 16px | `-1.6px` |
 | VT323 | 20px | `0` (unset) |
 | VT323 | 14px | `-1.4px` |
-| EB Garamond | 40px | `-3.2px` |
+| EB Garamond | 40px | `-3.2px` (except `.about-name`, see exceptions below) |
 | EB Garamond | 14px | `-1.12px` |
-| Pretendard | 12px | `-0.36px` |
+| Pretendard | 12px | `-0.36px` (except `.about-body`, see exceptions below) |
 | Pretendard | 14px | `0` (unset) |
 | Pretendard | 20px | `0` (unset) |
+
+**Known exceptions (deliberate, from a Figma resync — not drift to fix):**
+- `.about-name` (EB Garamond 40px): `-2.4px`, not the `-3.2px` token used by
+  `.bt-cur-tit`. Figma node 169:1053 (2026-07-22 resync) specifies this
+  value for the About Me popup specifically; Blair-tunes' title was not
+  updated to match. Flag to the user before "fixing" this back to `-3.2px`
+  — it may be intentional per the newer Figma frame.
+- `.about-body` (Pretendard 12px): `-0.24px` + `opacity:0.8`, not the
+  `-0.36px` token used by `.bt-row-txt`/`.bt-dur`/`.bt-cur-des`. Same
+  source (Figma 169:1053) and same caveat.
 
 Audited 2026-07-22: found two (font, size) pairs with inconsistent values
 across the codebase and unified them to whichever value the majority of
