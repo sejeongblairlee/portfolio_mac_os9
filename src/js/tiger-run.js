@@ -6,7 +6,8 @@
  * lottie-web을 Three.js/YouTube API와 같은 CDN 로드 패턴으로 사용한다.
  *
  * 정지: 포인터가 멈춘 지 150ms 지나면 그 즉시 속도 기여 0. 아무 활동도 없으면
- * goToAndStop(0). 속도: 재생/정지 여부와 별개로 activitySpeed를 계속 갱신해
+ * pause() — 달리던 포즈 그대로 프리즈(항상 같은 포즈로 멈추지 않도록 프레임 0
+ * 리셋은 하지 않는다). 속도: 재생/정지 여부와 별개로 activitySpeed를 계속 갱신해
  * anim.setSpeed()만 호출 — JSON 리로드도 리마운트도 하지 않는다.
  *
  * 속도 곡선: raw 합산 점수(RAW_BASE + 신호별 기여) × TIGER_SPEED_MULTIPLIER(0.76),
@@ -27,7 +28,9 @@
 'use strict';
 
 const LOTTIE_CDN = 'https://cdnjs.cloudflare.com/ajax/libs/lottie-web/5.12.2/lottie.min.js';
-const JSON_PATH = 'src/tiger-run.json';
+// 2026-07-22: 말(horse) 애니메이션으로 교체. 롤백하려면 이 한 줄만
+// 'src/tiger-run.json'으로 되돌리면 됨 — 원본 파일은 그대로 남아있음.
+const JSON_PATH = 'src/horse.json';
 
 const POINTER_STOP_MS = 150;    // 포인터 정지 판정 — "즉시 정지" 요구사항의 실제 임계값
 const KEY_ACTIVE_MS = 300;      // 키다운 1회의 활동 지속시간
@@ -129,7 +132,8 @@ async function initTigerRun(container) {
     if (next === running) return;
     running = next;
     if (running) anim.play();
-    else anim.goToAndStop(0, true);   // 정지 = 첫 프레임 (트랜스폼 가공 없음, Lottie 자체 모션만)
+    else anim.pause();   // 정지 = 달리던 그 포즈에서 프리즈 — 매번 같은 첫 프레임으로
+                         // 리셋(goToAndStop(0))하면 항상 같은 포즈로 멈춰서 어색함
   }
   function setSpeed(s) {
     if (Math.abs(s - currentSpeed) < 0.02) return;

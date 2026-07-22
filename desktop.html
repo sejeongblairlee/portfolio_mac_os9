@@ -121,7 +121,7 @@ body {
 .cu-btn.primary { background:#000CEE; color:#fff; padding:4px 10px; }
 .cu-btn.primary:active { background:#0008a8; }
 
-/* ══ About Me Window — Figma 77:530, 헤더 "About ME" 클릭 시 등장 ══
+/* ══ About Me Window — Figma 77:530, 헤더 "About me" 클릭 시 등장 ══
    design.md 팝업 규칙을 따름 — 처음엔 항상 화면 정중앙(CSS fixed+translate)에
    뜨지만(Figma 원본이 모달형 소개 카드라 CU-SeeMe식 스태거 배치 대상은 아님),
    헤더를 끌면 다른 팝업들과 동일하게 드래그로 옮길 수 있다(공통 사용성). */
@@ -186,19 +186,80 @@ body {
   letter-spacing:-1.6px; color:#fff; text-align:center;
 }
 
+/* ══ Project Popup — Figma 97:2319, Works 리스트에서 프로젝트 클릭 시 등장 ══
+   상세 페이지가 아직 없어서 "작업중입니다" 안내만 띄우는 자리표시자 모달.
+   About 창과 같은 작은 블루 모달 패턴(고정폭 240px, 중앙 정렬 + 드래그) 재사용. */
+.proj-popup {
+  position:fixed; top:50%; left:50%; transform:translate(-50%, -50%);
+  z-index:600;
+  width:min(240px, calc(100vw - 40px));
+  background:#00F; border:1px solid #000; color:#fff;
+  display:flex; flex-direction:column; align-items:center; gap:16px;
+  padding-bottom:24px;
+  box-shadow: 4px 4px 0 rgba(0,0,0,0.28), 8px 8px 0 rgba(0,0,0,0.08);
+}
+.proj-header {
+  height:24px; width:100%; display:flex; align-items:center; justify-content:center;
+  flex-shrink:0;
+  cursor:grab; touch-action:none; user-select:none; -webkit-user-select:none;
+}
+.proj-popup.dragging .proj-header { cursor:grabbing; }
+.proj-header-title {
+  flex:1; min-width:1px; text-align:center;
+  font-family:'VT323',monospace; font-size:16px; line-height:16px;
+  letter-spacing:-1.6px; color:#fff;
+}
+.proj-close {
+  width:24px; height:24px; flex-shrink:0; background:none; border:none;
+  cursor:pointer; display:flex; align-items:center; justify-content:center; padding:0;
+}
+.proj-close svg { display:block; }
+.proj-con { width:100%; display:flex; flex-direction:column; align-items:center; gap:16px; padding:0 20px; }
+.proj-tit { width:100%; display:flex; flex-direction:column; gap:8px; text-align:center; }
+.proj-sorry {
+  font-family:'EB Garamond', Georgia, 'Times New Roman', serif; font-weight:400;
+  font-size:40px; line-height:40px; letter-spacing:-3.2px; color:#fff; width:100%;
+}
+.proj-msg {
+  width:100%; font-family:'Pretendard',-apple-system,sans-serif; font-size:12px;
+  line-height:18px; letter-spacing:-0.36px; color:#fff; text-align:center;
+}
+.proj-btn {
+  width:160px; background:#fff; border:1px solid #000; padding:4px 8px; cursor:pointer;
+  font-family:'VT323',monospace; font-size:20px; line-height:24px;
+  color:#000; text-align:center; text-transform:uppercase; white-space:nowrap;
+}
+.proj-btn:active { background:#000; color:#fff; }
+
 /* ══ Works Window — Figma 94:808, 데스크탑 "Works" 아이콘 클릭 시 화면 정중앙에 등장 ══
    About 창과 같은 고정 중앙 모달 패턴이되, 폭/높이는 Figma 스펙대로 720px 고정
    (뷰포트가 더 작으면 세이프 에어리어만큼만 축소). 리스트는 내부 스크롤 +
    픽셀 스타일 커스텀 스크롤바(우측 8px 트랙). 모바일(≤768px)에서는 풀스크린 + 1열.
-   이미지는 전부 더미(흰 정사각형) — 실제 프로젝트 이미지 붙이기 전 단계. */
+   이미지가 있는 항목(DaLock/SKT T Factory/LOTTE ON)만 실제 프로젝트 이미지,
+   나머지는 Figma 원본과 동일하게 흰 정사각형 더미. */
 .works-win {
   position:fixed; top:50%; left:50%; transform:translate(-50%, -50%);
   z-index:600;
   width:min(960px, calc(100vw - 40px));
   height:min(960px, calc(100vh - 40px));
+  min-width:360px; min-height:300px;
   background:#000; border:1px solid #000; color:#fff;
   display:flex; flex-direction:column; align-items:center;
   box-shadow: 4px 4px 0 rgba(0,0,0,0.28), 8px 8px 0 rgba(0,0,0,0.08);
+}
+/* 우하단 리사이즈 핸들 — 처음엔 blairtunes(.bt-rs)처럼 완전 투명 히트 영역만
+   뒀었는데, 로직은 멀쩡한데도 "리사이즈가 안 된다"는 리포트가 있었음 — 원인은
+   버그가 아니라 순전히 발견성(discoverability): 아무 표시도 없는 16px 구역을
+   마우스로 정확히 맞히기 어려웠던 것. 클래식 Mac OS의 우하단 리사이즈 박스
+   (대각선 점 3줄, 1-2-3개)를 그려서 어디를 잡아야 하는지 보이게 함 —
+   픽셀 스크롤바 핸들과 같은 2px 사각형 도트 기법으로 그림(그라디언트 대신
+   또렷한 픽셀 느낌 유지). Works/Film/AI Images가 전부 공유하는 규칙. */
+.works-resize-handle, .film-resize-handle, .ai-resize-handle {
+  position:absolute; right:0; bottom:0; width:18px; height:18px;
+  cursor:nwse-resize; touch-action:none; z-index:2;
+}
+.works-resize-handle i, .film-resize-handle i, .ai-resize-handle i {
+  position:absolute; width:2px; height:2px; background:rgba(255,255,255,0.65); pointer-events:none;
 }
 .works-header {
   height:24px; width:100%; display:flex; align-items:center; justify-content:center;
@@ -225,16 +286,17 @@ body {
   display:grid; grid-template-columns:repeat(2, minmax(0,1fr));
   gap:24px 20px; padding:8px 20px 24px;
 }
-.works-item { display:flex; flex-direction:column; gap:12px; align-items:center; }
-.works-thumb { width:100%; aspect-ratio:1/1; background:#fff; }
+.works-item { display:flex; flex-direction:column; gap:12px; align-items:center; cursor:pointer; }
+.works-thumb { width:100%; aspect-ratio:1/1; background:#fff; overflow:hidden; }
+.works-thumb img { width:100%; height:100%; object-fit:cover; display:block; }
 .works-info { width:100%; display:flex; flex-direction:column; gap:4px; text-align:center; }
 .works-title {
   font-family:'Pretendard',-apple-system,sans-serif; font-weight:500;
   font-size:20px; line-height:24px; color:#fff;
 }
 .works-desc {
-  font-family:'Pretendard',-apple-system,sans-serif; font-weight:400;
-  font-size:14px; line-height:20px; color:#fff; white-space:pre-line;
+  font-family:'Pretendard',-apple-system,sans-serif; font-weight:200;
+  font-size:12px; line-height:18px; letter-spacing:-0.36px; color:#fff; white-space:pre-line;
 }
 @media (max-width:768px) {
   .works-win {
@@ -245,17 +307,22 @@ body {
     z-index:10000 !important;
   }
   .works-grid { grid-template-columns:1fr; }
+  .works-resize-handle { display:none; }   /* 풀스크린에서는 리사이즈 불가(위 JS와 동일 조건) */
 }
 
 /* ══ Film Window — Figma 107:2680, 데스크탑 "and my film" 아이콘 클릭 시 화면 정중앙에 등장 ══
    Works 창과 동일한 고정 중앙 모달 + 720px 고정(세이프 에어리어 내) + 픽셀 스크롤바
    패턴이되, 콘텐츠는 2열 매손리(masonry) 실제 필름 사진 6장 + 텍스트 카드 1개.
-   모바일(≤768px)에서는 풀스크린 + 1열(두 컬럼을 세로로 순서대로 스택). */
+   모바일(≤768px)에서는 풀스크린 + 1열(두 컬럼을 세로로 순서대로 스택).
+   우하단 핸들로 리사이즈 가능(Works와 동일 헬퍼) — 사진들은 원래 720px 기준
+   고정 px 높이였던 걸 aspect-ratio로 바꿔서(기준 컬럼폭 330px) 리사이즈해도
+   비율이 안 깨지게 함. */
 .film-win {
   position:fixed; top:50%; left:50%; transform:translate(-50%, -50%);
   z-index:600;
   width:min(720px, calc(100vw - 40px));
   height:min(720px, calc(100vh - 40px));
+  min-width:360px; min-height:300px;
   background:#000; border:1px solid #000; color:#fff;
   display:flex; flex-direction:column; align-items:center;
   box-shadow: 4px 4px 0 rgba(0,0,0,0.28), 8px 8px 0 rgba(0,0,0,0.08);
@@ -301,6 +368,68 @@ body {
     z-index:10000 !important;
   }
   .film-photos { flex-direction:column; }
+  .film-resize-handle { display:none; }
+}
+
+/* ══ AI Image Window — Figma 95:1675, 데스크탑 "AI Images" 아이콘 클릭 시 화면 정중앙에 등장 ══
+   Film과 같은 720px 고정 폭 + 픽셀 스크롤바 모달이되, 내부 그리드는 Works와
+   동일한 2열 CSS grid(패딩/간격 값도 동일) — 사진 5장(4:5 비율, object-cover)
+   + 텍스트 카드 1개(VT323, dt-label과 같은 -0.8px 자간) 총 6칸.
+   모바일(≤768px)에서는 풀스크린 + 1열.
+   중앙에서 (+24px, +24px) 오프셋 — Film과 크기(720×720)가 완전히 같아서
+   순수 정중앙(top:50%/left:50%)이면 둘 다 열었을 때 좌표가 완전히 겹친다.
+   CU-SeeMe의 ±24px 스태거와 같은 규모로 어긋나게 둠(design.md 참조). */
+.ai-win {
+  position:fixed; top:50%; left:50%; transform:translate(calc(-50% + 24px), calc(-50% + 24px));
+  z-index:600;
+  width:min(720px, calc(100vw - 40px));
+  height:min(720px, calc(100vh - 40px));
+  min-width:360px; min-height:300px;
+  background:#000; border:1px solid #000; color:#fff;
+  display:flex; flex-direction:column; align-items:center;
+  box-shadow: 4px 4px 0 rgba(0,0,0,0.28), 8px 8px 0 rgba(0,0,0,0.08);
+}
+.ai-header {
+  height:24px; width:100%; display:flex; align-items:center; justify-content:center;
+  flex-shrink:0;
+  cursor:grab; touch-action:none; user-select:none; -webkit-user-select:none;
+}
+.ai-win.dragging .ai-header { cursor:grabbing; }
+.ai-header-title {
+  flex:1; min-width:1px; text-align:center;
+  font-family:'VT323',monospace; font-size:16px; line-height:16px;
+  letter-spacing:-1.6px; color:#fff;
+}
+.ai-close {
+  width:24px; height:24px; flex-shrink:0; background:none; border:none;
+  cursor:pointer; display:flex; align-items:center; justify-content:center; padding:0;
+}
+.ai-close svg { display:block; }
+.ai-row { width:100%; flex:1; min-height:0; display:flex; justify-content:center; }
+.ai-scroll {
+  flex:1; min-width:0; min-height:0; overflow-y:auto; scrollbar-width:none;
+}
+.ai-scroll::-webkit-scrollbar { display:none; }
+.ai-grid {
+  display:grid; grid-template-columns:repeat(2, minmax(0,1fr));
+  gap:24px 20px; padding:8px 20px 24px;
+}
+.ai-pic { width:100%; aspect-ratio:960/1200; object-fit:cover; display:block; }
+.ai-text-cell {
+  width:100%; height:100%; display:flex; align-items:center; justify-content:center;
+  background:rgba(0,0,0,0.1);
+  font-family:'VT323',monospace; font-size:16px; line-height:0.98;
+  letter-spacing:-0.8px; color:#fff; text-align:center;
+}
+.ai-text-cell p { margin:0; }
+@media (max-width:768px) {
+  .ai-win {
+    width:100vw; height:100vh; max-width:none; max-height:none;
+    top:0; left:0; transform:none;
+    z-index:10000 !important;
+  }
+  .ai-grid { grid-template-columns:1fr; }
+  .ai-resize-handle { display:none; }
 }
 
 /* ══ Pixel Scrollbar — Figma 71:3350, 공용 컴포넌트 ══
@@ -384,8 +513,8 @@ body {
 <nav id="menu-bar">
   <div class="mb-lead">
     <div class="mb-tiger" id="mb-tiger" role="img" aria-label="tiger"></div>
-    <span class="mb-item clickable" id="mb-about">About ME</span>
-    <span class="mb-item">Works</span>
+    <span class="mb-item clickable" id="mb-about">About me</span>
+    <span class="mb-item clickable" id="mb-works">Works</span>
     <span class="mb-item">Contact</span>
   </div>
   <span class="mb-item" id="clock">Mon Jun 10&nbsp;&nbsp;9:41 AM</span>
@@ -397,8 +526,8 @@ body {
     <img src="src/images/desktop/folder-default.png" alt="">
     <div class="dt-label">Works</div>
   </div>
-  <div class="dt-icon">
-    <img src="src/images/desktop/adobe-photoshop.png" alt="">
+  <div class="dt-icon clickable" id="icon-ai">
+    <img src="src/images/desktop/adobe-illustrator-55.png" alt="">
     <div class="dt-label">AI Images</div>
   </div>
   <div class="dt-icon clickable" id="icon-film">
@@ -417,12 +546,12 @@ body {
 
 <!-- ▐▌ DESKTOP ICONS — 좌측 하단 ▐▌ -->
 <div class="icon-col" id="icons-left">
-  <div class="dt-icon">
+  <div class="dt-icon clickable" id="icon-guestbook">
     <img src="src/images/desktop/file-sharing.png" alt="">
     <div class="dt-label">Guestbook</div>
   </div>
-  <div class="dt-icon">
-    <img src="src/images/desktop/file-sharing.png" alt="">
+  <div class="dt-icon clickable" id="icon-glider">
+    <img src="src/images/desktop/utilities-help.png" alt="">
     <div class="dt-label">Glider 4.0</div>
   </div>
 </div>
@@ -474,7 +603,7 @@ body {
   </div>
 </div>
 
-<!-- ▐▌ WINDOW: About Me — 헤더 "About ME" 클릭 시 화면 정중앙에 등장 ▐▌ -->
+<!-- ▐▌ WINDOW: About Me — 헤더 "About me" 클릭 시 화면 정중앙에 등장 ▐▌ -->
 <div class="about-win" id="win-about" style="display:none;">
   <div class="about-header">
     <span class="about-header-title">Let me introduce..</span>
@@ -511,6 +640,25 @@ body {
   </div>
 </div>
 
+<!-- ▐▌ WINDOW: Project popup — Figma 97:2319, Works 리스트 프로젝트 클릭 시 등장(상세 준비 전 자리표시자) ▐▌ -->
+<div class="proj-popup" id="win-project" style="display:none;">
+  <div class="proj-header">
+    <span class="proj-header-title">..Hahaha</span>
+    <button class="proj-close" id="proj-close" aria-label="닫기">
+      <svg width="24" height="24" viewBox="0 0 24 24" fill="none">
+        <path d="M7 7L17 17M7 17L17 7" stroke="#fff" stroke-linecap="square"/>
+      </svg>
+    </button>
+  </div>
+  <div class="proj-con">
+    <div class="proj-tit">
+      <p class="proj-sorry">Sorry...</p>
+      <p class="proj-msg">작업중입니다 쪼금만 기다려주세요!</p>
+    </div>
+    <button class="proj-btn" id="proj-cheer">CHEER ME UP!</button>
+  </div>
+</div>
+
 <!-- ▐▌ WINDOW: Works — 데스크탑 "Works" 아이콘 클릭 시 화면 정중앙에 등장 ▐▌ -->
 <div class="works-win" id="win-works" style="display:none;">
   <div class="works-header">
@@ -529,6 +677,10 @@ body {
       <div class="pixel-scrollbar-handle" id="works-scrollbar-thumb" hidden></div>
     </div>
   </div>
+  <div class="works-resize-handle" id="works-resize-handle">
+    <i style="right:2px; bottom:2px;"></i><i style="right:2px; bottom:6px;"></i><i style="right:6px; bottom:2px;"></i>
+    <i style="right:2px; bottom:10px;"></i><i style="right:6px; bottom:6px;"></i><i style="right:10px; bottom:2px;"></i>
+  </div>
 </div>
 
 <!-- ▐▌ WINDOW: and my film — 데스크탑 "and my film" 아이콘 클릭 시 화면 정중앙에 등장 ▐▌ -->
@@ -546,26 +698,80 @@ body {
       <div class="film-photos">
         <div class="film-col">
           <div style="display:flex; flex-direction:column; gap:7px; width:100%;">
-            <img class="film-pic" style="height:216px;" src="src/images/film/film-01.jpg" alt="">
-            <p class="film-caption">20xx, type something.. weirjiwej</p>
+            <img class="film-pic" style="aspect-ratio:330/216;" src="src/images/film/film-01.jpg" alt="">
+            <p class="film-caption">2016, Somewhere in seoul</p>
           </div>
-          <img class="film-pic" style="height:474px;" src="src/images/film/film-02.jpg" alt="">
-          <img class="film-pic contain" style="height:216px;" src="src/images/film/film-03.jpg" alt="">
+          <div style="display:flex; flex-direction:column; gap:8px; width:100%;">
+            <img class="film-pic" style="aspect-ratio:330/474;" src="src/images/film/film-02.jpg" alt="">
+            <p class="film-caption">2018, Museum San</p>
+          </div>
+          <div style="display:flex; flex-direction:column; gap:8px; width:100%;">
+            <img class="film-pic contain" style="aspect-ratio:330/216;" src="src/images/film/film-03.jpg" alt="">
+            <p class="film-caption">2019, Seoul Forest</p>
+          </div>
         </div>
         <div class="film-col">
           <div class="film-text-slot">taken with my Pentax ME Super</div>
           <div style="display:flex; flex-direction:column; gap:8px; width:100%;">
-            <img class="film-pic" style="height:212px;" src="src/images/film/film-04.jpg" alt="">
-            <p class="film-caption">2017, FREITAG Store Tokyo, d</p>
+            <img class="film-pic" style="aspect-ratio:330/212;" src="src/images/film/film-04.jpg" alt="">
+            <p class="film-caption">2017, FREITAG Store Tokyo</p>
           </div>
-          <img class="film-pic" style="height:212px;" src="src/images/film/film-05.jpg" alt="">
-          <img class="film-pic" style="height:498px;" src="src/images/film/film-06.jpg" alt="">
+          <div style="display:flex; flex-direction:column; gap:8px; width:100%;">
+            <img class="film-pic" style="aspect-ratio:330/212;" src="src/images/film/film-05.jpg" alt="">
+            <p class="film-caption">2017, Inside a taxi in Taiwan</p>
+          </div>
+          <div style="display:flex; flex-direction:column; gap:8px; width:100%;">
+            <img class="film-pic" style="aspect-ratio:330/498;" src="src/images/film/film-06.jpg" alt="">
+            <p class="film-caption">2019, Jeju</p>
+          </div>
         </div>
       </div>
     </div>
     <div class="pixel-scrollbar" id="film-scrollbar">
       <div class="pixel-scrollbar-handle" id="film-scrollbar-thumb" hidden></div>
     </div>
+  </div>
+  <div class="film-resize-handle" id="film-resize-handle">
+    <i style="right:2px; bottom:2px;"></i><i style="right:2px; bottom:6px;"></i><i style="right:6px; bottom:2px;"></i>
+    <i style="right:2px; bottom:10px;"></i><i style="right:6px; bottom:6px;"></i><i style="right:10px; bottom:2px;"></i>
+  </div>
+</div>
+
+<!-- ▐▌ WINDOW: AI Image — 데스크탑 "AI Images" 아이콘 클릭 시 화면 정중앙에 등장 ▐▌ -->
+<div class="ai-win" id="win-ai" style="display:none;">
+  <div class="ai-header">
+    <span class="ai-header-title">AI images</span>
+    <button class="ai-close" id="ai-close" aria-label="닫기">
+      <svg width="24" height="24" viewBox="0 0 24 24" fill="none">
+        <path d="M7 7L17 17M7 17L17 7" stroke="#fff" stroke-linecap="square"/>
+      </svg>
+    </button>
+  </div>
+  <div class="ai-row">
+    <div class="ai-scroll" id="ai-scroll">
+      <div class="ai-grid">
+        <img class="ai-pic" src="src/images/ai/ai-01.jpg" alt="">
+        <div class="ai-text-cell">
+          <div>
+            <p>AI as a tool, always.</p>
+            <p>&nbsp;</p>
+            <p>Images made with AI,<br>with the belief</p>
+            <p>that it should always remain just a tool.</p>
+          </div>
+        </div>
+        <img class="ai-pic" src="src/images/ai/ai-02.jpg" alt="">
+        <img class="ai-pic" src="src/images/ai/ai-03.jpg" alt="">
+        <img class="ai-pic" src="src/images/ai/ai-04.jpg" alt="">
+        <img class="ai-pic" src="src/images/ai/ai-05.jpg" alt="">
+      </div>
+    </div>
+    <div class="pixel-scrollbar" id="ai-scrollbar">
+      <div class="pixel-scrollbar-handle" id="ai-scrollbar-thumb" hidden></div>
+    </div>
+  </div>
+  <div class="ai-resize-handle" id="ai-resize-handle">
+    <i style="right:2px; bottom:2px;"></i><i style="right:2px; bottom:6px;"></i><i style="right:6px; bottom:2px;"></i>
+    <i style="right:2px; bottom:10px;"></i><i style="right:6px; bottom:6px;"></i><i style="right:10px; bottom:2px;"></i>
   </div>
 </div>
 
@@ -885,7 +1091,7 @@ document.getElementById('btn-sayhi').addEventListener('click', () => {
   window.location.href = 'mailto:whynotblair@gmail.com';
 });
 
-// ── "About ME" 메뉴 → 소개 창(About Me) 정중앙에 열기 ───────────────────────
+// ── "About me" 메뉴 → 소개 창(About Me) 정중앙에 열기 ───────────────────────
 // 다른 팝업들과 사용성 통일 — CU-SeeMe와 같은 방식으로 드래그 가능(모바일
 // 포함, About은 풀스크린으로 전환되지 않고 계속 작은 카드로 뜨기 때문).
 // z-index는 다른 창들과 공유하는 topZ 카운터에 태워서 맨 앞으로 오게 한다.
@@ -902,20 +1108,43 @@ document.getElementById('about-say-hi').addEventListener('click', () => {
 });
 makeCenteredWinDraggable(winAbout, winAbout.querySelector('.about-header'), '.about-close');
 
+// ── 프로젝트 상세 준비중 팝업(Figma 97:2319) — Works 카드 클릭 시 뜸 ────────
+const winProject = document.getElementById('win-project');
+winProject.addEventListener('pointerdown', () => { winProject.style.zIndex = nextZ(); });
+document.getElementById('proj-close').addEventListener('click', () => {
+  winProject.style.display = 'none';
+});
+document.getElementById('proj-cheer').addEventListener('click', () => {
+  winProject.style.display = 'none';
+});
+makeCenteredWinDraggable(winProject, winProject.querySelector('.proj-header'), '.proj-close');
+
+// Guestbook / Glider 4.0 — 아직 콘텐츠가 없어서 Works 카드와 동일한
+// "작업중입니다" 팝업을 그대로 재사용(같은 winProject 공유, 별도 창 아님).
+document.getElementById('icon-guestbook').addEventListener('click', () => {
+  openCenteredDraggableWin(winProject);
+});
+document.getElementById('icon-glider').addEventListener('click', () => {
+  openCenteredDraggableWin(winProject);
+});
+
 // ── "Works" 아이콘 → 프로젝트 리스트 창(Works) 화면 정중앙에 열기 ───────────
 // Figma 94:808 — 2열 그리드(모바일 1열) + 우측 픽셀 스타일 커스텀 스크롤바.
-// 이미지는 전부 더미(흰 정사각형) — 실제 프로젝트 이미지 붙이기 전 단계.
+// 전 항목 실제 프로젝트 이미지 (2026-07-22 Figma 업데이트 반영). 이미지는
+// 전부 Figma 노드를 2x(652×652)로 export해서 레티나에서도 또렷하게 보인다
+// (work-thumb 표시 크기는 326px 기준이라 2x면 실제 표시 밀도가 2배).
 const WORKS_ITEMS = [
-  { title: 'Dalock', desc: 'Product Design, Design System, Rebranding' },
-  { title: 'Samsungcard monimo', desc: 'UX Strategy, UX Planning' },
-  { title: 'F&F MLB Discovery SUPRA', desc: 'Team Lead, UX Strategy\nUX Design, Design System' },
-  { title: 'CJ ENM Eddy', desc: 'Team Lead, Service Strategy, UX Design' },
-  { title: 'SHINSEGAE S.I.Village', desc: 'Service Strategy' },
-  { title: 'LOTTECARD LOCA', desc: 'UX Stategy, UX Design' },
-  { title: 'SKT T Factory', desc: 'UI Design, Design System' },
-  { title: 'LINA TMR Assitant', desc: 'User Research, UX Design' },
-  { title: 'LOTTE ON', desc: 'User Research, UX Strategy, UX Design' },
-  { title: 'CJ Vieiwng', desc: 'Design System, UI Design' },
+  { title: 'Portfolio Old Mac OS ver.', desc: 'A to Z..', img: 'src/images/works/portfolio-old-macos.jpg' },
+  { title: 'DaLock', desc: 'Product Design, Design System, Rebranding', img: 'src/images/works/dalock.jpg' },
+  { title: 'Samsungcard monimo', desc: 'UX Strategy, UX Planning', img: 'src/images/works/samsungcard-monimo.jpg' },
+  { title: 'F&F MLB Discovery SUPRA', desc: 'Team Lead, UX Strategy\nUX Design, Design System', img: 'src/images/works/ff-mlb-supra.jpg' },
+  { title: 'CJ ENM Eddy', desc: 'Team Lead, Service Strategy, UX Design', img: 'src/images/works/cj-enm-eddy.jpg' },
+  { title: 'SHINSEGAE S.I.Village', desc: 'Service Strategy', img: 'src/images/works/shinsegae-sivillage.jpg' },
+  { title: 'LOTTECARD LOCA', desc: 'UX Stategy, UX Design', img: 'src/images/works/lottecard-loca.jpg' },
+  { title: 'SKT T Factory', desc: 'UI Design, Design System', img: 'src/images/works/skt-t-factory.jpg' },
+  { title: 'LINA TMR Assitant', desc: 'User Research, UX Design', img: 'src/images/works/lina-tmr.jpg' },
+  { title: 'LOTTE ON', desc: 'User Research, UX Strategy, UX Design', img: 'src/images/works/lotte-on.jpg' },
+  { title: 'CJ Vieiwng', desc: 'Design System, UI Design', img: 'src/images/works/cj-viewing.jpg' },
 ];
 const worksGrid = document.getElementById('works-grid');
 WORKS_ITEMS.forEach((item) => {
@@ -923,6 +1152,13 @@ WORKS_ITEMS.forEach((item) => {
   el.className = 'works-item';
   const thumb = document.createElement('div');
   thumb.className = 'works-thumb';
+  if (item.img) {
+    const img = document.createElement('img');
+    img.src = item.img;
+    img.alt = item.title;
+    img.loading = 'lazy';
+    thumb.appendChild(img);
+  }
   const info = document.createElement('div');
   info.className = 'works-info';
   const title = document.createElement('p');
@@ -934,6 +1170,14 @@ WORKS_ITEMS.forEach((item) => {
   info.append(title, desc);
   el.append(thumb, info);
   worksGrid.appendChild(el);
+});
+
+// 프로젝트 카드 클릭 → 상세 준비중 팝업(Figma 97:2319). 아직 프로젝트별 상세
+// 페이지가 없어서 어떤 카드를 눌러도 동일한 "작업중입니다" 안내만 뜬다 —
+// 이벤트 위임이라 winProject가 이 시점엔 아직 선언 전이어도 문제없음(클릭은
+// 스크립트 전체 실행이 끝난 뒤에야 발생하므로).
+worksGrid.addEventListener('click', (e) => {
+  if (e.target.closest('.works-item')) openCenteredDraggableWin(winProject);
 });
 
 // 픽셀 스크롤바(Figma 71:3350) 공용 싱크 헬퍼 — Works/Film/Blair-tunes가 전부
@@ -1025,8 +1269,62 @@ function makeCenteredWinDraggable(win, headerEl, closeSelector, disableOnMobile)
   headerEl.addEventListener('pointercancel', endDrag);
 }
 
+// 우하단 핸들 드래그로 폭/높이 조절 — 드래그(makeCenteredWinDraggable)와 같은
+// "센터 transform → 절대 px 배치 전환" 규칙을 공유한다(win.dataset.dragged로
+// 상태 공유). 리사이즈 중에도 onResize 콜백으로 스크롤바 등을 즉시 갱신.
+function makeCenteredWinResizable(win, handleEl, minW, minH, disableOnMobile, onResize) {
+  let resizing = false, pid = null, startX = 0, startY = 0, origX = 0, origY = 0, w0 = 0, h0 = 0;
+  handleEl.addEventListener('pointerdown', (e) => {
+    if (disableOnMobile && window.innerWidth <= 768) return;   // 모바일 풀스크린에서는 리사이즈 비활성
+    if (!win.dataset.dragged) {
+      const rect = win.getBoundingClientRect();
+      win.style.transform = 'none';
+      win.style.left = rect.left + 'px';
+      win.style.top = rect.top + 'px';
+      win.dataset.dragged = '1';
+    }
+    const rect = win.getBoundingClientRect();
+    win.style.width = rect.width + 'px';
+    win.style.height = rect.height + 'px';
+    resizing = true;
+    pid = e.pointerId;
+    handleEl.setPointerCapture(pid);
+    startX = e.clientX;
+    startY = e.clientY;
+    w0 = rect.width;
+    h0 = rect.height;
+    origX = win.offsetLeft;
+    origY = win.offsetTop;
+    win.classList.add('resizing');
+    e.preventDefault();
+    e.stopPropagation();   // 헤더 드래그와 상호 배타
+  });
+  handleEl.addEventListener('pointermove', (e) => {
+    if (!resizing || e.pointerId !== pid) return;
+    const maxW = window.innerWidth - origX - 20;    // 우측 세이프 에어리어까지
+    const maxH = window.innerHeight - origY - 20;   // 하단 세이프 에어리어까지
+    const w = Math.max(minW, Math.min(w0 + (e.clientX - startX), maxW));
+    const h = Math.max(minH, Math.min(h0 + (e.clientY - startY), maxH));
+    win.style.width = w + 'px';
+    win.style.height = h + 'px';
+    onResize?.();
+  });
+  const endResize = (e) => {
+    if (!resizing || e.pointerId !== pid) return;
+    resizing = false;
+    win.classList.remove('resizing');
+  };
+  handleEl.addEventListener('pointerup', endResize);
+  handleEl.addEventListener('pointercancel', endResize);
+}
+
 const winWorks = document.getElementById('win-works');
 document.getElementById('icon-works').addEventListener('click', () => {
+  openCenteredDraggableWin(winWorks);
+  requestAnimationFrame(updateWorksScrollbar);
+});
+// 헤더 메뉴바의 "Works" 텍스트도 데스크탑 아이콘과 동일하게 열기 — 같은 창 공유.
+document.getElementById('mb-works').addEventListener('click', () => {
   openCenteredDraggableWin(winWorks);
   requestAnimationFrame(updateWorksScrollbar);
 });
@@ -1035,6 +1333,7 @@ document.getElementById('works-close').addEventListener('click', () => {
   winWorks.style.display = 'none';
 });
 makeCenteredWinDraggable(winWorks, winWorks.querySelector('.works-header'), '.works-close', true);
+makeCenteredWinResizable(winWorks, document.getElementById('works-resize-handle'), 360, 300, true, updateWorksScrollbar);
 
 // ── "and my film" 아이콘 → 필름 사진 창(Film) 화면 정중앙에 열기 ────────────
 // Figma 107:2680 — 2열 매손리(모바일 1열) + 공용 픽셀 스크롤바(syncPixelScrollbar).
@@ -1057,6 +1356,30 @@ document.getElementById('film-close').addEventListener('click', () => {
   winFilm.style.display = 'none';
 });
 makeCenteredWinDraggable(winFilm, winFilm.querySelector('.film-header'), '.film-close', true);
+makeCenteredWinResizable(winFilm, document.getElementById('film-resize-handle'), 360, 300, true, updateFilmScrollbar);
+
+// ── "AI Images" 아이콘 → AI 이미지 창 화면 정중앙에 열기 ────────────────────
+// Figma 95:1675 — Works와 동일한 2열 grid(모바일 1열) + 공용 픽셀 스크롤바.
+const aiScroll = document.getElementById('ai-scroll');
+const aiTrack = document.getElementById('ai-scrollbar');
+const aiThumb = document.getElementById('ai-scrollbar-thumb');
+function updateAiScrollbar() {
+  syncPixelScrollbar(aiTrack, aiThumb, aiScroll.clientHeight, aiScroll.scrollHeight, aiScroll.scrollTop);
+}
+aiScroll.addEventListener('scroll', updateAiScrollbar);
+window.addEventListener('resize', updateAiScrollbar);
+
+const winAi = document.getElementById('win-ai');
+document.getElementById('icon-ai').addEventListener('click', () => {
+  openCenteredDraggableWin(winAi);
+  requestAnimationFrame(updateAiScrollbar);
+});
+winAi.addEventListener('pointerdown', () => { winAi.style.zIndex = nextZ(); });
+document.getElementById('ai-close').addEventListener('click', () => {
+  winAi.style.display = 'none';
+});
+makeCenteredWinDraggable(winAi, winAi.querySelector('.ai-header'), '.ai-close', true);
+makeCenteredWinResizable(winAi, document.getElementById('ai-resize-handle'), 360, 300, true, updateAiScrollbar);
 
 // ── "If you want to ...SEE ME?" 아이콘 → CU-SeeMe 창 다시 열기 ─────────────
 document.getElementById('icon-seeme').addEventListener('click', () => {
@@ -1087,18 +1410,21 @@ document.getElementById('icon-seeme').addEventListener('click', () => {
 (function () {
   if (window.matchMedia('(prefers-reduced-motion: reduce)').matches) return;
 
-  // 레드 한정은 철회 — 다시 무지개 톤으로. 대신 스폰마다 색을 무작위로
-  // 고르지 않고, 색상(hue)을 조금씩만 회전시켜 "천천히 전환"되게 한다 —
-  // 인접한 블롭끼리 색이 가까워서 겹쳐도 탁해지지 않고 레퍼런스처럼 자연스러운
-  // 그라데이션 흐름으로 보인다.
+  // jeehyun.com 홈 트레일 참조: "찍고 방치"(스폰 후 그 자리에서 페이드)
+  // 방식은 원이 찍히는 시점의 위치 오차와 무관하게, 지난 수명(구 560ms) 동안
+  // 찍힌 블롭들이 이동 경로를 따라 줄줄이 남아 "꼬리 길이 = 속도 × 수명"만큼
+  // 커서와 멀어져 보였다. 그래서 고정 개수의 원을 매 프레임 커서 쪽으로
+  // 계속 이징(ease)시키는 방식으로 교체 — 새로 만들고 버리는 대신 이미 있는
+  // 원들을 재배치하므로 커서가 멈추면 원도 곧장 모여서 멈춘다.
   const HUE_COUNT = 24;               // 24색 프리베이크 — 15° 간격
   const HUE_SAT = 72, HUE_LIGHT = 56; // 채도/명도 고정, hue만 회전
-  const HUE_ADVANCE_PER_SPAWN = 0.35; // 스폰마다 이 정도씩만 다음 색으로 드리프트
-  const BLOB_R = 30;                  // 커서에 딱 붙어 퍼지는 크기로 축소(62→30)
-  const BLOB_LIFE_MS = 420;           // 300~500ms 범위
-  const SPAWN_MIN_INTERVAL_MS = 0;    // 사실상 게이팅 없음 — 실제 mousemove 빈도에 그대로 맡김
-  const SPAWN_MIN_DIST = 1;           // 동일 좌표 중복 스폰만 방지
-  const HALFTONE_ALPHA = 0.16;        // "살짝 더해지는" 정도 — 색을 덮지 않을 정도로 낮게
+  const HUE_HOLD_BLOOMS = 3;           // 도트 몇 개마다 무작위(최소 60°) 색으로 점프 — N=12에 맞춘 값
+                                       // (예전 10은 "블롭 10개 스폰마다"였던 무한 스트림 기준이라,
+                                       // 도트 12개 중 딱 한 번만 나뉘어 사실상 2색 고정이 되는 버그였음)
+  const RECOLOR_INTERVAL_MS = 4000;   // 계속 움직이는 동안 이 주기로 전체 팔레트를 다시 굴려
+                                       // 색이 한 세트로 고정되지 않고 세션 내내 서서히 바뀌게 한다
+  const BLOB_R = 42;                  // 원 기본 반경(px)
+  const HALFTONE_ALPHA = 0.1;         // 컬러 80 : 하프톤 20 — 도트는 질감으로만 은은하게
 
   function hslToRgb(h, s, l) {
     s /= 100; l /= 100;
@@ -1109,8 +1435,10 @@ document.getElementById('icon-seeme').addEventListener('click', () => {
   }
   function rgbToRgba([r, g, b], a) { return `rgba(${r},${g},${b},${a})`; }
 
-  // 색상별(24색) 소프트 라디얼 그라디언트 블롭을 로드 시 한 번만 굽는다.
-  // 매끈한 그라디언트라 스케일 없이 그대로 drawImage.
+  // 색상별(24색) 블룸 스프라이트를 로드 시 한 번만 굽는다. 완벽한 원 하나가
+  // 아니라 중심 코어 + 무작위 로브 4개를 겹쳐 그려서 잉크가 번진 듯한
+  // 불규칙한 실루엣 — 스프라이트마다 로브 배치가 달라 블롭마다 형태가 다르고,
+  // 그릴 때 무작위 회전까지 더해져 같은 스프라이트도 매번 다르게 보인다.
   const SPR = BLOB_R * 2 + 8;
   const sprHalf = SPR / 2;
   const SPRITES = Array.from({ length: HUE_COUNT }, (_, i) => {
@@ -1118,14 +1446,21 @@ document.getElementById('icon-seeme').addEventListener('click', () => {
     const c = document.createElement('canvas');
     c.width = c.height = SPR;
     const cctx = c.getContext('2d');
-    const grad = cctx.createRadialGradient(sprHalf, sprHalf, 0, sprHalf, sprHalf, BLOB_R);
-    grad.addColorStop(0, rgbToRgba(rgb, 0.95));
-    grad.addColorStop(0.4, rgbToRgba(rgb, 0.7));
-    grad.addColorStop(1, rgbToRgba(rgb, 0));
-    cctx.fillStyle = grad;
-    cctx.beginPath();
-    cctx.arc(sprHalf, sprHalf, BLOB_R, 0, Math.PI * 2);
-    cctx.fill();
+    const paint = (x, y, r, a) => {
+      const g = cctx.createRadialGradient(x, y, 0, x, y, r);
+      g.addColorStop(0, rgbToRgba(rgb, a));
+      g.addColorStop(0.55, rgbToRgba(rgb, a * 0.6));
+      g.addColorStop(1, rgbToRgba(rgb, 0));
+      cctx.fillStyle = g;
+      cctx.fillRect(0, 0, SPR, SPR);
+    };
+    paint(sprHalf, sprHalf, BLOB_R * 0.78, 0.9);
+    for (let k = 0; k < 4; k++) {
+      const ang = Math.random() * Math.PI * 2;
+      const d = BLOB_R * (0.2 + Math.random() * 0.2);
+      paint(sprHalf + Math.cos(ang) * d, sprHalf + Math.sin(ang) * d,
+            BLOB_R * (0.4 + Math.random() * 0.2), 0.55);
+    }
     return c;
   });
 
@@ -1143,7 +1478,9 @@ document.getElementById('icon-seeme').addEventListener('click', () => {
   }
 
   const fxCanvas = document.getElementById('cursor-fx');
-  const fxCtx = fxCanvas.getContext('2d');
+  // desynchronized — 캔버스를 컴포지터 동기화에서 분리해 표시 지연을 줄인다
+  // (미지원 플랫폼에서는 조용히 무시됨).
+  const fxCtx = fxCanvas.getContext('2d', { desynchronized: true });
   const ditherPattern = fxCtx.createPattern(ditherTile, 'repeat');
   let dpr = Math.min(window.devicePixelRatio || 1, 2);
 
@@ -1151,66 +1488,186 @@ document.getElementById('icon-seeme').addEventListener('click', () => {
     dpr = Math.min(window.devicePixelRatio || 1, 2);
     fxCanvas.width = Math.round(window.innerWidth * dpr);
     fxCanvas.height = Math.round(window.innerHeight * dpr);
+    // <canvas>는 교체 요소라 position:fixed+inset:0만으로는 뷰포트 크기에
+    // 맞춰지지 않고 width/height 속성값(dpr을 곱해 키운 backing-store
+    // 픽셀 수)을 그대로 CSS 크기로 써버린다. 그러면 dpr>1인 화면(레티나)에서
+    // 캔버스 박스 자체가 뷰포트보다 dpr배 커지고, 커서 좌표에 dpr을 곱해
+    // 그린 그림이 실제 화면 좌표 기준으로 또 dpr배 밀려서 커서와 원 사이에
+    // (뷰포트 원점에서 멀어질수록 커지는) 오차가 생긴다. CSS 크기를 뷰포트에
+    // 명시적으로 고정해서 브라우저가 backing store를 제대로 축소 표시하게 한다.
+    fxCanvas.style.width = window.innerWidth + 'px';
+    fxCanvas.style.height = window.innerHeight + 'px';
     fxCtx.setTransform(dpr, 0, 0, dpr, 0, 0);
   }
   resizeFxCanvas();
   window.addEventListener('resize', resizeFxCanvas);
 
-  let activeBlobs = [];
   let rafRunning = false;
-  let huePos = Math.random() * HUE_COUNT;
+  let started = false;
+  let dots = null;
+  const N = 9;                  // 고정 개수 — 스폰/소멸 없이 이 원들이 매 프레임 커서를 추적
+                                 // (예전 스폰 방식에서 동시에 살아있던 블롭 수(~5~6개)에 맞춰 12→9로 축소 —
+                                 // 너무 많으면 자잘하게 움직이는 게 다 보여서 부산해 보인다)
+  const CHAIN_EASE = 0.24;      // 클수록 커서에 밀착, 작을수록 길게 늘어짐. 처음엔 좌표 버그를 추적
+                                 // 로직으로 억지로 보정하려고 0.55까지 올렸었는데, 진짜 원인(캔버스 dpr
+                                 // 크기 버그)을 고치고 나니 그럴 필요가 없어져서 jeehyun.com 레퍼런스(0.26)에
+                                 // 맞춰 다시 낮췄다 — 이래야 유연하게 따라오지 파르르 떨지 않는다
+  const IDLE_FADE_DELAY = 250;  // 이만큼 움직임이 없으면 페이드 시작
+  const IDLE_FADE_MS = 400;     // 페이드 아웃 소요 시간
 
-  function spawnBlob(x, y) {
-    huePos = (huePos + HUE_ADVANCE_PER_SPAWN) % HUE_COUNT;
-    const colorIndex = Math.floor(huePos);
-    activeBlobs.push({ x, y, colorIndex, start: performance.now() });
-    if (!rafRunning) { rafRunning = true; requestAnimationFrame(tick); }
+  // 색은 청크 단위 — 체인의 앞쪽과 뒤쪽이 다른 색 덩어리로 보이도록, 도트를
+  // 만들 때 하나씩 지나가며 HUE_HOLD_BLOOMS개마다 무작위(최소 60°) 색 점프
+  // (레퍼런스의 "보라 뭉치 → 그린 뭉치" 구조를 도트 개수 기준으로 재현).
+  let hueIndex = Math.floor(Math.random() * HUE_COUNT);
+  let hueHold = 0;
+  function nextHue() {
+    if (++hueHold >= HUE_HOLD_BLOOMS) {
+      hueHold = 0;
+      const jump = 4 + Math.floor(Math.random() * (HUE_COUNT - 8));
+      hueIndex = (hueIndex + jump) % HUE_COUNT;
+    }
+    return hueIndex;
   }
 
-  function tick(now) {
-    fxCtx.clearRect(0, 0, window.innerWidth, window.innerHeight);
-    // source-over(기본값) — screen 블렌드는 흰 데스크탑 배경 위에서 블롭이
-    // 겹칠 때마다 하얗게 씻겨나가 채도가 죽는 문제가 있어서(측정으로 확인),
-    // 잉크가 겹쳐 칠해지듯 자연스럽게 색이 살아있는 source-over로 변경.
-    activeBlobs = activeBlobs.filter((b) => {
-      // Math.max(0, ...) — rAF 타임스탬프가 스폰 시점의 performance.now()보다
-      // 아주 살짝 이를 수 있는 엣지 케이스 방지(실측으로 확인).
-      const age = Math.max(0, now - b.start);
-      if (age >= BLOB_LIFE_MS) return false;
-      const t = age / BLOB_LIFE_MS;
-      // 스폰된 그 프레임부터 곧바로 최대 밝기 — 커서 바로 그 지점이 가장
-      // 밝아야 "커서를 따라온다"고 느껴진다. 페이드인 램프를 두면 방금 찍힌
-      // 블롭이 아직 옅은 상태라 커서 자리가 오히려 흐릿해 보이는 착시가 생김.
-      const alpha = Math.max(0, 1 - t);
-      fxCtx.globalAlpha = alpha;
-      fxCtx.drawImage(SPRITES[b.colorIndex], b.x - sprHalf, b.y - sprHalf);
+  function makeDots(x, y) {
+    return Array.from({ length: N }, (_, i) => ({
+      x, y,
+      colorIndex: nextHue(),
+      rot: Math.random() * Math.PI * 2,       // 도트마다 무작위 회전 — 같은 스프라이트도 다른 형태로
+      scaleJit: 0.85 + Math.random() * 0.3,   // 도트마다 미세하게 다른 기준 크기
+      // 예전(오늘 고치기 전) 버전은 블롭이 태어나서 560ms 동안 0.8→1.2배로
+      // 서서히 자라며 번지는 게 수채화 느낌의 핵심이었다. 지금은 도트가
+      // 새로 태어나고 사라지지 않으니 그 "자람"을 시간이 아니라 각자 다른
+      // 위상/속도로 계속 숨쉬듯 맥동시켜서 대신한다 — 고정 크기라 뻣뻣해
+      // 보이던 걸 완화.
+      pulsePhase: Math.random() * Math.PI * 2,
+      pulseSpeed: 0.5 + Math.random() * 0.5,  // rad/s
+      alpha: 0.95 - (i / (N - 1)) * 0.35,     // 체인 뒤쪽으로 갈수록 살짝 옅어짐
+    }));
+  }
+
+  // 팝업(Works/Film/About/프로젝트/Blair-tunes)이 하나라도 열려 있으면 커서
+  // 이펙트를 숨긴다 — 처음엔(전부 닫힌 상태) 보이다가 폴더를 열면 그 순간
+  // 사라지고, 전부 닫으면 다시 나타나야 한다는 요구사항. CU-SeeMe는 페이지
+  // 로드 시 기본으로 열려 있는 창이라 여기 포함하면 처음부터 계속 숨는
+  // 꼴이 되므로 의도적으로 제외 — "폴더"(데스크탑 아이콘으로 여는 팝업류)만.
+  const POPUP_IDS = ['win-works', 'win-film', 'win-about', 'win-project', 'win-ai', 'bt-win', 'bt-mini'];
+  function isAnyPopupOpen() {
+    return POPUP_IDS.some((id) => {
+      const el = document.getElementById(id);
+      if (!el || el.hidden || el.style.display === 'none') return false;
       return true;
     });
+  }
+  let suppressed = false, suppressMulCur = 1;
+  // rAF 루프가 유휴 상태로 멈춰 있을 때(idle-fade 완료) 팝업이 닫혀도 다음
+  // pointermove가 있어야만 다시 켜지는 문제 방지 — 가벼운 폴링으로 상태
+  // 전환을 감지해서 필요하면 루프를 깨운다.
+  setInterval(() => {
+    const open = isAnyPopupOpen();
+    if (open !== suppressed) {
+      suppressed = open;
+      if (!suppressed && !rafRunning) { rafRunning = true; requestAnimationFrame(tick); }
+    }
+  }, 200);
+
+  let lastRecolor = 0;
+  function tick(now) {
+    const idle = now - lastMoveT;
+    const fadeMul = idle <= IDLE_FADE_DELAY ? 1 : Math.max(0, 1 - (idle - IDLE_FADE_DELAY) / IDLE_FADE_MS);
+    suppressMulCur += ((suppressed ? 0 : 1) - suppressMulCur) * 0.3;   // 빠르지만 딱 끊기지 않는 전환
+    const visMul = fadeMul * suppressMulCur;
+    // 계속 움직이는 동안 주기적으로 팔레트를 다시 굴린다 — 색이 처음 배정된
+    // 세트로 세션 내내 고정되지 않고(구 버그: 12개 중 10:2로 딱 2색 고정),
+    // 예전처럼 서서히 다른 색 뭉치로 전환되는 느낌을 유지한다.
+    if (idle < IDLE_FADE_DELAY && now - lastRecolor > RECOLOR_INTERVAL_MS) {
+      lastRecolor = now;
+      dots.forEach((d) => { d.colorIndex = nextHue(); });
+    }
+    // 속도 외삽(최대 40ms/60px 앞)은 연속 이동 중 파이프라인 지연을 보정하기
+    // 위한 것 — 마지막 이동 이후 그 외삽 구간(약 48ms)이 지나면 더 이상
+    // "예측"이 아니라 "고정 오차"가 되므로, 실제 마지막 좌표로 되돌려 정지
+    // 시 원이 실제 커서 위치가 아닌 예측 지점에 멈춰버리는 것을 막는다.
+    if (idle > 48) { tx = lastX; ty = lastY; }
+
+    // 체인 추적 — 첫 도트가 (예측 보정된) 실시간 커서 좌표를 이징으로 쫓고,
+    // 다음 도트는 그 앞 도트를 쫓는 식으로 이어진다. 새로 만들고 버리는 게
+    // 아니라 항상 존재하는 도트를 재배치하므로, 커서가 멈추면 도트도 곧장
+    // 모여서 멈춘다 — 스폰형 구현과 달리 정지 후 남는 잔상이 없다.
+    let px = tx, py = ty;
+    dots.forEach((d) => {
+      d.x += (px - d.x) * CHAIN_EASE;
+      d.y += (py - d.y) * CHAIN_EASE;
+      px = d.x; py = d.y;
+    });
+
+    fxCtx.clearRect(0, 0, window.innerWidth, window.innerHeight);
+    // source-over(기본값) — screen 블렌드는 흰 데스크탑 배경 위에서 도트가
+    // 겹칠 때마다 하얗게 씻겨나가 채도가 죽는 문제가 있어서(측정으로 확인),
+    // 잉크가 겹쳐 칠해지듯 자연스럽게 색이 살아있는 source-over로 변경.
+    dots.forEach((d) => {
+      const pulse = 1 + 0.18 * Math.sin((now / 1000) * d.pulseSpeed + d.pulsePhase);
+      const scale = d.scaleJit * pulse;
+      fxCtx.globalAlpha = d.alpha * visMul;
+      fxCtx.setTransform(dpr * scale, 0, 0, dpr * scale, dpr * d.x, dpr * d.y);
+      fxCtx.rotate(d.rot);
+      fxCtx.drawImage(SPRITES[d.colorIndex], -sprHalf, -sprHalf);
+    });
+    fxCtx.setTransform(dpr, 0, 0, dpr, 0, 0);
     // 하프톤 텍스처를 색이 이미 칠해진 영역 위에만(source-atop) 낮은 강도로
-    // 얹는다 — 빈 캔버스엔 아무것도 안 남고, 블롭이 있는 곳에만 살짝 도트가 낌.
+    // 얹는다 — 빈 캔버스엔 아무것도 안 남고, 도트가 있는 곳에만 살짝 도트가 낌.
     fxCtx.globalCompositeOperation = 'source-atop';
-    fxCtx.globalAlpha = HALFTONE_ALPHA;
+    fxCtx.globalAlpha = HALFTONE_ALPHA * visMul;
     fxCtx.fillStyle = ditherPattern;
     fxCtx.fillRect(0, 0, window.innerWidth, window.innerHeight);
     fxCtx.globalAlpha = 1;
     fxCtx.globalCompositeOperation = 'source-over';
-    if (activeBlobs.length) requestAnimationFrame(tick);
-    else rafRunning = false;   // 블롭이 없으면 다음 프레임을 아예 요청하지 않음 — 유휴 비용 0
+
+    if (fadeMul > 0 || suppressMulCur > 0.002) {
+      requestAnimationFrame(tick);
+    } else {
+      fxCtx.clearRect(0, 0, window.innerWidth, window.innerHeight);
+      rafRunning = false;   // 완전히 페이드 아웃되면 다음 프레임을 요청하지 않음 — 유휴 비용 0
+    }
   }
 
-  // 스폰 게이팅 — 사실상 없음. 실제 mousemove가 발화하는 만큼 그대로 스폰해서
-  // 커서와 이펙트 사이에 인위적인 지연이 생기지 않게 한다(동일 좌표 중복
-  // 스폰만 1px 거리로 걸러냄). pointerType이 mouse인 이벤트만 반응.
+  // pointerType이 mouse인 이벤트만 반응. 매 이동마다 새로 만들고 버리는 대신
+  // "타깃 좌표(tx, ty)"만 갱신 — 실제 재배치는 tick()의 이징이 담당한다.
+  let tx = 0, ty = 0, lastMoveT = 0;
   let lastX = null, lastY = null, lastT = 0;
   document.addEventListener('pointermove', (e) => {
     if (e.pointerType !== 'mouse') return;
     const now = performance.now();
-    if (lastX !== null) {
-      const dist = Math.hypot(e.clientX - lastX, e.clientY - lastY);
-      if (now - lastT < SPAWN_MIN_INTERVAL_MS || dist < SPAWN_MIN_DIST) return;
+    const dt = lastX !== null ? now - lastT : 0;
+
+    // 예측 타깃 — OS 커서는 컴포지터가 지연 0으로 그리지만 캔버스는 이벤트→
+    // JS→rAF→컴포지트를 거쳐 1~2프레임(16~33ms) 늦게 표시된다. 최근 속도로
+    // ~40ms 외삽한 좌표를 타깃으로 삼는다(최대 60px — 방향 전환 오버슛 제한).
+    // getPredictedEvents는 쓰지 않는다 — Chrome의 예측 지평이 몇 ms에
+    // 불과해서 실제 마우스에서 보상이 거의 안 되는 걸 실사용으로 확인.
+    let px = e.clientX, py = e.clientY;
+    if (dt > 0 && dt < 100) {
+      let lx = (e.clientX - lastX) * (40 / dt);
+      let ly = (e.clientY - lastY) * (40 / dt);
+      const lm = Math.hypot(lx, ly);
+      if (lm > 60) { lx *= 60 / lm; ly *= 60 / lm; }
+      px += lx; py += ly;
     }
     lastX = e.clientX; lastY = e.clientY; lastT = now;
-    spawnBlob(e.clientX, e.clientY);
+    tx = px; ty = py;
+    lastMoveT = now;
+
+    if (!started) {
+      started = true;
+      dots = makeDots(px, py);   // 첫 위치는 화면 밖에서 날아오지 않도록 즉시 스냅
+      lastRecolor = now;
+    }
+    if (!rafRunning) { rafRunning = true; requestAnimationFrame(tick); }
+  }, { passive: true });
+
+  // 커서가 창을 벗어나면 그 자리에 멈춰있지 않도록 페이드아웃을 즉시 시작
+  document.documentElement.addEventListener('mouseleave', () => {
+    lastMoveT = performance.now() - IDLE_FADE_DELAY;
   }, { passive: true });
 })();
 </script>

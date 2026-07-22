@@ -59,6 +59,13 @@ https://www.figma.com/design/nOOniYoXTbhuQ0FxO4ifAV/Untitled
 - 프로덕션: https://portfolio-mu-tan-9x1aeva6c8.vercel.app
 - Vercel 프로젝트: `portfolio` (blair-lees-projects). 수동 배포: `npx vercel --prod`.
 - 배포별 URL(`portfolio-xxxx-...vercel.app`)이 로그인 화면으로 가는 건 정상(SSO 보호).
+- **`public/` 폴더를 저장소 루트에 절대 만들지 말 것.** `vercel.json`이 없고
+  프레임워크 프리셋이 "Other"라서, Vercel이 `public/`이 존재하면 그걸
+  Output Directory로 자동 인식해버림 — 그러면 `public/` 밖의 모든 파일
+  (`index.html`, `src/` 전체 포함)이 프로덕션에서 통째로 404. 실제로 이 문제로
+  전체 배포가 깨진 적 있음. 정적 에셋은 전부 `src/`(예: `src/images/`,
+  `src/fonts/`) 밑에 두는 기존 컨벤션을 따를 것. `.gitignore`에 `public/`이
+  등록돼 있음 — 로컬에 레퍼런스용 `public/` 폴더가 있어도 커밋되지 않게.
 
 ## 작업 규칙
 

@@ -1,3 +1,6 @@
 .vercel
 .DS_Store
 node_modules/
+# Vercel auto-detects Output Directory as public/ if it exists at repo root,
+# which breaks the entire deploy (see CLAUDE.md 배포 section). Never commit this.
+public/
