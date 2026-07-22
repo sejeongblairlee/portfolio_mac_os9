@@ -241,6 +241,13 @@ body {
   color:#000; text-align:center; text-transform:uppercase; white-space:nowrap;
 }
 .proj-btn:active { background:#000; color:#fff; }
+@media (max-width:768px) {
+  /* Works/Film/AI Images는 모바일에서 풀스크린 + z-index:10000 !important —
+     그 안에서 연 Project 팝업(예: Works 카드 클릭)의 인라인 topZ 값(100번대)로는
+     절대 이길 수 없어서 팝업이 밑에 깔리는 버그가 있었음. 10000보다 높은
+     !important로 항상 위에 오게 함. */
+  .proj-popup { z-index:10001 !important; }
+}
 
 /* ══ Works Window — Figma 94:808, 데스크탑 "Works" 아이콘 클릭 시 화면 정중앙에 등장 ══
    About 창과 같은 고정 중앙 모달 패턴이되, 폭/높이는 Figma 스펙대로 720px 고정
@@ -266,7 +273,11 @@ body {
    픽셀 스크롤바 핸들과 같은 2px 사각형 도트 기법으로 그림(그라디언트 대신
    또렷한 픽셀 느낌 유지). Works/Film/AI Images가 전부 공유하는 규칙. */
 .works-resize-handle, .film-resize-handle, .ai-resize-handle {
-  position:absolute; right:0; bottom:0; width:18px; height:18px;
+  /* 히트 영역을 18px → 36px로 대폭 키우고 창 경계 바깥까지(-8px) 확장 —
+     이전 크기로도 실사용에서 "리사이즈가 안 된다" 리포트가 계속 있었음.
+     원인이 정밀도 문제든 다른 무엇이든, 훨씬 넉넉한 히트 영역이 더 안전함.
+     보이는 점(아래 i 태그)은 그대로 작게 유지해서 비주얼은 안 무거워짐. */
+  position:absolute; right:-8px; bottom:-8px; width:36px; height:36px;
   cursor:nwse-resize; touch-action:none; z-index:2;
 }
 .works-resize-handle i, .film-resize-handle i, .ai-resize-handle i {
@@ -685,8 +696,8 @@ body {
     </div>
   </div>
   <div class="works-resize-handle" id="works-resize-handle">
-    <i style="right:2px; bottom:2px;"></i><i style="right:2px; bottom:6px;"></i><i style="right:6px; bottom:2px;"></i>
-    <i style="right:2px; bottom:10px;"></i><i style="right:6px; bottom:6px;"></i><i style="right:10px; bottom:2px;"></i>
+    <i style="right:10px; bottom:10px;"></i><i style="right:10px; bottom:14px;"></i><i style="right:14px; bottom:10px;"></i>
+    <i style="right:10px; bottom:18px;"></i><i style="right:14px; bottom:14px;"></i><i style="right:18px; bottom:10px;"></i>
   </div>
 </div>
 
@@ -739,8 +750,8 @@ body {
     </div>
   </div>
   <div class="film-resize-handle" id="film-resize-handle">
-    <i style="right:2px; bottom:2px;"></i><i style="right:2px; bottom:6px;"></i><i style="right:6px; bottom:2px;"></i>
-    <i style="right:2px; bottom:10px;"></i><i style="right:6px; bottom:6px;"></i><i style="right:10px; bottom:2px;"></i>
+    <i style="right:10px; bottom:10px;"></i><i style="right:10px; bottom:14px;"></i><i style="right:14px; bottom:10px;"></i>
+    <i style="right:10px; bottom:18px;"></i><i style="right:14px; bottom:14px;"></i><i style="right:18px; bottom:10px;"></i>
   </div>
 </div>
 
@@ -777,8 +788,8 @@ body {
     </div>
   </div>
   <div class="ai-resize-handle" id="ai-resize-handle">
-    <i style="right:2px; bottom:2px;"></i><i style="right:2px; bottom:6px;"></i><i style="right:6px; bottom:2px;"></i>
-    <i style="right:2px; bottom:10px;"></i><i style="right:6px; bottom:6px;"></i><i style="right:10px; bottom:2px;"></i>
+    <i style="right:10px; bottom:10px;"></i><i style="right:10px; bottom:14px;"></i><i style="right:14px; bottom:10px;"></i>
+    <i style="right:10px; bottom:18px;"></i><i style="right:14px; bottom:14px;"></i><i style="right:18px; bottom:10px;"></i>
   </div>
 </div>
 
@@ -1394,6 +1405,10 @@ document.getElementById('icon-seeme').addEventListener('click', () => {
     document.getElementById(id).style.display = '';
   });
   layoutWindows();   // 드래그 안 한 창은 초기 위치로, 드래그한 창은 클램프만
+  // 두 창(Local/Remote) 다 앞으로 — 하나만 올리면 다른 팝업 위로 온 나머지
+  // 한 창이 여전히 그 팝업 밑에 깔려있는 버그가 있었음. Remote를 먼저 올리고
+  // Local을 마지막에 올려서 기존처럼 Local이 최종적으로 맨 위가 되게 함.
+  focusWin(document.getElementById('win-you'));
   focusWin(document.getElementById('win-local'));
   window.__tigerRun?.reportWindowAction();   // 타이거 활동 펄스 (옵셔널 — 없어도 무해)
   // 카메라가 아직 연결 전(권한 거부 후 재시도 등)이면 다시 요청
@@ -1638,12 +1653,17 @@ document.getElementById('icon-seeme').addEventListener('click', () => {
     }
   }
 
-  // pointerType이 mouse인 이벤트만 반응. 매 이동마다 새로 만들고 버리는 대신
-  // "타깃 좌표(tx, ty)"만 갱신 — 실제 재배치는 tick()의 이징이 담당한다.
+  // pointerType이 mouse 또는 touch인 이벤트에 반응(펜은 제외). 모바일은
+  // 상시 커서가 없어서 이 이펙트가 한 번도 안 보였는데, "터치하면 커서
+  // 이펙트가 나타나게 해달라"는 요청으로 touch도 같은 경로를 타게 함 —
+  // 팝업이 열려 있을 때 숨기는 isAnyPopupOpen() 로직은 그대로 공유되므로
+  // 데스크탑 배경에서만 나타나는 동작도 동일하게 유지된다.
+  // 매 이동마다 새로 만들고 버리는 대신 "타깃 좌표(tx, ty)"만 갱신 —
+  // 실제 재배치는 tick()의 이징이 담당한다.
   let tx = 0, ty = 0, lastMoveT = 0;
   let lastX = null, lastY = null, lastT = 0;
-  document.addEventListener('pointermove', (e) => {
-    if (e.pointerType !== 'mouse') return;
+  function onFxPointerMove(e) {
+    if (e.pointerType !== 'mouse' && e.pointerType !== 'touch') return;
     const now = performance.now();
     const dt = lastX !== null ? now - lastT : 0;
 
@@ -1670,7 +1690,34 @@ document.getElementById('icon-seeme').addEventListener('click', () => {
       lastRecolor = now;
     }
     if (!rafRunning) { rafRunning = true; requestAnimationFrame(tick); }
-  }, { passive: true });
+  }
+  document.addEventListener('pointermove', onFxPointerMove, { passive: true });
+
+  // 탭만 하고 움직이지 않으면 pointermove가 아예 안 온다 — 터치 시작 시점에
+  // 바로 그 자리에 도트를 배치해서 "터치하면 즉시 나타남"이 되게 한다.
+  function onFxPointerDown(e) {
+    if (e.pointerType !== 'touch') return;
+    const now = performance.now();
+    lastX = e.clientX; lastY = e.clientY; lastT = now;
+    tx = e.clientX; ty = e.clientY;
+    lastMoveT = now;
+    if (!started) {
+      started = true;
+      dots = makeDots(tx, ty);
+      lastRecolor = now;
+    }
+    if (!rafRunning) { rafRunning = true; requestAnimationFrame(tick); }
+  }
+  document.addEventListener('pointerdown', onFxPointerDown, { passive: true });
+
+  // 손가락을 떼면(터치는 마우스와 달리 "hover"가 없어 계속 멈춰있는 상태가
+  // 없음) mouseleave와 동일하게 즉시 페이드아웃을 시작한다.
+  function onFxTouchEnd(e) {
+    if (e.pointerType !== 'touch') return;
+    lastMoveT = performance.now() - IDLE_FADE_DELAY;
+  }
+  document.addEventListener('pointerup', onFxTouchEnd, { passive: true });
+  document.addEventListener('pointercancel', onFxTouchEnd, { passive: true });
 
   // 커서가 창을 벗어나면 그 자리에 멈춰있지 않도록 페이드아웃을 즉시 시작
   document.documentElement.addEventListener('mouseleave', () => {
