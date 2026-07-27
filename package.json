@@ -2,7 +2,8 @@
   "name": "portfolio",
   "private": true,
   "scripts": {
-    "dev": "npx -y serve -l 5500 ."
+    "dev": "npx -y serve -l 5500 .",
+    "sync-durations": "node scripts/sync-durations.mjs"
   },
   "dependencies": {
     "jpeg-js": "^0.4.4"

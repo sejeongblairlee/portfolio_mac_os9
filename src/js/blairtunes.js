@@ -689,7 +689,7 @@ function renderCurrent() {
 
   document.getElementById('bt-mini-title').textContent = t.title;
   document.getElementById('bt-mini-artist').textContent = t.artist;
-  document.getElementById('bt-mini-dur').textContent = t.duration_label ?? 'mm:hh';
+  document.getElementById('bt-mini-dur').textContent = t.duration_label || '';
 
   document.querySelectorAll('#bt-list .bt-row').forEach((row) => {
     row.classList.toggle('playing', row.dataset.id === t.id);
@@ -706,7 +706,7 @@ function renderList() {
         <p>${esc(t.artist)}</p>
       </div>
       <span class="bt-np" aria-hidden="true"><i></i><i></i><i></i></span>
-      <span class="bt-dur">${esc(t.duration_label ?? 'mm:hh')}</span>
+      <span class="bt-dur">${esc(t.duration_label || '')}</span>
     </button>`).join('');
   list.querySelectorAll('.bt-row').forEach((row) => {
     row.addEventListener('click', () => selectTrack(row.dataset.id));
