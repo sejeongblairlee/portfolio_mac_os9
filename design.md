@@ -11,13 +11,27 @@ and popup depth on the desktop page (`desktop.html`).
 - Use 768px consistently everywhere — one breakpoint, JS and CSS must never
   disagree. Positions must be deterministic and stable around 768px
   (no left-right oscillation during resize).
-- **Exception — Works/Film/AI Images use the same 768px number, but as a
-  container-query breakpoint on the popup's own width** (`@container`), not
-  the viewport (`@media`). These three are always user-resizable regardless
-  of viewport size (see "Current popup types" below), so "mobile" for them
-  means "this window has been resized/opened narrow," not "the browser
-  viewport is narrow." Every other popup (CU-SeeMe, About Me, Project) still
-  keys off the real viewport via `@media`/`window.innerWidth`.
+- **Exception — Works/Film/AI Images don't use the 768px viewport breakpoint
+  at all.** They're always user-resizable regardless of viewport size (see
+  "Current popup types" below), so their column collapse is a **container
+  query on the popup's own width** (`@container`), tuned per popup to its own
+  default open size — **not** a single shared number, and **not** the 768px
+  viewport breakpoint used everywhere else:
+  - **Works**: `@container (max-width:768px)`. Safe to reuse 768 here because
+    Works opens at `960px` by default — comfortably above the threshold, so
+    it stays 2-column out of the box and only collapses once resized well
+    below its default.
+  - **Film / AI Images**: `@container (max-width:600px)`. These both open at
+    `720px` by default — **already below 768** — so reusing 768 here made
+    them collapse to 1 column immediately at their normal desktop size (a
+    real regression, caught 2026-07-28). 600px keeps the 720px default
+    comfortably 2-column (330px/column, the original desktop look) while
+    still collapsing before the column width gets cramped near the 360px
+    resize floor. **When copying this pattern to a new popup, always check
+    the popup's own default width against whatever container-query number
+    you pick — don't assume 768 transfers.**
+  - Every other popup (CU-SeeMe, About Me, Project) keys off the real
+    viewport via `@media`/`window.innerWidth` at 768px, unaffected by this.
 
 ## Popup sizing
 
@@ -38,8 +52,8 @@ and popup depth on the desktop page (`desktop.html`).
 | CU-SeeMe (Local/Remote) | `min(320px, 100vw-40px)` | vertical stack, centered (see below) |
 | About Me | `min(320px, 100vw-40px)`, `max-height: 100vh-40px` | same as desktop (small centered card, never fullscreen) |
 | Works | `min(960px, 100vw-40px)` square (width = height) initially, **user-resizable** (bottom-right handle, min 360×300, clamped to safe area) | **not fullscreen** — same resizable window; grid collapses to 1 column only when the window's own width drops to ≤768px (`@container`), resize handle stays active |
-| and my film | `min(720px, 100vw-40px)` square (width = height) initially, **user-resizable**, dead-center (`top:50%/left:50%`, no offset) | **not fullscreen** — same resizable window; 2-column masonry collapses to 1 column at container width ≤768px, resize handle stays active |
-| AI Images | `min(720px, 100vw-40px)` square (width = height) initially, **user-resizable**, **offset (+24px, +24px) from dead-center** — see below | **not fullscreen** — same resizable window; grid collapses to 1 column at container width ≤768px, resize handle stays active |
+| and my film | `min(720px, 100vw-40px)` square (width = height) initially, **user-resizable**, dead-center (`top:50%/left:50%`, no offset) | **not fullscreen** — same resizable window; 2-column masonry collapses to 1 column at container width ≤**600px** (not 768 — see Breakpoints exception above), resize handle stays active |
+| AI Images | `min(720px, 100vw-40px)` square (width = height) initially, **user-resizable**, **offset (+24px, +24px) from dead-center** — see below | **not fullscreen** — same resizable window; grid collapses to 1 column at container width ≤**600px** (not 768 — see Breakpoints exception above), resize handle stays active |
 | Project popup (Works card click) | fixed `240px` wide, dead-center, content-hugging height, not resizable | same as desktop (small centered card, never fullscreen) |
 
 Works/Film/AI used to switch to a fullscreen mobile layout (`width<=768px`
