@@ -11,6 +11,13 @@ and popup depth on the desktop page (`desktop.html`).
 - Use 768px consistently everywhere — one breakpoint, JS and CSS must never
   disagree. Positions must be deterministic and stable around 768px
   (no left-right oscillation during resize).
+- **Exception — Works/Film/AI Images use the same 768px number, but as a
+  container-query breakpoint on the popup's own width** (`@container`), not
+  the viewport (`@media`). These three are always user-resizable regardless
+  of viewport size (see "Current popup types" below), so "mobile" for them
+  means "this window has been resized/opened narrow," not "the browser
+  viewport is narrow." Every other popup (CU-SeeMe, About Me, Project) still
+  keys off the real viewport via `@media`/`window.innerWidth`.
 
 ## Popup sizing
 
@@ -30,14 +37,18 @@ and popup depth on the desktop page (`desktop.html`).
 |---|---|---|
 | CU-SeeMe (Local/Remote) | `min(320px, 100vw-40px)` | vertical stack, centered (see below) |
 | About Me | `min(320px, 100vw-40px)`, `max-height: 100vh-40px` | same as desktop (small centered card, never fullscreen) |
-| Works | `min(960px, 100vw-40px)` square (width = height) initially, **user-resizable** (bottom-right handle, min 360×300, clamped to safe area) | **fullscreen** (`100vw`/`100vh`), grid collapses to 1 column, resize handle hidden |
-| and my film | `min(720px, 100vw-40px)` square (width = height) initially, **user-resizable**, dead-center (`top:50%/left:50%`, no offset) | **fullscreen** (`100vw`/`100vh`), 2-column masonry collapses to 1 column, resize handle hidden |
-| AI Images | `min(720px, 100vw-40px)` square (width = height) initially, **user-resizable**, **offset (+24px, +24px) from dead-center** — see below | **fullscreen** (`100vw`/`100vh`), grid collapses to 1 column, resize handle hidden |
+| Works | `min(960px, 100vw-40px)` square (width = height) initially, **user-resizable** (bottom-right handle, min 360×300, clamped to safe area) | **not fullscreen** — same resizable window; grid collapses to 1 column only when the window's own width drops to ≤768px (`@container`), resize handle stays active |
+| and my film | `min(720px, 100vw-40px)` square (width = height) initially, **user-resizable**, dead-center (`top:50%/left:50%`, no offset) | **not fullscreen** — same resizable window; 2-column masonry collapses to 1 column at container width ≤768px, resize handle stays active |
+| AI Images | `min(720px, 100vw-40px)` square (width = height) initially, **user-resizable**, **offset (+24px, +24px) from dead-center** — see below | **not fullscreen** — same resizable window; grid collapses to 1 column at container width ≤768px, resize handle stays active |
 | Project popup (Works card click) | fixed `240px` wide, dead-center, content-hugging height, not resizable | same as desktop (small centered card, never fullscreen) |
 
-Works/Film/AI fullscreen mode sits above the menu bar (`z-index: 10000 !important`,
-higher than the menu bar's `9999`) so menu bar text never bleeds through the
-popup on mobile.
+Works/Film/AI used to switch to a fullscreen mobile layout (`width<=768px`
+viewport check) with dragging/resizing disabled — removed 2026-07-28. The
+viewport-only check meant a merely-narrow desktop browser window (not an
+actual phone) silently lost resize with zero visual feedback, which read as
+"resize is broken." Unified with Blair-tunes' player: always draggable and
+resizable regardless of width; only the internal grid/masonry column count
+reacts to the popup's own width via `@container` (see Breakpoints above).
 
 ### Same-size popup collision (AI Images vs and my film)
 
@@ -66,8 +77,8 @@ existing one.**
 - `min-width: 360px`, `min-height: 300px` for all three. Max is clamped to
   the 20px safe area from the window's current top/left, same convention as
   `clampToSafeArea` below.
-- Disabled on mobile fullscreen (`width <= 768px`), same condition as drag —
-  there's no free space to resize into.
+- Always active regardless of window width — no mobile-fullscreen disablement
+  (see "Current popup types" above; removed 2026-07-28).
 - Each window's `onResize` callback re-syncs its own pixel scrollbar
   (`updateWorksScrollbar` / `updateFilmScrollbar` / `updateAiScrollbar`) so
   the handle position/height stays correct as the content area resizes.
@@ -132,10 +143,10 @@ Shared helper: `clampToSafeArea(x, y, windowWidth, windowHeight, viewportWidth, 
 - On viewport resize: recompute initial positions **only if the user has not
   manually dragged the window**. A dragged window keeps its position,
   clamped back into the safe area only when it would become inaccessible.
-- **Exception:** Works and Film switch to a fullscreen mobile layout
-  (see "Current popup types" above) — there is no space to drag into, so
-  dragging is disabled there specifically on mobile (`width <= 768px`).
-  This is the only case where a popup is not draggable.
+- **No exceptions** — every popup (including Works/Film/AI Images) stays
+  draggable and resizable at every width. Works/Film/AI previously lost both
+  on a mobile-fullscreen switch; that was removed 2026-07-28 in favor of
+  container-query column collapse only (see "Current popup types" above).
 
 ## Popup shadow / depth
 

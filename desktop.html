@@ -252,7 +252,8 @@ body {
 /* ══ Works Window — Figma 94:808, 데스크탑 "Works" 아이콘 클릭 시 화면 정중앙에 등장 ══
    About 창과 같은 고정 중앙 모달 패턴이되, 폭/높이는 Figma 스펙대로 720px 고정
    (뷰포트가 더 작으면 세이프 에어리어만큼만 축소). 리스트는 내부 스크롤 +
-   픽셀 스타일 커스텀 스크롤바(우측 8px 트랙). 모바일(≤768px)에서는 풀스크린 + 1열.
+   픽셀 스타일 커스텀 스크롤바(우측 8px 트랙). 풀스크린 전환 없이 항상 드래그/리사이즈
+   가능한 창 — 창 자신의 폭이 768px 이하로 좁아지면(@container) 그리드만 1열로 전환.
    이미지가 있는 항목(DaLock/SKT T Factory/LOTTE ON)만 실제 프로젝트 이미지,
    나머지는 Figma 원본과 동일하게 흰 정사각형 더미. */
 .works-win {
@@ -264,6 +265,9 @@ body {
   background:#000; border:1px solid #000; color:#fff;
   display:flex; flex-direction:column; align-items:center;
   box-shadow: 4px 4px 0 rgba(0,0,0,0.28), 8px 8px 0 rgba(0,0,0,0.08);
+  /* 그리드 1열 전환은 뷰포트가 아니라 이 창 자신의 폭 기준(@container) —
+     항상 드래그/리사이즈 가능한 창이라 폭은 유저가 자유롭게 바꾼다. */
+  container-type: inline-size;
 }
 /* 우하단 리사이즈 핸들 — 처음엔 blairtunes(.bt-rs)처럼 완전 투명 히트 영역만
    뒀었는데, 로직은 멀쩡한데도 "리사이즈가 안 된다"는 리포트가 있었음 — 원인은
@@ -320,22 +324,17 @@ body {
   font-family:'Pretendard',-apple-system,sans-serif; font-weight:200;
   font-size:12px; line-height:18px; letter-spacing:-0.36px; color:#fff; white-space:pre-line;
 }
-@media (max-width:768px) {
-  .works-win {
-    width:100vw; height:100vh; max-width:none; max-height:none;
-    top:0; left:0; transform:none;
-    /* !important — JS가 열기/포커스 시 인라인 z-index(topZ, 100번대)를 계속 덮어써서
-       일반 우선순위로는 못 이김. 풀스크린 전환 시 메뉴바(z-index:9999)보다 위로. */
-    z-index:10000 !important;
-  }
+/* 창 자신의 폭이 768px 이하로 좁아지면(리사이즈든 좁은 화면이든) 그리드 1열로 —
+   풀스크린 전환은 더 이상 없음, 리사이즈 핸들도 항상 살아있다. */
+@container (max-width:768px) {
   .works-grid { grid-template-columns:1fr; }
-  .works-resize-handle { display:none; }   /* 풀스크린에서는 리사이즈 불가(위 JS와 동일 조건) */
 }
 
 /* ══ Film Window — Figma 107:2680, 데스크탑 "and my film" 아이콘 클릭 시 화면 정중앙에 등장 ══
    Works 창과 동일한 고정 중앙 모달 + 720px 고정(세이프 에어리어 내) + 픽셀 스크롤바
    패턴이되, 콘텐츠는 2열 매손리(masonry) 실제 필름 사진 6장 + 텍스트 카드 1개.
-   모바일(≤768px)에서는 풀스크린 + 1열(두 컬럼을 세로로 순서대로 스택).
+   풀스크린 전환 없이 항상 드래그/리사이즈 가능 — 창 자신의 폭이 768px 이하로
+   좁아지면(@container) 두 컬럼을 세로로 순서대로 스택.
    우하단 핸들로 리사이즈 가능(Works와 동일 헬퍼) — 사진들은 원래 720px 기준
    고정 px 높이였던 걸 aspect-ratio로 바꿔서(기준 컬럼폭 330px) 리사이즈해도
    비율이 안 깨지게 함. */
@@ -348,6 +347,7 @@ body {
   background:#000; border:1px solid #000; color:#fff;
   display:flex; flex-direction:column; align-items:center;
   box-shadow: 4px 4px 0 rgba(0,0,0,0.28), 8px 8px 0 rgba(0,0,0,0.08);
+  container-type: inline-size;
 }
 .film-header {
   height:24px; width:100%; display:flex; align-items:center; justify-content:center;
@@ -383,21 +383,16 @@ body {
   text-align:center; font-family:'VT323',monospace; font-size:16px; line-height:0.98;
   letter-spacing:-0.8px; color:#fff;
 }
-@media (max-width:768px) {
-  .film-win {
-    width:100vw; height:100vh; max-width:none; max-height:none;
-    top:0; left:0; transform:none;
-    z-index:10000 !important;
-  }
+@container (max-width:768px) {
   .film-photos { flex-direction:column; }
-  .film-resize-handle { display:none; }
 }
 
 /* ══ AI Image Window — Figma 95:1675, 데스크탑 "AI Images" 아이콘 클릭 시 화면 정중앙에 등장 ══
    Film과 같은 720px 고정 폭 + 픽셀 스크롤바 모달이되, 내부 그리드는 Works와
    동일한 2열 CSS grid(패딩/간격 값도 동일) — 사진 5장(4:5 비율, object-cover)
    + 텍스트 카드 1개(VT323, dt-label과 같은 -0.8px 자간) 총 6칸.
-   모바일(≤768px)에서는 풀스크린 + 1열.
+   풀스크린 전환 없이 항상 드래그/리사이즈 가능 — 창 자신의 폭이 768px 이하로
+   좁아지면(@container) 그리드 1열로 전환.
    중앙에서 (+24px, +24px) 오프셋 — Film과 크기(720×720)가 완전히 같아서
    순수 정중앙(top:50%/left:50%)이면 둘 다 열었을 때 좌표가 완전히 겹친다.
    CU-SeeMe의 ±24px 스태거와 같은 규모로 어긋나게 둠(design.md 참조). */
@@ -410,6 +405,7 @@ body {
   background:#000; border:1px solid #000; color:#fff;
   display:flex; flex-direction:column; align-items:center;
   box-shadow: 4px 4px 0 rgba(0,0,0,0.28), 8px 8px 0 rgba(0,0,0,0.08);
+  container-type: inline-size;
 }
 .ai-header {
   height:24px; width:100%; display:flex; align-items:center; justify-content:center;
@@ -444,14 +440,8 @@ body {
   letter-spacing:-0.8px; color:#fff; text-align:center;
 }
 .ai-text-cell p { margin:0; }
-@media (max-width:768px) {
-  .ai-win {
-    width:100vw; height:100vh; max-width:none; max-height:none;
-    top:0; left:0; transform:none;
-    z-index:10000 !important;
-  }
+@container (max-width:768px) {
   .ai-grid { grid-template-columns:1fr; }
-  .ai-resize-handle { display:none; }
 }
 
 /* ══ Pixel Scrollbar — Figma 71:3350, 공용 컴포넌트 ══
@@ -1239,17 +1229,18 @@ window.addEventListener('resize', updateWorksScrollbar);
 // 드래그를 시작하는 순간에만 그 렌더 위치를 절대 px(left/top)로 굳히고
 // transform을 제거한다(위치는 시각적으로 동일, dataset.dragged로 표시).
 // 이후로는 CU-SeeMe처럼 닫았다 열어도 마지막으로 끌어놓은 자리를 유지한다.
-// disableOnMobile=true인 창(Works/Film)은 모바일에서 풀스크린으로 전환되므로
-// 그때는 드래그를 붙이지 않는다(움직일 공간이 없음) — About은 모바일에서도
-// CU-SeeMe처럼 작은 카드로 뜨기 때문에 계속 드래그 가능해야 공통 사용성이 맞음.
+// Works/Film/AI Images도 예전엔 disableOnMobile=true로 좁은 폭에서 드래그/리사이즈를
+// 꺼버렸는데, 그 판정이 실제 모바일 기기가 아니라 순전히 window.innerWidth로만
+// 이뤄져서 데스크탑에서 창을 좁게 쓰기만 해도 "리사이즈가 안 된다"는 리포트로
+// 이어졌다. Blair-tunes 플레이어처럼 폭과 무관하게 항상 드래그/리사이즈 가능하도록
+// 통일 — 폭에 따른 레이아웃 반응(그리드 1열 전환)은 컨테이너 쿼리(CSS)가 담당한다.
 function openCenteredDraggableWin(win) {
   win.style.display = 'flex';
   win.style.zIndex = nextZ();
 }
-function makeCenteredWinDraggable(win, headerEl, closeSelector, disableOnMobile) {
+function makeCenteredWinDraggable(win, headerEl, closeSelector) {
   let dragging = false, pid = null, startX = 0, startY = 0, origX = 0, origY = 0;
   headerEl.addEventListener('pointerdown', (e) => {
-    if (disableOnMobile && window.innerWidth <= 768) return;   // 모바일 풀스크린에서는 드래그 비활성
     if (e.target.closest(closeSelector)) return;
     if (!win.dataset.dragged) {
       const rect = win.getBoundingClientRect();
@@ -1290,7 +1281,7 @@ function makeCenteredWinDraggable(win, headerEl, closeSelector, disableOnMobile)
 // 우하단 핸들 드래그로 폭/높이 조절 — 드래그(makeCenteredWinDraggable)와 같은
 // "센터 transform → 절대 px 배치 전환" 규칙을 공유한다(win.dataset.dragged로
 // 상태 공유). 리사이즈 중에도 onResize 콜백으로 스크롤바 등을 즉시 갱신.
-function makeCenteredWinResizable(win, handleEl, minW, minH, disableOnMobile, onResize) {
+function makeCenteredWinResizable(win, handleEl, minW, minH, onResize) {
   let resizing = false, pid = null, startX = 0, startY = 0, origX = 0, origY = 0, w0 = 0, h0 = 0;
   // 별도 자식 엘리먼트(handleEl)에 픽셀 단위로 정확히 맞혀야만 동작하던 이전 방식은
   // 히트 영역을 아무리 키워도(18→36px) 실사용에서 계속 "리사이즈가 안 된다"는
@@ -1308,7 +1299,6 @@ function makeCenteredWinResizable(win, handleEl, minW, minH, disableOnMobile, on
   // 캡처 단계 — works-item 클릭/헤더 드래그 등 그 자리의 다른 핸들러보다 먼저
   // 판정해서, 코너 안이면 stopImmediatePropagation으로 확실히 가로챈다.
   win.addEventListener('pointerdown', (e) => {
-    if (disableOnMobile && window.innerWidth <= 768) return;   // 모바일 풀스크린에서는 리사이즈 비활성
     if (!inCorner(e)) return;
     if (!win.dataset.dragged) {
       const rect = win.getBoundingClientRect();
@@ -1370,8 +1360,8 @@ winWorks.addEventListener('pointerdown', () => { winWorks.style.zIndex = nextZ()
 document.getElementById('works-close').addEventListener('click', () => {
   winWorks.style.display = 'none';
 });
-makeCenteredWinDraggable(winWorks, winWorks.querySelector('.works-header'), '.works-close', true);
-makeCenteredWinResizable(winWorks, document.getElementById('works-resize-handle'), 360, 300, true, updateWorksScrollbar);
+makeCenteredWinDraggable(winWorks, winWorks.querySelector('.works-header'), '.works-close');
+makeCenteredWinResizable(winWorks, document.getElementById('works-resize-handle'), 360, 300, updateWorksScrollbar);
 
 // ── "and my film" 아이콘 → 필름 사진 창(Film) 화면 정중앙에 열기 ────────────
 // Figma 107:2680 — 2열 매손리(모바일 1열) + 공용 픽셀 스크롤바(syncPixelScrollbar).
@@ -1393,8 +1383,8 @@ winFilm.addEventListener('pointerdown', () => { winFilm.style.zIndex = nextZ(); 
 document.getElementById('film-close').addEventListener('click', () => {
   winFilm.style.display = 'none';
 });
-makeCenteredWinDraggable(winFilm, winFilm.querySelector('.film-header'), '.film-close', true);
-makeCenteredWinResizable(winFilm, document.getElementById('film-resize-handle'), 360, 300, true, updateFilmScrollbar);
+makeCenteredWinDraggable(winFilm, winFilm.querySelector('.film-header'), '.film-close');
+makeCenteredWinResizable(winFilm, document.getElementById('film-resize-handle'), 360, 300, updateFilmScrollbar);
 
 // ── "AI Images" 아이콘 → AI 이미지 창 화면 정중앙에 열기 ────────────────────
 // Figma 95:1675 — Works와 동일한 2열 grid(모바일 1열) + 공용 픽셀 스크롤바.
@@ -1416,8 +1406,8 @@ winAi.addEventListener('pointerdown', () => { winAi.style.zIndex = nextZ(); });
 document.getElementById('ai-close').addEventListener('click', () => {
   winAi.style.display = 'none';
 });
-makeCenteredWinDraggable(winAi, winAi.querySelector('.ai-header'), '.ai-close', true);
-makeCenteredWinResizable(winAi, document.getElementById('ai-resize-handle'), 360, 300, true, updateAiScrollbar);
+makeCenteredWinDraggable(winAi, winAi.querySelector('.ai-header'), '.ai-close');
+makeCenteredWinResizable(winAi, document.getElementById('ai-resize-handle'), 360, 300, updateAiScrollbar);
 
 // ── "If you want to ...SEE ME?" 아이콘 → CU-SeeMe 창 다시 열기 ─────────────
 document.getElementById('icon-seeme').addEventListener('click', () => {
