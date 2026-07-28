@@ -79,15 +79,23 @@ existing one.**
 
 ### Works/Film/AI Images window resize (desktop only)
 
-- Bottom-right corner handle (`.works-resize-handle` / `.film-resize-handle` /
-  `.ai-resize-handle` — one shared CSS rule, transparent 16×16px hit area,
-  same "invisible strip" technique as Blair-tunes' `.bt-rs`), adjusts both
-  width and height independently via the shared `makeCenteredWinResizable`
-  helper (not locked to square after the first resize — square is only the
-  *initial* size).
-- Shares the same "centered transform → absolute px position" conversion as
-  drag (`win.dataset.dragged`) — resizing before ever dragging still starts
-  from the correct centered rect.
+- **Bottom-right corner** (`.works-resize-handle` / `.film-resize-handle` /
+  `.ai-resize-handle` — one shared CSS rule, transparent 36×36px hit area
+  extending past the window edge, same "invisible strip" technique as
+  Blair-tunes' `.bt-rs`), adjusts both width and height independently via
+  `makeCenteredWinResizable` (not locked to square after the first resize —
+  square is only the *initial* size).
+- **Left/right edges** (`.win-rs-e` / `.win-rs-w` — one shared class reused
+  by all three windows, transparent 8px strip, same pattern as Blair-tunes'
+  `.bt-rs-e`/`.bt-rs-w`) adjust **width only** via `makeEdgeResizable`, added
+  2026-07-28 after user feedback that only the corner worked and the player
+  supports edges too — parity now matches the player. Elements are created
+  purely by `makeEdgeResizable`'s `appendChild` (JS-only, no static HTML
+  counterpart) — **do not also add static `<div class="win-rs-e">` markup**,
+  that was tried once and produced duplicate stacked handles.
+- All three resize mechanisms (corner + 2 edges) share the same "centered
+  transform → absolute px position" conversion as drag (`win.dataset.dragged`)
+  — resizing before ever dragging still starts from the correct centered rect.
 - `min-width: 360px`, `min-height: 300px` for all three. Max is clamped to
   the 20px safe area from the window's current top/left, same convention as
   `clampToSafeArea` below.

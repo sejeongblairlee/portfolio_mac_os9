@@ -287,6 +287,15 @@ body {
 .works-resize-handle i, .film-resize-handle i, .ai-resize-handle i {
   position:absolute; width:2px; height:2px; background:rgba(255,255,255,0.65); pointer-events:none;
 }
+/* 좌/우 엣지 리사이즈 — Blair-tunes(.bt-rs-e/-w)와 동일한 투명 8px 히트 스트립.
+   너비만 바꾼다(높이는 그대로) — 하단 코너 핸들(위)과 달리 시각적 그립은
+   없고 커서(ew-resize)로만 안내. Works/Film/AI Images가 전부 공유. */
+.win-rs-e, .win-rs-w {
+  position:absolute; top:0; bottom:0; width:8px; cursor:ew-resize;
+  touch-action:none; z-index:2;
+}
+.win-rs-e { right:-4px; }
+.win-rs-w { left:-4px; }
 .works-header {
   height:24px; width:100%; display:flex; align-items:center; justify-content:center;
   flex-shrink:0;
@@ -1351,6 +1360,58 @@ function makeCenteredWinResizable(win, handleEl, minW, minH, onResize) {
   win.addEventListener('pointercancel', endResize);
 }
 
+// 좌/우 엣지 리사이즈 — Blair-tunes(makeResizable의 'e'/'w' 핸들)와 같은 패턴을
+// 그대로 이식. 코너 핸들(위)은 폭+높이를 함께 바꾸지만, 이건 폭만 바꾼다
+// (높이 불변) — 유저가 "플레이어처럼 옆에서도 리사이즈"를 기대했는데 코너에만
+// 있어서 못 찾은 리포트가 있었음(2026-07-28). .win-rs-e/.win-rs-w 두 스트립을
+// win에 append하고 각각 독립적인 포인터 드래그를 붙인다.
+function makeEdgeResizable(win, minW, onResize) {
+  ['e', 'w'].forEach((side) => {
+    const h = document.createElement('div');
+    h.className = `win-rs-${side}`;
+    win.appendChild(h);
+    let pid = null, sx = 0, w0 = 0, left0 = 0;
+
+    h.addEventListener('pointerdown', (e) => {
+      if (!win.dataset.dragged) {
+        const rect = win.getBoundingClientRect();
+        win.style.transform = 'none';
+        win.style.left = rect.left + 'px';
+        win.style.top = rect.top + 'px';
+        win.dataset.dragged = '1';
+      }
+      const r = win.getBoundingClientRect();
+      pid = e.pointerId;
+      try { h.setPointerCapture(pid); } catch (err) {}
+      sx = e.clientX; w0 = r.width; left0 = r.left;
+      win.classList.add('resizing');
+      e.preventDefault();
+      e.stopPropagation();   // 헤더 드래그와 상호 배타
+    });
+
+    h.addEventListener('pointermove', (e) => {
+      if (pid === null || e.pointerId !== pid) return;
+      const dx = e.clientX - sx;
+      let w = side === 'e' ? w0 + dx : w0 - dx;
+      const maxW = side === 'e'
+        ? window.innerWidth - left0 - 20    // 좌변 고정 → 우측 세이프 에어리어까지
+        : left0 + w0 - 20;                  // 우변 고정 → 좌측 세이프 에어리어까지
+      w = Math.max(minW, Math.min(w, maxW));
+      win.style.width = w + 'px';
+      if (side === 'w') win.style.left = (left0 + w0 - w) + 'px';   // 우변 앵커
+      onResize?.();
+    });
+
+    const end = (e) => {
+      if (e.pointerId !== pid) return;
+      pid = null;
+      win.classList.remove('resizing');
+    };
+    h.addEventListener('pointerup', end);
+    h.addEventListener('pointercancel', end);
+  });
+}
+
 const winWorks = document.getElementById('win-works');
 document.getElementById('icon-works').addEventListener('click', () => {
   openCenteredDraggableWin(winWorks);
@@ -1367,6 +1428,7 @@ document.getElementById('works-close').addEventListener('click', () => {
 });
 makeCenteredWinDraggable(winWorks, winWorks.querySelector('.works-header'), '.works-close');
 makeCenteredWinResizable(winWorks, document.getElementById('works-resize-handle'), 360, 300, updateWorksScrollbar);
+makeEdgeResizable(winWorks, 360, updateWorksScrollbar);
 
 // ── "and my film" 아이콘 → 필름 사진 창(Film) 화면 정중앙에 열기 ────────────
 // Figma 107:2680 — 2열 매손리(모바일 1열) + 공용 픽셀 스크롤바(syncPixelScrollbar).
@@ -1390,6 +1452,7 @@ document.getElementById('film-close').addEventListener('click', () => {
 });
 makeCenteredWinDraggable(winFilm, winFilm.querySelector('.film-header'), '.film-close');
 makeCenteredWinResizable(winFilm, document.getElementById('film-resize-handle'), 360, 300, updateFilmScrollbar);
+makeEdgeResizable(winFilm, 360, updateFilmScrollbar);
 
 // ── "AI Images" 아이콘 → AI 이미지 창 화면 정중앙에 열기 ────────────────────
 // Figma 95:1675 — Works와 동일한 2열 grid(모바일 1열) + 공용 픽셀 스크롤바.
@@ -1413,6 +1476,7 @@ document.getElementById('ai-close').addEventListener('click', () => {
 });
 makeCenteredWinDraggable(winAi, winAi.querySelector('.ai-header'), '.ai-close');
 makeCenteredWinResizable(winAi, document.getElementById('ai-resize-handle'), 360, 300, updateAiScrollbar);
+makeEdgeResizable(winAi, 360, updateAiScrollbar);
 
 // ── "If you want to ...SEE ME?" 아이콘 → CU-SeeMe 창 다시 열기 ─────────────
 document.getElementById('icon-seeme').addEventListener('click', () => {
