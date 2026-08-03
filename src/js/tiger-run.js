@@ -95,6 +95,19 @@ async function initTigerRun(container) {
     path: JSON_PATH,
   });
 
+  // 원본 컴포지션(560×368)은 호랑이 그림 자체보다 훨씬 넓어서(특히 좌우) 기본
+  // xMidYMid meet으로 렌더하면 #mb-tiger 박스 안에 좌우 여백이 과하게 남는다
+  // (사용자 지적, 2026-08-02). 전체 12프레임(구보 사이클)의 실측 bbox를 다
+  // 찍어봐서 어느 프레임에서도 잘리지 않는 가장 타이트한 안전 범위가
+  // x:32~528(폭 496, 원본 좌 48/우 32 비대칭 패딩 중 더 타이트한 32 기준으로
+  // 대칭 크롭)임을 확인 — viewBox를 그 범위로 좁혀서 좌우 여백만 줄이고,
+  // y/height(0/368)는 그대로 둬서 세로 스케일(높이)은 전혀 안 건드린다.
+  // lottie는 매 프레임 <g> 내부 좌표만 갱신하고 svg 루트의 viewBox는 다시
+  // 안 건드리는 걸 확인해서 여기서 한 번만 세팅하면 애니메이션 내내 유지됨.
+  anim.addEventListener('DOMLoaded', () => {
+    container.querySelector('svg')?.setAttribute('viewBox', '32 0 496 368');
+  });
+
   // ── 포인터 속도 추적 ──
   let lastX = null, lastY = null, lastMoveT = 0, lastMoveAt = 0;
   let smoothedVelocity = 0;
