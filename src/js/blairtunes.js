@@ -111,6 +111,11 @@ function accentFrom(themeHex) {
 // 뷰일 뿐 별도 플레이어를 만들지 않는다.
 
 let tracks = [];
+// initBlairTunes()에서 실제 구현이 대입됨 — selectTrack()처럼 더 앞에서(모듈
+// 최상위 스코프에) 정의된 함수도 트랙이 바뀔 때마다 좌/우 컬럼을 다시
+// 동기화할 수 있게 모듈 스코프 변수로 선언(초기값은 no-op, 클로저 안에
+// 갇힌 함수 선언이 아니라 이 변수에 재대입하는 방식이라 스코프 문제 없음).
+let syncSideColumnHeights = () => {};
 const state = {
   selectedTrackId: null,
   isPlaying: false,
@@ -485,16 +490,18 @@ function hideEmbedFallback() {
 
 // ═══ 재생 상태 표시 (메인·미니 동기화) ═════════════════════════════════════
 
-const PAUSE_SVG =
-  '<svg width="24" height="24" viewBox="0 0 24 24" shape-rendering="crispEdges">' +
-  '<rect x="6" y="5" width="4" height="14" fill="#111"/>' +
-  '<rect x="14" y="5" width="4" height="14" fill="#111"/></svg>';
+// Figma "Spotify UI Kit" 일시정지 아이콘(node 0:1747) 그대로 — icon-play.svg와
+// 동일한 <img> 패턴으로 통일. 예전엔 인라인 <svg>를 innerHTML로 직접 꽂았는데,
+// .bt-btn img 규칙(24×24 절대 중앙 정렬)이 <img> 태그에만 걸리는 규칙이라
+// 재생 버튼(아이콘)과 높이/정렬이 안 맞았음(사용자 지적) — <img> 태그로
+// 바꿔서 같은 CSS 규칙을 그대로 타게 함.
 const PLAY_IMG = `<img src="${ICONS}/icon-play.svg" alt="">`;
+const PAUSE_IMG = `<img src="${ICONS}/icon-pause.svg" alt="">`;
 
 function setPlaying(playing) {
   state.isPlaying = playing;
   document.querySelectorAll('.bt-play').forEach((btn) => {
-    btn.innerHTML = playing ? PAUSE_SVG : PLAY_IMG;
+    btn.innerHTML = playing ? PAUSE_IMG : PLAY_IMG;
     btn.setAttribute('aria-label', playing ? 'pause' : 'play');
   });
   // 이퀄라이저 동기화: 재생 중일 때만 애니메이션 (CSS animation-play-state)
@@ -525,6 +532,10 @@ function selectTrack(id, { autoplay = true } = {}) {
   hideEmbedFallback();
   renderCurrent();            // 텍스트/썸네일/테마(DB 값) 즉시 반영 — 깜빡임 없음
   refreshThemeFor(track);     // 썸네일 파생 색 최신화 (iframe 미접촉)
+  // 트랙마다 제목/아티스트/설명 길이가 달라 우측 패널의 스크롤 필요 여부가
+  // 바뀔 수 있음 — 높이 자체(중앙 영상 기준)는 안 바뀌지만 스크롤바 표시는
+  // 다시 계산해야 함.
+  syncSideColumnHeights();
 
   if (!track.youtube_video_id) return;
   const opened = !document.getElementById('bt-win').hidden || state.isMinimized;
@@ -560,10 +571,14 @@ function stepTrack(delta) {
 const esc = (s) => String(s ?? '').replace(/[&<>"']/g, (c) =>
   ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
 
-/** 자막 = performance_location DB 값 그대로. 접두사/연도 이어붙이기 금지 —
-    "Live from Paris, 2002", "Tiny Desk Concert" 같은 완성 문자열을 그대로 저장·표시. */
+/** 자막 = "{performance_location}, {performance_year}" — 둘 다 있으면 콤마로 연결,
+    하나만 있으면 그것만, 둘 다 없으면 빈 문자열. performance_year는 DB에 별도
+    컬럼으로 들어와 있는데 화면에 전혀 노출이 안 되고 있었던 걸 수정(2026-08-02). */
 function subtitleOf(track) {
-  return (track.performance_location ?? '').trim();
+  const location = (track.performance_location ?? '').trim();
+  const year = track.performance_year ? String(track.performance_year).trim() : '';
+  if (location && year) return `${location}, ${year}`;
+  return location || year;
 }
 
 function controlsHTML() {
@@ -594,9 +609,11 @@ function windowHTML() {
   return `
   <div class="bt-win" id="bt-win" hidden>
     <div class="bt-header">
-      <button class="bt-hbtn" id="bt-minimize" aria-label="minimize"><img src="${ICONS}/icon-minimize.svg" alt=""></button>
-      <span class="bt-title">Blair-tunes</span>
       <button class="bt-hbtn" id="bt-close" aria-label="close"><img src="${ICONS}/icon-close.svg" alt=""></button>
+      <span class="bt-header-pinstripe" aria-hidden="true"></span>
+      <span class="bt-title">Blair-tunes</span>
+      <span class="bt-header-pinstripe" aria-hidden="true"></span>
+      <button class="bt-hbtn" id="bt-minimize" aria-label="minimize"><img src="${ICONS}/icon-minimize.svg" alt=""></button>
     </div>
     <div class="bt-body">
       <div class="bt-col-list">
@@ -624,16 +641,18 @@ function windowHTML() {
           </div>
           <div class="bt-cur-des" id="bt-cur-des"></div>
         </div>
-        <div class="pixel-scrollbar"><div class="pixel-scrollbar-handle"></div></div>
+        <div class="pixel-scrollbar" id="bt-cur-scrollbar"><div class="pixel-scrollbar-handle" id="bt-cur-scrollbar-handle" hidden></div></div>
       </div>
     </div>
   </div>
 
   <div class="bt-mini" id="bt-mini" hidden>
     <div class="bt-header">
-      <button class="bt-hbtn" id="bt-restore" aria-label="maximize"><img src="${ICONS}/icon-maximize.svg" alt=""></button>
-      <span class="bt-title">Blair-tunes</span>
       <button class="bt-hbtn" id="bt-mini-close" aria-label="close"><img src="${ICONS}/icon-close.svg" alt=""></button>
+      <span class="bt-header-pinstripe" aria-hidden="true"></span>
+      <span class="bt-title">Blair-tunes</span>
+      <span class="bt-header-pinstripe" aria-hidden="true"></span>
+      <button class="bt-hbtn" id="bt-restore" aria-label="maximize"><img src="${ICONS}/icon-maximize.svg" alt=""></button>
     </div>
     <div class="bt-mini-body">
       <div class="bt-video">
@@ -760,12 +779,13 @@ function makeDraggable(win) {
 }
 
 // ═══ 창 리사이즈 — 좌/우 엣지 + 하단 코너 핸들 (풀 플레이어만) ═══════════════
-// 폭만 조절: 높이는 비디오 비율이 결정하므로 자동. 768px 미만이 되면
-// @container 쿼리가 모바일 레이아웃으로 전환. iframe은 도크가 rAF로 따라가므로
-// 리사이즈 중에도 재생성/왜곡 없음.
+// 폭만 조절: 높이는 비디오 비율이 결정하므로 자동. 880px 미만이 되면
+// @container 쿼리가 모바일(세로 스택) 레이아웃으로 전환. iframe은 도크가
+// rAF로 따라가므로 리사이즈 중에도 재생성/왜곡 없음.
 
 function makeResizable(win) {
-  const MIN_W = 380;   // 모바일 레이아웃 최소폭 (CSS min-width와 동일)
+  const MIN_W = 380;    // 모바일 스택 레이아웃 최소폭 (CSS min-width와 동일)
+  const MAX_W = 1600;   // 리사이즈 상한 (CSS max-width와 동일)
   [['e', 'bt-rs-e'], ['w', 'bt-rs-w'], ['e', 'bt-rs-se'], ['w', 'bt-rs-sw']].forEach(([side, cls]) => {
     const h = document.createElement('div');
     h.className = `bt-rs ${cls}`;
@@ -793,12 +813,17 @@ function makeResizable(win) {
       if (pid === null || e.pointerId !== pid) return;
       const dx = e.clientX - sx;
       let w = side === 'e' ? w0 + dx : w0 - dx;
-      const maxW = side === 'e'
+      const safeMaxW = side === 'e'
         ? window.innerWidth - left0 - 20          // 좌변 고정 → 우측 세이프 에어리어까지
         : left0 + w0 - 20;                        // 우변 고정 → 좌측 세이프 에어리어까지
+      const maxW = Math.min(safeMaxW, MAX_W);
       w = Math.max(MIN_W, Math.min(w, maxW));
       win.style.width = w + 'px';
       if (side === 'w') win.style.left = (left0 + w0 - w) + 'px';   // 우변 앵커
+      // ResizeObserver만 믿지 않고 여기서도 직접 호출 — 드래그 리사이즈 중
+      // 옵저버 콜백이 매 프레임 안정적으로 안 오는 경우가 있어서(실측)
+      // 좌/우 컬럼 높이가 중앙 컬럼을 못 따라가는 현상이 있었다.
+      syncSideColumnHeights();
     });
 
     const end = (e) => {
@@ -844,7 +869,9 @@ async function initBlairTunes() {
     document.getElementById('bt-mini').hidden = !min;
     window.__tigerRun?.reportWindowAction();   // 타이거 활동 펄스 (옵셔널 — 없어도 무해)
   };
-  document.getElementById('bt-minimize').addEventListener('click', () => setMinimized(true));
+  document.getElementById('bt-minimize').addEventListener('click', () => {
+    setMinimized(true);
+  });
   document.getElementById('bt-restore').addEventListener('click', () => {
     setMinimized(false);
     window.__bringToFront?.(document.getElementById('bt-win'));
@@ -888,6 +915,53 @@ async function initBlairTunes() {
   window.addEventListener('resize', syncListScrollbar);
   syncListScrollbar();
 
+  // 우측 큐레이션 패널도 같은 방식으로 실제 스크롤 상태에 동기화 — 예전엔
+  // 창 높이가 콘텐츠에 맞춰 늘어나서 여기가 스크롤될 일이 없었지만, 이제
+  // 창 높이를 중앙 영상 영역 기준으로 고정하므로(아래 syncSideColumnHeights)
+  // 설명이 길면 실제로 넘칠 수 있다.
+  const btCurInner = document.getElementById('bt-win').querySelector('.bt-cur-inner');
+  const btCurTrack = document.getElementById('bt-cur-scrollbar');
+  const btCurHandle = document.getElementById('bt-cur-scrollbar-handle');
+  const syncCurScrollbar = () => {
+    window.__syncPixelScrollbar?.(btCurTrack, btCurHandle, btCurInner.clientHeight, btCurInner.scrollHeight, btCurInner.scrollTop);
+  };
+  btCurInner.addEventListener('scroll', syncCurScrollbar);
+  syncCurScrollbar();
+
+  // 좌(플레이리스트)/우(큐레이션) 컬럼 높이를 중앙(영상+컨트롤) 컬럼 높이에
+  // 맞춘다 — 요청: "전체 높이는 가운데 영상 영역에 맞추고, 좌우는 정보가
+  // 넘치면 내부 스크롤". 모바일/좁은 폭(컨테이너 쿼리 ≤768px, .bt-body가
+  // column으로 바뀌는 시점)에서는 3열이 세로로 쌓이므로 높이를 강제하지
+  // 않고 원래대로 자연스러운 높이를 쓴다.
+  const btWin = document.getElementById('bt-win');
+  const btBody = btWin.querySelector('.bt-body');
+  const btColCenter = btWin.querySelector('.bt-col-center');
+  const btColList = btWin.querySelector('.bt-col-list');
+  const btColCur = btWin.querySelector('.bt-col-cur');
+  // 모듈 최상위 스코프 변수(위 "let syncSideColumnHeights = () => {}")에 실제
+  // 구현을 대입 — function 선언으로 새로 만들면 이 함수 스코프 안에서만
+  // 보이는 별개 바인딩이 생겨서 바깥(selectTrack 등)에서는 여전히 no-op
+  // 스텁만 보인다. 대입이라야 바깥 변수가 실제로 갱신된다.
+  syncSideColumnHeights = function () {
+    if (btWin.hidden) return;
+    const stacked = getComputedStyle(btBody).flexDirection === 'column';
+    if (stacked) {
+      btColList.style.height = '';
+      btColCur.style.height = '';
+    } else {
+      const h = btColCenter.getBoundingClientRect().height;
+      if (h > 0) {
+        btColList.style.height = h + 'px';
+        btColCur.style.height = h + 'px';
+      }
+    }
+    syncListScrollbar();
+    syncCurScrollbar();
+  };
+  new ResizeObserver(syncSideColumnHeights).observe(btColCenter);
+  window.addEventListener('resize', syncSideColumnHeights);   // 뷰포트 리사이즈로 .bt-win 자체 폭이 바뀌는 경우
+  syncSideColumnHeights();
+
   document.querySelectorAll('.bt-play').forEach((b) => b.addEventListener('click', togglePlay));
   document.querySelectorAll('.bt-prev').forEach((b) => b.addEventListener('click', () => stepTrack(-1)));
   document.querySelectorAll('.bt-next').forEach((b) => b.addEventListener('click', () => stepTrack(1)));
@@ -900,6 +974,12 @@ async function initBlairTunes() {
       const wasClosed = win.hidden && !state.isMinimized;
       if (state.isMinimized) setMinimized(false);   // 미니 → 풀 플레이어 (재생 유지)
       win.hidden = false;
+      // ResizeObserver는 창이 hidden→visible로 바뀌는 순간을 못 잡을 때가
+      // 있어서(관찰 시작 시점에 이미 display:none이면 최초 콜백이 안 옴)
+      // 여기서 직접 한 번 더 불러 확실히 맞춘다 — getBoundingClientRect()가
+      // 강제 동기 레이아웃을 유발하므로 hidden 해제 직후에 호출해도 정확한
+      // 값을 읽는다.
+      syncSideColumnHeights();
       window.__bringToFront?.(win);
       window.__tigerRun?.reportWindowAction();
       const t = tracks[currentIndexOf()];
