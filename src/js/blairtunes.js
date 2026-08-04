@@ -383,6 +383,33 @@ function formatTime(sec) {
   return `${Math.floor(s / 60)}:${String(s % 60).padStart(2, '0')}`;
 }
 
+// ═══ duration_label 재생 기반 백필 — scripts/sync-durations.mjs(YouTube Data
+// API 일괄 백필)와 같은 목적을 API 키 없이 달성: 누군가 트랙을 재생해서
+// duration을 알게 되는 순간, 그게 아직 비어있으면(placeholder) API로 채워
+// 넣는다. 세션당 트랙 하나에 한 번만 시도(durationSyncAttempted) — 요청
+// 폭주 방지용이며, 서버도 이미 값이 있으면 덮어쓰지 않아 안전(멱등). ═══
+const DURATION_PLACEHOLDERS = new Set([null, undefined, '', 'mm:hh']);
+const durationSyncAttempted = new Set();
+
+function maybeSyncDurationLabel(track, seconds) {
+  if (!track || !(seconds > 0) || durationSyncAttempted.has(track.id)) return;
+  if (!DURATION_PLACEHOLDERS.has(track.duration_label)) return;
+  durationSyncAttempted.add(track.id);
+  fetch('/api/track-duration', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ id: track.id, seconds }),
+  })
+    .then((res) => (res.ok ? res.json() : null))
+    .then((body) => {
+      if (body?.duration_label) track.duration_label = body.duration_label;
+    })
+    .catch(() => {
+      // API 불가(로컬 정적 서버 등) → 조용히 무시, 다음 재생 때 다시 시도되지 않음
+      // (세션 단위 시도이므로 페이지 새로고침하면 재시도됨)
+    });
+}
+
 function renderProgress() {
   if (!(state.duration > 0)) return;
   const label = formatTime(state.duration);
@@ -401,6 +428,7 @@ function startProgressTicker() {
       state.duration = ytPlayer.getDuration() || 0;
     } catch { return; }
     renderProgress();
+    maybeSyncDurationLabel(tracks.find((t) => t.id === state.selectedTrackId), state.duration);
   }, 250);
 }
 
