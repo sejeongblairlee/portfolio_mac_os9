@@ -8,7 +8,6 @@
 <link rel="stylesheet" as="style" crossorigin href="https://cdn.jsdelivr.net/gh/orioncactus/pretendard@v1.3.9/dist/web/static/pretendard.css">
 <link rel="stylesheet" href="src/css/blairtunes.css">
 <link rel="stylesheet" href="src/css/sudoku.css">
-<link rel="stylesheet" href="src/css/glider.css">
 <style>
 @font-face {
   font-family: 'VT323';
@@ -1473,10 +1472,12 @@ document.getElementById('proj-cheer').addEventListener('click', () => {
 });
 makeCenteredWinDraggable(winProject, winProject.querySelector('.proj-header'), '.proj-close');
 
-// Guestbook — 아직 콘텐츠가 없어서 Works 카드와 동일한
+// Guestbook / Glider 4.0 — 아직 콘텐츠가 없어서 Works 카드와 동일한
 // "작업중입니다" 팝업을 그대로 재사용(같은 winProject 공유, 별도 창 아님).
-// Glider 4.0은 실제 게임으로 구현됨(src/js/glider.js가 자기 아이콘 클릭을 직접 배선).
 document.getElementById('icon-guestbook').addEventListener('click', () => {
+  openCenteredDraggableWin(winProject);
+});
+document.getElementById('icon-glider').addEventListener('click', () => {
   openCenteredDraggableWin(winProject);
 });
 
@@ -1860,7 +1861,6 @@ const MB_NAV_ITEMS = [
   { winId: 'win-local', label: 'CU-SeeMe', icon: 'src/images/desktop/icon-zoom.png', open: () => document.getElementById('icon-seeme').click() },
   { winId: 'bt-win', label: 'Enjoy Music!', icon: 'src/images/desktop/music-ipod.png', open: () => document.getElementById('icon-tunes')?.click() },
   { winId: 'sudoku-win', label: 'Sudoku', icon: MB_SUDOKU_ICON, open: () => document.getElementById('icon-sudoku')?.click() },
-  { winId: 'glider-win', label: 'Glider 4.0', icon: 'src/images/desktop/utilities-help.png', open: () => document.getElementById('icon-glider')?.click() },
   { winId: 'win-project', label: 'Guestbook', icon: 'src/images/desktop/file-sharing.png', open: () => document.getElementById('icon-guestbook').click() },
 ];
 
@@ -2092,7 +2092,7 @@ document.addEventListener('click', (e) => {
   // 사라지고, 전부 닫으면 다시 나타나야 한다는 요구사항. CU-SeeMe는 페이지
   // 로드 시 기본으로 열려 있는 창이라 여기 포함하면 처음부터 계속 숨는
   // 꼴이 되므로 의도적으로 제외 — "폴더"(데스크탑 아이콘으로 여는 팝업류)만.
-  const POPUP_IDS = ['win-works', 'win-film', 'win-about', 'win-project', 'win-ai', 'bt-win', 'bt-mini', 'sudoku-win', 'glider-win'];
+  const POPUP_IDS = ['win-works', 'win-film', 'win-about', 'win-project', 'win-ai', 'bt-win', 'bt-mini', 'sudoku-win'];
   function isAnyPopupOpen() {
     return POPUP_IDS.some((id) => {
       const el = document.getElementById(id);
@@ -2248,6 +2248,5 @@ document.addEventListener('click', (e) => {
 <script src="src/js/tiger-run.js" defer></script>
 <script src="src/js/blairtunes.js" defer></script>
 <script src="src/js/sudoku.js" defer></script>
-<script src="src/js/glider.js" defer></script>
 </body>
 </html>
