@@ -97,14 +97,13 @@ function hexToHsl(hex) {
   return { h, s, l };
 }
 
-/** 슬라이더 액티브용 액센트 — 테마 보색(hue+180) + 밝기/채도 보정 (같은 hue라 배경에 묻히던 문제 수정) */
+/** 슬라이더 액티브용 액센트 — 테마 hue 유지, 배경보다 밝게 (배경색 그대로면 안 보임) */
 function accentFrom(themeHex) {
   const hsl = hexToHsl(themeHex);
   if (!hsl) return '#0037FF';
-  const h = (hsl.h + 180) % 360;
   const l = Math.min(0.86, hsl.l + 0.32);
   const s = Math.min(1, hsl.s * 1.1 + 0.08);
-  return `hsl(${Math.round(h)} ${Math.round(s * 100)}% ${Math.round(l * 100)}%)`;
+  return `hsl(${Math.round(hsl.h)} ${Math.round(s * 100)}% ${Math.round(l * 100)}%)`;
 }
 
 // ═══ 공유 상태 — 메인/미니/플레이리스트가 함께 읽음 ════════════════════════
