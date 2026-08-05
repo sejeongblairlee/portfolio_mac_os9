@@ -5,29 +5,34 @@
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>Sejeong Lee — Media Archive</title>
 <!--
-  독립 실험 페이지. index.html/desktop.html/blair-os.html 및 공용 CSS/JS를
-  전혀 참조하지 않는다 — 이 파일 하나가 스타일/스크립트를 전부 인라인으로 갖고
-  있어, 기존 페이지에 어떤 영향도 줄 수 없는 구조.
+  구 루트 랜딩(2026-07-09~2026-08-05, index.html이었음). 2026-08-05에 루트를
+  desktop.html로 바로 보내도록 바뀌면서(vercel.json rewrite, "/" →
+  "/desktop.html") 이 파일은 라이브 플로우에서 빠지고 /media-archive.html
+  경로로만 보존됨 — 나중에 랜딩 디자인을 다시 바꿀 때 재사용하려고 남겨둠.
+  루트에 실제 index.html 파일이 있으면 Vercel이 rewrite보다 filesystem을
+  먼저 서빙해버려서, 이 파일을 index.html로 두는 한 rewrite가 무시된다 —
+  그래서 파일명 자체를 media-archive.html로 유지(= 절대 index.html로
+  되돌리지 말 것, 되돌리면 루트가 다시 이 페이지로 돌아감).
+  desktop.html/blair-os.html 및 공용 CSS/JS(script.js, style.css)를 전혀
+  참조하지 않는다 — 이 파일 하나가 스타일/스크립트를 전부 인라인으로 갖고
+  있어 다른 페이지에 영향을 주지 않는 구조는 그대로 유지.
 
   헤드라인/코너/부팅 프롬프트 텍스트의 위치·크기·line-height·letter-spacing은
   Figma dev link 실측값 그대로(근사 아님): node 157:904(desktop) / 160:1309
   (mobile, ≤768px) — 중앙 텍스트 스택은 165:1027(desktop)/165:1026(mobile),
   부팅 프롬프트는 162:1024(desktop)/165:1024(mobile, VT323 20px/24px 공통).
 
-  중앙 텍스트는 이제 "Press enter to boot..." 시스템 프롬프트를 겸한다 —
+  중앙 텍스트는 "Press enter to boot..." 시스템 프롬프트를 겸한다 —
   Enter 키 또는 프롬프트 텍스트 클릭/탭으로 부팅 시퀀스가 시작되고
   desktop.html로 이동한다(아래 startBoot() 참고). 일반 캔버스 클릭으로는
   절대 이동하지 않음 — 드래그/줌은 부팅 전까지 그대로 살아있음.
 
-  이번 패스는 검정 placeholder 사각형만 렌더링한다 — 실제 이미지/영상은 아직
-  매핑하지 않음(요청 범위 밖). 실제 자산 연결 방법:
-  1) data/media-archive-data.js 의 각 항목에 실제 src/width/height를 채운다.
-  2) 이미지: src/images/media-archive/ 에 파일을 넣고 그 경로를 사용.
-  3) 영상: src/video/media-archive/ 에 mp4를 넣고 type:'video'로 바꾼다.
-  4) 아래 buildFragment()의 "TODO: 실제 미디어 매핑" 부분에 TextureLoader/
-     VideoTexture 연결 로직을 추가하면 된다 — 위치/사이즈/애니메이션 골격은
-     이미 완성되어 있어 매핑 코드만 끼워 넣으면 됨.
-  5) public/ 디렉토리에는 절대 실제 자산을 넣지 말 것 — 이 프로젝트에서
+  미디어 매핑 구현 완료: data/media-archive-data.js의 각 항목을
+  TextureLoader(이미지)/VideoTexture(영상)로 로드해 검정 placeholder를
+  실제 텍스처로 교체한다(아래 loadFragmentMedia 참고). 새 미디어 추가 시:
+  1) data/media-archive-data.js에 항목 추가(src/width/height).
+  2) 이미지: src/images/media-archive/, 영상: src/video/media-archive/.
+  3) public/ 디렉토리에는 절대 실제 자산을 넣지 말 것 — 이 프로젝트에서
      public/이 생기면 Vercel이 그걸 Output Directory로 오인해 배포 전체가
      깨진 전례가 있음(레포 히스토리 참고).
 -->
@@ -309,6 +314,74 @@ const fragments = [];
 
 function randRange(a, b) { return a + Math.random() * (b - a); }
 
+// ── 실제 미디어 로딩 — 이미지는 TextureLoader, 영상은 <video>+VideoTexture ──
+// 검정 placeholder(mat.color 0x000000, map 없음)로 시작해서, 로드에 성공한
+// 프래그먼트만 map/color를 갈아끼운다. 파일이 없거나(404) 로드 실패하면
+// 아무것도 하지 않고 검정 placeholder를 그대로 둔다 — 빈 상태 문구 없음.
+const textureLoader = new THREE.TextureLoader();
+const videoEls = [];
+
+const FRAG_ASPECT_MIN = 0.55;   // 9:16(0.5625) 세로 영상/사진까지 클램프 없이 커버
+const FRAG_ASPECT_MAX = 1.8;    // 16:9(1.778) 가로 영상까지 클램프 없이 커버
+function clamp(v, min, max) { return Math.min(max, Math.max(min, v)); }
+
+// 크롭(cover) 대신 프레임 자체를 미디어 실측 비율에 맞춘다 — 가장 긴 변은
+// buildFragment에서 정한 sizeScale(티어별 크기)을 그대로 유지하고, 짧은 변만
+// 비율에 맞게 다시 계산한다(= buildFragment의 dims 계산식과 동일한 공식,
+// item.width/height 대신 실측 mediaAspect를 사용). 너무 극단적인 비율(예:
+// 초와이드 영상)은 레이아웃이 깨지지 않게 clamp한다.
+function applyAspectToFragment(frag, mediaAspect) {
+  const aspect = clamp(mediaAspect, FRAG_ASPECT_MIN, FRAG_ASPECT_MAX);
+  const scale = frag.sizeScale;
+  frag.dims.w = aspect >= 1 ? scale : scale * aspect;
+  frag.dims.h = aspect >= 1 ? scale / aspect : scale;
+  // 인트로 트윈이 이미 끝났거나 진행 중이어도(proxy.p가 0~1 사이 어떤 값이든)
+  // 즉시 새 비율을 반영 — 진행 중인 트윈은 다음 tick부터 새 dims를 계속 사용.
+  frag.mesh.scale.set(frag.dims.w * frag.proxy.p, frag.dims.h * frag.proxy.p, 1);
+}
+
+function applyTextureToFragment(frag, texture, mediaAspect) {
+  texture.encoding = THREE.sRGBEncoding;
+  texture.minFilter = THREE.LinearFilter;
+  texture.wrapS = texture.wrapT = THREE.ClampToEdgeWrapping;
+  applyAspectToFragment(frag, mediaAspect);
+  frag.mat.map = texture;
+  frag.mat.color.set(0xffffff);   // 텍스처가 원색 그대로 보이도록(검정 곱연산 방지)
+  frag.mat.needsUpdate = true;
+}
+
+function loadFragmentMedia(item, frag) {
+  if (!item.src) return;   // src 없음 — 검정 placeholder 유지
+  if (item.type === 'video') {
+    const video = document.createElement('video');
+    video.muted = true;
+    video.loop = true;
+    video.playsInline = true;
+    video.autoplay = true;
+    video.addEventListener('loadedmetadata', () => {
+      const texture = new THREE.VideoTexture(video);
+      applyTextureToFragment(frag, texture, video.videoWidth / video.videoHeight);
+      video.play().catch(() => {});   // 자동재생 정책으로 막혀도 조용히 무시(검정 유지)
+    });
+    video.addEventListener('error', () => { /* 로드 실패 — 검정 placeholder 유지 */ });
+    video.src = item.src;
+    video.load();
+    frag.videoEl = video;
+    videoEls.push(video);
+  } else {
+    textureLoader.load(
+      item.src,
+      (texture) => {
+        const img = texture.image;
+        const mediaAspect = (img && img.naturalWidth) ? img.naturalWidth / img.naturalHeight : item.width / item.height;
+        applyTextureToFragment(frag, texture, mediaAspect);
+      },
+      undefined,
+      () => { /* 로드 실패 — 검정 placeholder 유지 */ }
+    );
+  }
+}
+
 // 크기 티어 — "적은 수의 큰 앵커 + 많은 중/소형"으로 밀도감을 만든다.
 // 앵커는 카메라에 가깝게, 소형은 멀게 둬서 "큰 게 가깝다"는 자연스러운
 // 원근 상관관계를 만들고(별도 near/far 플래그가 필요 없어짐), 평균 크기는
@@ -360,7 +433,7 @@ function buildFragment(item) {
 
   const geo = new THREE.PlaneGeometry(1, 1);   // 실제 크기는 mesh.scale로 표현(아래)
   const mat = new THREE.MeshBasicMaterial({
-    color: 0x000000,   // 요청대로 순검정 — 미래 미디어 매핑 전 placeholder
+    color: 0x000000,   // 미디어 로드 전/실패 시 계속 유지되는 검정 placeholder
     transparent: true, opacity: 0,
     side: THREE.DoubleSide, depthWrite: false,
   });
@@ -369,21 +442,27 @@ function buildFragment(item) {
   mesh.scale.set(0.0001, 0.0001, 1);
   group.add(mesh);
 
-  // TODO: 실제 미디어 매핑 시점에 여기서 item.type에 따라
-  // THREE.TextureLoader(이미지) 또는 <video>+THREE.VideoTexture(비디오)를
-  // 로드해 mat.map에 연결하면 된다. 지금은 검정 placeholder만 렌더링.
-
   const proxy = { p: 0 };   // GSAP 인트로(0→1)가 구동 — scale/opacity/position 전부 여기서 파생
 
   // 유휴 시 아주 은은하게 떠 있는 느낌을 주는 개별 bob(위아래 미세 흔들림) 파라미터 —
   // 인트로가 끝난 뒤에만 적용(아래 animate 루프 참고), 진폭이 작아 산만하지 않음.
   const bob = { amp: randRange(0.03, 0.09), speed: randRange(0.12, 0.3), phase: randRange(0, Math.PI * 2) };
 
-  return { mesh, mat, proxy, dims, startPos, finalPos, targetOpacity: 1, bob, introDone: false };
+  const frag = { mesh, mat, proxy, dims, sizeScale, startPos, finalPos, targetOpacity: 1, bob, introDone: false, videoEl: null };
+  return frag;
 }
 
-window.MEDIA_ARCHIVE_DATA.forEach((item) => {
-  fragments.push(buildFragment(item));
+// 파티클/텍스처 개수가 많아서(현재 30여 개 이미지 + 영상 여러 개) 페이지 로드
+// 시점에 전부 한꺼번에 fetch+decode+GPU 업로드를 시작하면 초기 버벅거림과
+// "이미지가 뒤늦게 팝인"하는 현상이 생긴다. 그래서 미디어 로드 시작 자체를
+// 아이템당 조금씩(스태거) 늦춰서 네트워크/디코드 부하를 첫 몇 초에 걸쳐
+// 분산시킨다 — 파티클 생성(배치/애니메이션 골격)은 여전히 즉시 전부 이루어짐,
+// 늦어지는 건 오직 "실제 미디어를 언제부터 불러오기 시작하느냐"뿐이다.
+const MEDIA_LOAD_STAGGER_MS = 55;
+window.MEDIA_ARCHIVE_DATA.forEach((item, i) => {
+  const frag = buildFragment(item);
+  fragments.push(frag);
+  setTimeout(() => loadFragmentMedia(item, frag), i * MEDIA_LOAD_STAGGER_MS);
 });
 
 // ── 부팅 프롬프트 — 타이핑 효과 + Enter/클릭 트리거 + 부팅 시퀀스 ───────────
@@ -597,6 +676,7 @@ function disposeScene() {
       mats.forEach((m) => { m?.map?.dispose(); m?.dispose(); });
     }
   });
+  videoEls.forEach((video) => { video.pause(); video.removeAttribute('src'); video.load(); });
   renderer.dispose();
 }
 // pagehide는 일반 내비게이션(location.href 이동 포함)과 탭 종료 모두에서 발생 —
