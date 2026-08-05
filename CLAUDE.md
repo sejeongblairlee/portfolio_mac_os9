@@ -6,13 +6,16 @@ https://www.figma.com/design/nOOniYoXTbhuQ0FxO4ifAV/Untitled
 
 ## 페이지 구조 / 플로우
 
-- `index.html` — **미디어 아카이브 랜딩** (2026-07-09부터 루트, 구
-  media-archive.html 승격본. Three.js r128 파티클 필드, CDN 로드, 완전
-  인라인 self-contained). "Hello world / Welcome to my space." +
-  "Press enter to boot..." 프롬프트 → Enter/클릭 → 부팅 시퀀스 →
-  `desktop.html`로 이동. `media-archive.html` 경로도 동일 내용 별칭으로 유지.
-- `index-classic-mac-backup.html` — **구 3D 매킨토시 랜딩**(이전 index.html,
-  Figma 노드 `1:35`). 플로우에서 미사용, 백업/참조용으로만 보존.
+- 루트(`/`)는 **`desktop.html`을 바로 서빙** (2026-08-05부터, `vercel.json`의
+  `rewrites: "/" → "/desktop.html"`). 부팅 화면 없이 데스크탑이 바로 뜬다.
+  루트에 실제 `index.html` 파일이 있으면 Vercel이 rewrite보다 filesystem을
+  먼저 서빙해버려서 rewrite가 무시된다 — **`index.html`을 절대 다시 만들지
+  말 것** (만들면 루트가 그 파일로 되돌아가고 rewrite가 죽는다).
+- `media-archive.html` — **구 루트 랜딩**(2026-07-09~2026-08-05, Three.js
+  r128 파티클 필드, CDN 로드, 완전 인라인 self-contained. "Hello world /
+  Welcome to my space." + "Press enter to boot..." → Enter/클릭 →
+  `desktop.html`로 이동). 지금은 플로우에서 빠졌지만 랜딩 디자인을 나중에
+  다시 바꿀 때 재사용하려고 `/media-archive.html` 경로로 보존.
 - `desktop.html` — **OS9 스타일 데스크탑** (Figma 노드 `99:2332`).
   메뉴바 + 데스크탑 아이콘 + CU-SeeMe 창 2개:
   - "SEJEONG LEE (Local)": `src/CU-SeeME/hello-halftone.mp4` 재생 (흑백 하프톤)
@@ -59,13 +62,15 @@ https://www.figma.com/design/nOOniYoXTbhuQ0FxO4ifAV/Untitled
 - 프로덕션: https://portfolio-mu-tan-9x1aeva6c8.vercel.app
 - Vercel 프로젝트: `portfolio` (blair-lees-projects). 수동 배포: `npx vercel --prod`.
 - 배포별 URL(`portfolio-xxxx-...vercel.app`)이 로그인 화면으로 가는 건 정상(SSO 보호).
-- **`public/` 폴더를 저장소 루트에 절대 만들지 말 것.** `vercel.json`이 없고
-  프레임워크 프리셋이 "Other"라서, Vercel이 `public/`이 존재하면 그걸
-  Output Directory로 자동 인식해버림 — 그러면 `public/` 밖의 모든 파일
-  (`index.html`, `src/` 전체 포함)이 프로덕션에서 통째로 404. 실제로 이 문제로
-  전체 배포가 깨진 적 있음. 정적 에셋은 전부 `src/`(예: `src/images/`,
-  `src/fonts/`) 밑에 두는 기존 컨벤션을 따를 것. `.gitignore`에 `public/`이
-  등록돼 있음 — 로컬에 레퍼런스용 `public/` 폴더가 있어도 커밋되지 않게.
+- **`public/` 폴더를 저장소 루트에 절대 만들지 말 것.** 프레임워크 프리셋이
+  "Other"라서, Vercel이 `public/`이 존재하면 그걸 Output Directory로 자동
+  인식해버림 — 그러면 `public/` 밖의 모든 파일(`desktop.html`, `src/` 전체
+  포함)이 프로덕션에서 통째로 404. 실제로 이 문제로 전체 배포가 깨진 적
+  있음. `vercel.json`이 생긴 지금도(루트 rewrite용, `outputDirectory`는
+  설정 안 함) 이 자동 인식 로직 자체는 그대로라 여전히 위험함. 정적 에셋은
+  전부 `src/`(예: `src/images/`, `src/fonts/`) 밑에 두는 기존 컨벤션을
+  따를 것. `.gitignore`에 `public/`이 등록돼 있음 — 로컬에 레퍼런스용
+  `public/` 폴더가 있어도 커밋되지 않게.
 
 ## 작업 규칙
 
