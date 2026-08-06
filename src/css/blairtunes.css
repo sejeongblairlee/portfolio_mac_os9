@@ -34,7 +34,7 @@
   flex-direction: column;
   align-items: center;
   z-index: 500;
-  /* Mac OS9 WindowChrome — charliedean.com 실측 그대로, 배경은 트랙 테마색(--bt-theme) 그대로 유지 */
+  /* Mac OS9 WindowChrome — 실측 그대로, 배경은 트랙 테마색(--bt-theme) 그대로 유지 */
   border: 1px solid #262626;
   box-shadow: inset 1px 1px 0 0 #eee, inset -1px -1px 0 0 #999, 2px 2px 0 0 rgba(0,0,0,0.5);
 }
@@ -65,7 +65,7 @@
   border-left: 1px solid rgba(255,255,255,0.28); border-right: 1px solid rgba(0,0,0,0.3);
 }
 /* close box(좌) / collapse box(우) — Figma Mac-OS-9-UI-Kit atoms 18:49 / 18:121, 3겹 베벨 구조.
-   DOM 순서로 좌/우 배치(inline flex) — charliedean.com 레퍼런스와 동일한 방식, absolute 오프셋 불필요. */
+   DOM 순서로 좌/우 배치(inline flex) — 레퍼런스 구현과 동일한 방식, absolute 오프셋 불필요. */
 .bt-header .bt-hbtn {
   position: relative; flex-shrink: 0;
   width: 18px; height: 18px;
@@ -75,10 +75,10 @@
   box-shadow: inset 0 0 0 1px #262626, inset 2px 2px 0 0 #f1f1f1, inset -2px -2px 0 0 gray;
 }
 .bt-header .bt-hbtn img { display: none; }
-/* charliedean.com 실측(.titlebar-button:active) 그대로 — 눌렀을 때 밝기만 낮춰서
+/* 실측(.titlebar-button:active) 그대로 — 눌렀을 때 밝기만 낮춰서
    기존 베벨과 합쳐지며 움푹 들어간 느낌을 줌 */
 .bt-header .bt-hbtn:active { filter: brightness(69%); }
-/* charliedean.com 실측(.titlebar-button-minimize / .titlebar-button-zoom) 그대로 —
+/* 실측(.titlebar-button-minimize / .titlebar-button-zoom) 그대로 —
    최소화(가로 막대 두 줄)와 복원(꺾쇠 사각형) 아이콘을 다르게 그려서
    close 버튼과도, 서로도 구분되게 함 */
 #bt-minimize::before {
