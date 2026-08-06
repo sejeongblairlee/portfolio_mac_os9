@@ -79,7 +79,7 @@ body {
    Figma Molecule/Menu Bar(53:118679)의 RIGHT MENU "Finder" 항목 그대로:
    16px 아이콘 + Charcoal 12px 텍스트, hover는 다른 메뉴 항목과 같은 Azul(#339)
    반전. 클릭하면 현재 열려있는 모든 창(About/Works/Film/AI/CU-SeeMe/
-   Blair-tunes/Sudoku/Guestbook) 목록이 드롭다운으로 뜨고, 항목을 고르면 그
+   Blair-tunes/Sudoku/Glider) 목록이 드롭다운으로 뜨고, 항목을 고르면 그
    창을 열거나 맨 앞으로 가져온다 — 데스크탑 아이콘을 직접 클릭하는 것과
    완전히 같은 동작(각 항목이 실제 아이콘의 click()을 그대로 호출). ── */
 .mb-trail { display:flex; align-items:center; height:100%; gap:6px; }
@@ -110,7 +110,7 @@ body {
 }
 .mb-nav.open .mb-nav-toggle { background:#339; color:#fff; }
 /* 기본(아이콘 없는 창 — About Me/Sudoku)은 CSS로 그린 제네릭 미니 윈도우 아이콘,
-   실제 아이콘이 있는 창(Works/Film/AI/CU-SeeMe/Blair-tunes/Guestbook)이 활성화
+   실제 아이콘이 있는 창(Works/Film/AI/CU-SeeMe/Blair-tunes/Glider)이 활성화
    되면 JS(renderMbNavList)가 background-image로 그 창의 실제 아이콘을 채워
    넣고 .has-icon을 붙여 제네릭 테두리/타이틀바 장식을 끈다. */
 .mb-nav-icon {
@@ -858,10 +858,6 @@ body {
 
 <!-- ▐▌ DESKTOP ICONS — 좌측 하단 ▐▌ -->
 <div class="icon-col" id="icons-left">
-  <div class="dt-icon clickable" id="icon-guestbook">
-    <img src="src/images/desktop/file-sharing.png" alt="">
-    <div class="dt-label">Guestbook</div>
-  </div>
   <div class="dt-icon clickable" id="icon-glider">
     <img src="src/images/desktop/utilities-help.png" alt="">
     <div class="dt-label">Glider 4.0</div>
@@ -1485,13 +1481,6 @@ document.getElementById('proj-cheer').addEventListener('click', () => {
 });
 makeCenteredWinDraggable(winProject, winProject.querySelector('.proj-header'), '.proj-close');
 
-// Guestbook — 아직 콘텐츠가 없어서 Works 카드와 동일한
-// "작업중입니다" 팝업을 그대로 재사용(같은 winProject 공유, 별도 창 아님).
-// Glider 4.0은 실제 게임으로 구현됨(src/js/glider.js가 자기 아이콘 클릭을 직접 배선).
-document.getElementById('icon-guestbook').addEventListener('click', () => {
-  openCenteredDraggableWin(winProject);
-});
-
 // ── "Works" 아이콘 → 프로젝트 리스트 창(Works) 화면 정중앙에 열기 ───────────
 // Figma 94:808 — 2열 그리드(모바일 1열) + 우측 픽셀 스타일 커스텀 스크롤바.
 // 전 항목 실제 프로젝트 이미지 (2026-07-22 Figma 업데이트 반영). 이미지는
@@ -1873,7 +1862,6 @@ const MB_NAV_ITEMS = [
   { winId: 'bt-win', label: 'Enjoy Music!', icon: 'src/images/desktop/music-ipod.png', open: () => document.getElementById('icon-tunes')?.click() },
   { winId: 'sudoku-win', label: 'Sudoku', icon: MB_SUDOKU_ICON, open: () => document.getElementById('icon-sudoku')?.click() },
   { winId: 'glider-win', label: 'Glider 4.0', icon: 'src/images/desktop/utilities-help.png', open: () => document.getElementById('icon-glider')?.click() },
-  { winId: 'win-project', label: 'Guestbook', icon: 'src/images/desktop/file-sharing.png', open: () => document.getElementById('icon-guestbook').click() },
 ];
 
 function isWinOpen(winId) {
