@@ -958,7 +958,7 @@ body {
       <p>이 곳에서 취향에 맞는 컨텐츠 하나 쯤은 <br>발견하셨기를 바라며...*</p>
     </div>
     <button class="about-btn" id="about-say-hi">STILL CURIOUS?</button>
-    <p class="about-updated">Last updated 26-07-09</p>
+    <p class="about-updated" id="about-updated">Last updated 26-07-09</p>
   </div>
 </div>
 
@@ -1461,6 +1461,18 @@ document.getElementById('about-say-hi').addEventListener('click', () => {
   window.open('https://www.instagram.com/whynotblair', '_blank', 'noopener,noreferrer');
 });
 makeCenteredWinDraggable(winAbout, winAbout.querySelector('.about-header'), '.about-close');
+
+// "Last updated" — 손으로 날짜 고칠 필요 없이 저장소 최신 커밋 날짜를 그대로
+// 보여줌(/api/last-updated, GitHub API를 감싼 캐시된 서버리스 함수). 실패해도
+// (로컬 정적 서버, API 불가 등) 마크업에 있던 날짜를 그대로 두고 조용히 무시.
+fetch('/api/last-updated')
+  .then((res) => (res.ok ? res.json() : null))
+  .then((body) => {
+    if (body?.date) {
+      document.getElementById('about-updated').textContent = `Last updated ${body.date}`;
+    }
+  })
+  .catch(() => {});
 
 // ── 프로젝트 상세 준비중 팝업(Figma 97:2319) — Works 카드 클릭 시 뜸 ────────
 const winProject = document.getElementById('win-project');
