@@ -20,12 +20,17 @@
   font-weight: 400; font-style: normal;
   font-display: block;
 }
-/* 실제 Mac OS9 시스템 폰트(Charcoal) — 메뉴바 우측 창 내비게이션(mb-nav)에만 적용.
-   메뉴바 나머지 항목(About me/Works/Contact/시계)은 기존 방침대로 VT323 유지 —
-   이 폰트는 오직 새로 추가하는 창 내비게이션 드롭다운에만 쓴다. */
+/* 메뉴바 전체(About me/Works/Contact/시계 + 우측 창 내비게이션)에 쓰는 UI 폰트.
+   원래 실제 Mac OS9 시스템 폰트(Charcoal)를 썼었는데, 그 파일의 출처가
+   불분명한 서드파티 재배포본이라 저작권 리스크가 있어 SIL Open Font License로
+   정식 배포되는 Fira Sans Condensed Bold로 교체(2026-08-06, Figma node
+   69:113986 스펙: 12px / line-height 14px / letter-spacing 8%). 폰트 파일은
+   Google Fonts 공식 저장소(github.com/google/fonts, ofl/firasanscondensed)에서
+   받음. */
 @font-face {
-  font-family: 'Charcoal';
-  src: url('src/fonts/CHARCOAL.TTF') format('truetype');
+  font-family: 'Fira Sans Condensed';
+  src: url('src/fonts/FiraSansCondensed-Bold.ttf') format('truetype');
+  font-weight: 700; font-style: normal;
   font-display: swap;
 }
 * { margin:0; padding:0; box-sizing:border-box; }
@@ -48,8 +53,9 @@ body {
    OS9 스타일 회색 바(#ddd) + 인셋 베벨 + 각진 hover.
    Figma의 핵심 디테일: 항목 사이 6px gap, hover 시 회색 톤다운이 아니라
    Colours/Azul(#333399) 배경 반전 + 흰 텍스트 — 클래식 Mac 메뉴 선택 그대로.
-   폰트는 Figma 스펙대로 헤더 전체 Charcoal(2026-08-02, 사용자 요청으로
-   VT323→Charcoal 전환 — 이전엔 새로 추가한 우측 내비게이션에만 적용했었음). */
+   폰트는 Figma 스펙대로 헤더 전체 Fira Sans Condensed Bold(2026-08-06,
+   Figma node 69:113986 스펙대로 Charcoal에서 교체 — 이전엔 VT323, 그 전엔
+   새로 추가한 우측 내비게이션에만 적용했었음). */
 #menu-bar {
   position:absolute; top:0; left:0; right:0; z-index:9999; height:28px;
   display:flex; align-items:center; justify-content:space-between;
@@ -63,12 +69,9 @@ body {
 .mb-tiger { width:54px; height:28px; display:block; }
 .mb-item {
   height:100%; padding:0 6px; display:flex; align-items:center;
-  /* Figma dev-mode 스펙(12px/0.42px)이 아니라 실제 브라우저 렌더링 결과(14px,
-     letter-spacing 없음)에 맞춤 — Charcoal은 희귀 폰트라 Figma가 dev-mode
-     스펙을 뽑을 때 폰트를 못 읽고 폴백 폰트 기준으로 수치를 냈을 가능성이 큼,
-     실제 폰트로 렌더링하면 그 스펙대로는 작고 답답해 보임(2026-08-02, 사용자가
-     육안 비교로 다르다고 지적해서 재측정 후 수정). */
-  font-family:'Charcoal','Tahoma',sans-serif; font-size:14px; line-height:1.2; letter-spacing:normal; color:#262626;
+  /* Figma node 69:113986 스펙 그대로: Fira Sans Condensed Bold, 12px,
+     line-height 14px, letter-spacing 8%(=0.96px, 12px 기준 0.08em). */
+  font-family:'Fira Sans Condensed','Tahoma',sans-serif; font-weight:700; font-size:12px; line-height:14px; letter-spacing:0.08em; color:#262626;
   cursor:default; user-select:none;
 }
 .mb-item:hover { background:#339; color:#fff; }
@@ -76,7 +79,7 @@ body {
 
 /* ── 창 내비게이션(mb-nav) — 레퍼런스 구현의 "Home" 버튼과 동일한 역할.
    Figma Molecule/Menu Bar(53:118679)의 RIGHT MENU "Finder" 항목 그대로:
-   16px 아이콘 + Charcoal 12px 텍스트, hover는 다른 메뉴 항목과 같은 Azul(#339)
+   16px 아이콘 + Fira Sans Condensed Bold 12px 텍스트, hover는 다른 메뉴 항목과 같은 Azul(#339)
    반전. 클릭하면 현재 열려있는 모든 창(About/Works/Film/AI/CU-SeeMe/
    Blair-tunes/Sudoku/Guestbook) 목록이 드롭다운으로 뜨고, 항목을 고르면 그
    창을 열거나 맨 앞으로 가져온다 — 데스크탑 아이콘을 직접 클릭하는 것과
@@ -104,8 +107,9 @@ body {
 .mb-nav-toggle {
   display:flex; align-items:center; gap:4px;
   border:none; background:none; cursor:pointer;
-  /* 폰트는 .mb-item에서 상속(14px Charcoal) — 여기서 따로 지정하면 .mb-item보다
-     늦게 선언돼서 덮어써버리므로 레이아웃 리셋용 속성만 남김. */
+  /* 폰트는 .mb-item에서 상속(12px Fira Sans Condensed Bold) — 여기서 따로
+     지정하면 .mb-item보다 늦게 선언돼서 덮어써버리므로 레이아웃 리셋용
+     속성만 남김. */
 }
 .mb-nav.open .mb-nav-toggle { background:#339; color:#fff; }
 /* 기본(아이콘 없는 창 — About Me/Sudoku)은 CSS로 그린 제네릭 미니 윈도우 아이콘,
@@ -129,7 +133,7 @@ body {
 .mb-nav-item {
   display:flex; align-items:center; gap:6px;
   padding:3px 10px;
-  font-family:'Charcoal','Tahoma',sans-serif; font-size:14px; line-height:1.2; letter-spacing:normal;
+  font-family:'Fira Sans Condensed','Tahoma',sans-serif; font-weight:700; font-size:12px; line-height:14px; letter-spacing:0.08em;
   color:#262626; cursor:pointer; white-space:nowrap;
 }
 .mb-nav-item:hover { background:#339; color:#fff; }
