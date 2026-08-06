@@ -21,9 +21,7 @@
   font-weight: 400; font-style: normal;
   font-display: block;
 }
-/* charliedean.com 실측 — 메뉴바 우측 창 내비게이션(mb-nav)에만 적용.
-   실제 Mac OS9 시스템 폰트, charliedean.com이 자기 사이트에 /fonts/CHARCOAL.TTF로
-   직접 호스팅해서 쓰고 있는 걸 그대로 받아옴(개인 포트폴리오 용도 — 사용자 확인 완료).
+/* 실제 Mac OS9 시스템 폰트(Charcoal) — 메뉴바 우측 창 내비게이션(mb-nav)에만 적용.
    메뉴바 나머지 항목(About me/Works/Contact/시계)은 기존 방침대로 VT323 유지 —
    이 폰트는 오직 새로 추가하는 창 내비게이션 드롭다운에만 쓴다. */
 @font-face {
@@ -66,16 +64,18 @@ body {
 .mb-tiger { width:54px; height:28px; display:block; }
 .mb-item {
   height:100%; padding:0 6px; display:flex; align-items:center;
-  /* charliedean.com 실측 computed 값 그대로 — Figma dev-mode 스펙(12px/0.42px)이
-     아니라 실제 라이브 사이트가 렌더링하는 값(14px, letter-spacing 없음)에 맞춤
-     (2026-08-02, 사용자가 육안 비교로 다르다고 지적해서 재측정 후 수정). */
+  /* Figma dev-mode 스펙(12px/0.42px)이 아니라 실제 브라우저 렌더링 결과(14px,
+     letter-spacing 없음)에 맞춤 — Charcoal은 희귀 폰트라 Figma가 dev-mode
+     스펙을 뽑을 때 폰트를 못 읽고 폴백 폰트 기준으로 수치를 냈을 가능성이 큼,
+     실제 폰트로 렌더링하면 그 스펙대로는 작고 답답해 보임(2026-08-02, 사용자가
+     육안 비교로 다르다고 지적해서 재측정 후 수정). */
   font-family:'Charcoal','Tahoma',sans-serif; font-size:14px; line-height:1.2; letter-spacing:normal; color:#262626;
   cursor:default; user-select:none;
 }
 .mb-item:hover { background:#339; color:#fff; }
 .mb-item.clickable { cursor:pointer; }
 
-/* ── 창 내비게이션(mb-nav) — charliedean.com "Home" 버튼과 동일한 역할.
+/* ── 창 내비게이션(mb-nav) — 레퍼런스 구현의 "Home" 버튼과 동일한 역할.
    Figma Molecule/Menu Bar(53:118679)의 RIGHT MENU "Finder" 항목 그대로:
    16px 아이콘 + Charcoal 12px 텍스트, hover는 다른 메뉴 항목과 같은 Azul(#339)
    반전. 클릭하면 현재 열려있는 모든 창(About/Works/Film/AI/CU-SeeMe/
@@ -178,7 +178,7 @@ body {
   background:#000;
   display:flex; flex-direction:column; align-items:center;
   border:1px solid #262626;
-  /* Mac OS9 WindowChrome — charliedean.com 실측(computed) 그대로: 1px 인셋 베벨 + 2px 하드 섀도 */
+  /* Mac OS9 WindowChrome — 실측(computed) 그대로: 1px 인셋 베벨 + 2px 하드 섀도 */
   box-shadow: inset 1px 1px 0 0 #eee, inset -1px -1px 0 0 #999, 2px 2px 0 0 rgba(0,0,0,0.5);
 }
 .cu-header {
@@ -192,7 +192,7 @@ body {
   /* Blair-tunes와 동일 정책 — 헤더 배경을 회색으로 고정하지 않고 창 콘텐츠 배경(검정)과 통일 */
   background:#000; border-bottom:1px solid #262626;
   /* 창 외곽의 인셋 하이라이트(좌상단 화이트/우측 그레이)가 헤더 자체 배경에
-     가려지고 있어서, 헤더에도 동일하게 겹쳐 그려줌(charliedean.com 프레임과 이어지게) */
+     가려지고 있어서, 헤더에도 동일하게 겹쳐 그려줌(프레임과 이어지게) */
   box-shadow: inset 1px 1px 0 0 #eee, inset -1px 0 0 0 #999;
 }
 .cu-win.dragging .cu-header { cursor:grabbing; }
@@ -214,7 +214,7 @@ body {
 .cu-close {
   flex-shrink:0;
   width:18px; height:18px; padding:0; cursor:pointer;
-  /* charliedean.com 실측(computed) 그대로 — 실제 border(상/좌 회색, 우/하 밝은색)를
+  /* 실측(computed) 그대로 — 실제 border(상/좌 회색, 우/하 밝은색)를
      box-shadow 베벨(2px 인셋)과 겹쳐서 훨씬 또렷한 입체감을 냄 */
   border-style:solid; border-width:1px; border-color:grey #f1f1f1 #f1f1f1 grey;
   background-image: linear-gradient(153deg, #9a9a9a, #f1f1f1);
@@ -273,7 +273,7 @@ body {
   background:#00F; color:#fff;
   display:flex; flex-direction:column; align-items:center; gap:16px;
   padding-bottom:24px;
-  /* Mac OS9 WindowChrome — charliedean.com 실측(computed) 그대로: 1px 인셋 베벨 + 2px 하드 섀도.
+  /* Mac OS9 WindowChrome — 실측(computed) 그대로: 1px 인셋 베벨 + 2px 하드 섀도.
      background(#00F)와 콘텐츠는 그대로 유지, 프레임/베벨만 교체. */
   border:1px solid #262626;
   box-shadow: inset 1px 1px 0 0 #eee, inset -1px -1px 0 0 #999, 2px 2px 0 0 rgba(0,0,0,0.5);
@@ -289,7 +289,7 @@ body {
   /* Mac OS9 타이틀바 — 모든 창 공통 회색(Figma Grays/400), 콘텐츠와 경계선으로 분리 */
   background:#ccc; border-bottom:1px solid #262626;
   /* 창 외곽의 인셋 하이라이트(좌상단 화이트/우측 그레이)가 헤더 자체 배경에
-     가려지고 있어서, 헤더에도 동일하게 겹쳐 그려줌(charliedean.com 프레임과 이어지게) */
+     가려지고 있어서, 헤더에도 동일하게 겹쳐 그려줌(프레임과 이어지게) */
   box-shadow: inset 1px 1px 0 0 #eee, inset -1px 0 0 0 #999;
 }
 .about-win.dragging .about-header { cursor:grabbing; }
@@ -367,7 +367,7 @@ body {
   background:#00F; color:#fff;
   display:flex; flex-direction:column; align-items:center; gap:16px;
   padding-bottom:24px;
-  /* Mac OS9 WindowChrome — charliedean.com 실측 그대로, 헤더 배경은 창 고유색(블루) 유지 */
+  /* Mac OS9 WindowChrome — 실측 그대로, 헤더 배경은 창 고유색(블루) 유지 */
   border:1px solid #262626;
   box-shadow: inset 1px 1px 0 0 #eee, inset -1px -1px 0 0 #999, 2px 2px 0 0 rgba(0,0,0,0.5);
 }
@@ -381,7 +381,7 @@ body {
   cursor:grab; touch-action:none; user-select:none; -webkit-user-select:none;
   background:#ccc; border-bottom:1px solid #262626;
   /* 창 외곽의 인셋 하이라이트(좌상단 화이트/우측 그레이)가 헤더 자체 배경에
-     가려지고 있어서, 헤더에도 동일하게 겹쳐 그려줌(charliedean.com 프레임과 이어지게) */
+     가려지고 있어서, 헤더에도 동일하게 겹쳐 그려줌(프레임과 이어지게) */
   box-shadow: inset 1px 1px 0 0 #eee, inset -1px 0 0 0 #999;
 }
 .proj-popup.dragging .proj-header { cursor:grabbing; }
@@ -498,7 +498,7 @@ body {
   cursor:grab; touch-action:none; user-select:none; -webkit-user-select:none;
   background:#000; border-bottom:1px solid #262626;
   /* 창 외곽의 인셋 하이라이트(좌상단 화이트/우측 그레이)가 헤더 자체 배경에
-     가려지고 있어서, 헤더에도 동일하게 겹쳐 그려줌(charliedean.com 프레임과 이어지게) */
+     가려지고 있어서, 헤더에도 동일하게 겹쳐 그려줌(프레임과 이어지게) */
   box-shadow: inset 1px 1px 0 0 #eee, inset -1px 0 0 0 #999;
 }
 .works-win.dragging .works-header { cursor:grabbing; }
@@ -581,7 +581,7 @@ body {
   cursor:grab; touch-action:none; user-select:none; -webkit-user-select:none;
   background:#000; border-bottom:1px solid #262626;
   /* 창 외곽의 인셋 하이라이트(좌상단 화이트/우측 그레이)가 헤더 자체 배경에
-     가려지고 있어서, 헤더에도 동일하게 겹쳐 그려줌(charliedean.com 프레임과 이어지게) */
+     가려지고 있어서, 헤더에도 동일하게 겹쳐 그려줌(프레임과 이어지게) */
   box-shadow: inset 1px 1px 0 0 #eee, inset -1px 0 0 0 #999;
 }
 .film-win.dragging .film-header { cursor:grabbing; }
@@ -664,7 +664,7 @@ body {
   cursor:grab; touch-action:none; user-select:none; -webkit-user-select:none;
   background:#000; border-bottom:1px solid #262626;
   /* 창 외곽의 인셋 하이라이트(좌상단 화이트/우측 그레이)가 헤더 자체 배경에
-     가려지고 있어서, 헤더에도 동일하게 겹쳐 그려줌(charliedean.com 프레임과 이어지게) */
+     가려지고 있어서, 헤더에도 동일하게 겹쳐 그려줌(프레임과 이어지게) */
   box-shadow: inset 1px 1px 0 0 #eee, inset -1px 0 0 0 #999;
 }
 .ai-win.dragging .ai-header { cursor:grabbing; }
@@ -690,7 +690,7 @@ body {
   box-shadow: inset 0 0 0 1px #262626, inset 2px 2px 0 0 #f1f1f1, inset -2px -2px 0 0 gray;
 }
 .ai-close svg { display:none; }
-/* charliedean.com 실측(.titlebar-button:active) 그대로 — 눌렀을 때 밝기만 낮춰서
+/* 실측(.titlebar-button:active) 그대로 — 눌렀을 때 밝기만 낮춰서
    기존 베벨과 합쳐지며 움푹 들어간 느낌을 줌 */
 .about-close:active, .cu-close:active, .proj-close:active,
 .works-close:active, .film-close:active, .ai-close:active {
@@ -718,10 +718,10 @@ body {
   .ai-grid { grid-template-columns:1fr; }
 }
 
-/* ══ Pixel Scrollbar — charliedean.com 실측(::-webkit-scrollbar 렌더 결과) 그대로 ══
+/* ══ Pixel Scrollbar — 실측(::-webkit-scrollbar 렌더 결과) 그대로 ══
    Works/Film/AI Images/Blair-tunes 트랙리스트가 전부 이 클래스를 공유한다(design.md
    문서화). 16px 폭 — 베벨이 폭 대비 너무 얇으면(8px 이하) 안티앨리어싱에 묻혀
-   입체감이 사라지는 걸 실측 비교로 확인, Figma/charliedean 실제 크기 그대로 적용.
+   입체감이 사라지는 걸 실측 비교로 확인, Figma 스펙 대비 실제 크기 그대로 적용.
    스크롤이 필요 없는 콘텐츠(뷰포트보다 짧음)에서는 [hidden]으로 핸들 자체를
    완전히 숨긴다 — "스크롤할 게 없는데 핸들만 떠 있는" 상태를 만들지 않는다. */
 .pixel-scrollbar {
@@ -744,7 +744,7 @@ body {
 .pixel-scrollbar-handle {
   position:absolute; left:1px; right:1px; min-height:20px;
   box-sizing:border-box;
-  /* charliedean.com 실측 그대로 — #99f 채우기 + 좌상단 라벤더 하이라이트 밴드 +
+  /* 실측 그대로 — #99f 채우기 + 좌상단 라벤더 하이라이트 밴드 +
      가로 리지 그립 텍스처(scrollhandle.png 9x9 패턴을 줄무늬로 재현) */
   background-color:#99f;
   border:1px solid #262626;
@@ -1824,7 +1824,7 @@ document.getElementById('icon-seeme').addEventListener('click', () => {
   if (!camStream) initCamera();
 });
 
-// ── 메뉴바 우측 창 내비게이션(mb-nav) — charliedean.com "Home" 버튼(실제로는
+// ── 메뉴바 우측 창 내비게이션(mb-nav) — 레퍼런스 구현의 "Home" 버튼(실제로는
 // 클래식 Mac OS9 "Application/Windows 메뉴") 재구현. 각 항목은 실제 데스크탑
 // 아이콘의 click()을 그대로 호출해서 기존 열기 로직을 하나도 중복 구현하지
 // 않는다. "현재 열려있는 창 중 가장 앞(z-index 최대)"을 active로 굵게 표시하고
