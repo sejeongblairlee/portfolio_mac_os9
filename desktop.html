@@ -1218,8 +1218,19 @@ function layoutWindows() {
 }
 layoutWindows();
 window.addEventListener('resize', layoutWindows);
-// 초기 포커스: Local 창 (클래식 OS — 항상 하나는 활성)
-requestAnimationFrame(() => focusWin(document.getElementById('win-local')));
+// 초기 상태: Works도 기본으로 같이 열어두되 맨 밑에 깔리게 — CU-SeeMe 두 창보다
+// 먼저 openCenteredDraggableWin()으로 z-index를 받아야 더 낮은 값이 됨.
+// openCenteredDraggableWin/updateWorksScrollbar는 파일 아래쪽(Works 섹션)에서
+// 선언되지만 함수 선언이라 호이스팅되고, 이 콜백은 RAF라 스크립트 전체가
+// 동기 실행을 마친 뒤에야 실행되므로 아래쪽 const(winWorks 등)도 이미 준비돼 있음.
+requestAnimationFrame(() => {
+  openCenteredDraggableWin(document.getElementById('win-works'));
+  updateWorksScrollbar();
+  // CU-SeeMe 두 창을 Works보다 위로 — Remote 먼저, Local 마지막(icon-seeme
+  // 재오픈 로직과 동일 순서, 최종적으로 Local이 맨 위=기본 포커스).
+  focusWin(document.getElementById('win-you'));
+  focusWin(document.getElementById('win-local'));
+});
 
 // ── 창 드래그 + 포커스 z-index (포인터 이벤트 — 마우스/터치 공용) ──────────
 // 10씩 증가 — blairtunes.js가 자기 YT iframe 도크를 "호스트 창 z-index + 1"에
