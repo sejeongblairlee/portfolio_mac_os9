@@ -165,3 +165,9 @@
 @media (max-width: 480px) {
   .sudoku-grid { width: 270px; height: 270px; }
 }
+
+/* 창 테두리 하이라이트 — ::after로 content 위에 렌더링 */
+.sudoku-win::after {
+  content: ''; position: absolute; inset: 0; pointer-events: none; z-index: 9999;
+  box-shadow: inset 1px 1px 0 0 #f1f1f1, inset -1px -1px 0 0 #999;
+}

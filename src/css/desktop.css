@@ -1,0 +1,910 @@
+@font-face {
+  font-family: 'VT323';
+  src: url('../fonts/VT323-Regular.ttf') format('truetype');
+  font-display: block;
+}
+@font-face {
+  font-family: 'EB Garamond';
+  src: url('../fonts/EBGaramond-Regular.ttf') format('truetype');
+  font-weight: 400; font-style: normal;
+  font-display: block;
+}
+/* 실제 Mac OS9 시스템 폰트(Charcoal) — 메뉴바 우측 창 내비게이션(mb-nav)에만 적용.
+   메뉴바 나머지 항목(About me/Works/Contact/시계)은 기존 방침대로 VT323 유지 —
+   이 폰트는 오직 새로 추가하는 창 내비게이션 드롭다운에만 쓴다. */
+@font-face {
+  font-family: 'Charcoal';
+  src: url('../fonts/CHARCOAL.TTF') format('truetype');
+  font-display: swap;
+}
+* { margin:0; padding:0; box-sizing:border-box; }
+/* 데스크탑 배경 — Figma Mac-OS-9-UI-Kit(node 20:110744, "Default" 패턴,
+   클래식 Mac OS9 기본 배경 중 하나인 보라색 세일보트 텍스처)로 교체
+   (2026-08-03, 이전엔 node 73:1023 "macOS Background"였음). 타일링 대신
+   화면 전체를 꽉 채우는 방식 유지 — background-size:cover로 뷰포트 비율과
+   무관하게 잘리는 부분만 생기고 늘어나거나 여백이 남지 않게, center 고정으로
+   어떤 해상도에서도 항상 패턴 중심이 보이게 처리. */
+body {
+  background:#6362a0 url('../images/desktop/os9-wallpaper-default.png') no-repeat center center;
+  background-size: cover;
+  width:100vw; height:100vh; overflow:hidden;
+  font-family:'Pretendard',-apple-system,sans-serif;
+}
+
+/* ══ Menu Bar — Figma Mac-OS-9-UI-Kit 실측(node 53:118679, Molecule/Menu Bar) 그대로,
+   폰트만 VT323(사이트 픽셀 폰트) 유지 ══
+   기존엔 배경도 없고(투명) 둥근 hover 필/Pretendard로 "멀끔한 최신 OS" 느낌이었던 걸,
+   OS9 스타일 회색 바(#ddd) + 인셋 베벨 + 각진 hover.
+   Figma의 핵심 디테일: 항목 사이 6px gap, hover 시 회색 톤다운이 아니라
+   Colours/Azul(#333399) 배경 반전 + 흰 텍스트 — 클래식 Mac 메뉴 선택 그대로.
+   폰트는 Figma 스펙대로 헤더 전체 Charcoal(2026-08-02, 사용자 요청으로
+   VT323→Charcoal 전환 — 이전엔 새로 추가한 우측 내비게이션에만 적용했었음). */
+#menu-bar {
+  position:absolute; top:0; left:0; right:0; z-index:9999; height:28px;
+  display:flex; align-items:center; justify-content:space-between;
+  padding:0 8px;
+  background:#ddd;
+  box-shadow: inset 1px 1px 0 0 #f1f1f1, inset -1px -1px 0 0 #bbb;
+}
+.mb-lead { display:flex; align-items:center; height:100%; gap:6px; }
+/* 54px = 크롭된 lottie 렌더 폭(~37.7px) + 좌우 8px씩 — 높이(28px)는 그대로,
+   좌우 여백만 줄임(tiger-run.js의 viewBox 크롭과 세트, 2026-08-02). */
+.mb-tiger { width:54px; height:28px; display:block; }
+.mb-item {
+  height:100%; padding:0 6px; display:flex; align-items:center;
+  /* Figma dev-mode 스펙(12px/0.42px)이 아니라 실제 브라우저 렌더링 결과(14px,
+     letter-spacing 없음)에 맞춤 — Charcoal은 희귀 폰트라 Figma가 dev-mode
+     스펙을 뽑을 때 폰트를 못 읽고 폴백 폰트 기준으로 수치를 냈을 가능성이 큼,
+     실제 폰트로 렌더링하면 그 스펙대로는 작고 답답해 보임(2026-08-02, 사용자가
+     육안 비교로 다르다고 지적해서 재측정 후 수정). */
+  font-family:'Charcoal','Tahoma',sans-serif; font-size:14px; line-height:1.2; letter-spacing:normal; color:#262626;
+  cursor:default; user-select:none;
+}
+.mb-item:hover { background:#339; color:#fff; }
+.mb-item.clickable { cursor:pointer; }
+
+/* ── 창 내비게이션(mb-nav) — 레퍼런스 구현의 "Home" 버튼과 동일한 역할.
+   Figma Molecule/Menu Bar(53:118679)의 RIGHT MENU "Finder" 항목 그대로:
+   16px 아이콘 + Charcoal 12px 텍스트, hover는 다른 메뉴 항목과 같은 Azul(#339)
+   반전. 클릭하면 현재 열려있는 모든 창(About/Works/Film/AI/CU-SeeMe/
+   Blair-tunes/Sudoku) 목록이 드롭다운으로 뜨고, 항목을 고르면 그
+   창을 열거나 맨 앞으로 가져온다 — 데스크탑 아이콘을 직접 클릭하는 것과
+   완전히 같은 동작(각 항목이 실제 아이콘의 click()을 그대로 호출). ── */
+.mb-trail { display:flex; align-items:center; height:100%; gap:6px; }
+/* Figma Atom/Menu bar resizer(49:25533) 실측 재현 — 바깥은 인셋 베벨 패널
+   (좌상단 밝게/우하단 어둡게), 안쪽엔 대각선 베벨 도트 4개가 세로로.
+   기존엔 그냥 1px 선 하나였는데 Figma 원본과 너무 달라서(사용자 지적) 교체.
+   높이는 Figma 원본(18px, 20px 바 기준)이 아니라 100% — 우리 메뉴바는 28px라
+   고정 18px로 두면 위아래 여백이 눈에 띄게 남아서(사용자 지적) 바 전체 높이를
+   꽉 채우도록 바꾸고, 도트 4개는 그 안에서 세로 중앙 정렬. */
+.mb-resizer {
+  position:relative; width:6px; height:100%; flex-shrink:0;
+  box-shadow: inset 1px 1px 0 0 #fff, inset -1px -1px 0 0 #999;
+}
+.mb-resizer i {
+  position:absolute; left:2px; width:2px; height:2px;
+  background:linear-gradient(135deg, #999 0%, #bbb 50%, #fff 100%);
+}
+.mb-resizer i:nth-child(1) { top:8px; }
+.mb-resizer i:nth-child(2) { top:11px; }
+.mb-resizer i:nth-child(3) { top:14px; }
+.mb-resizer i:nth-child(4) { top:17px; }
+.mb-nav { position:relative; height:100%; }
+.mb-nav-toggle {
+  display:flex; align-items:center; gap:4px;
+  border:none; background:none; cursor:pointer;
+  /* 폰트는 .mb-item에서 상속(14px Charcoal) — 여기서 따로 지정하면 .mb-item보다
+     늦게 선언돼서 덮어써버리므로 레이아웃 리셋용 속성만 남김. */
+}
+.mb-nav.open .mb-nav-toggle { background:#339; color:#fff; }
+/* 기본(아이콘 없는 창 — About Me/Sudoku)은 CSS로 그린 제네릭 미니 윈도우 아이콘,
+   실제 아이콘이 있는 창(Works/Film/AI/CU-SeeMe/Blair-tunes)이 활성화
+   되면 JS(renderMbNavList)가 background-image로 그 창의 실제 아이콘을 채워
+   넣고 .has-icon을 붙여 제네릭 테두리/타이틀바 장식을 끈다. */
+.mb-nav-icon {
+  width:14px; height:14px; flex-shrink:0;
+  background-color:#fff; background-size:cover; background-position:center;
+  border:1px solid #262626;
+  box-shadow: inset 0 3px 0 0 #262626;   /* 위쪽 타이틀바 줄 하나 — 미니 윈도우 아이콘 */
+}
+.mb-nav-icon.has-icon { border:none; box-shadow:none; background-color:transparent; }
+.mb-nav-list {
+  position:absolute; top:100%; right:0; margin-top:1px;
+  min-width:168px; background:#fff; border:1px solid #262626;
+  box-shadow: 2px 2px 0 0 rgba(0,0,0,0.35);
+  padding:2px 0; list-style:none; z-index:10000;
+}
+.mb-nav-list[hidden] { display:none; }
+.mb-nav-item {
+  display:flex; align-items:center; gap:6px;
+  padding:3px 10px;
+  font-family:'Charcoal','Tahoma',sans-serif; font-size:14px; line-height:1.2; letter-spacing:normal;
+  color:#262626; cursor:pointer; white-space:nowrap;
+}
+.mb-nav-item:hover { background:#339; color:#fff; }
+.mb-nav-item.active { font-weight:700; }
+/* cover — music-ipod.png는 원본 캔버스가 실제 아이콘보다 훨씬 넓어서(좌우
+   여백 78%) contain으로는 14px 박스 안에서 아이콘이 너무 작게 보임(사용자
+   지적) — 데스크탑의 큰 아이콘(.dt-icon.big img)이 이미 cover를 쓰고 있는
+   것과 통일. 나머지 아이콘들은 원래 캔버스가 거의 꽉 차 있어서(94~100%)
+   cover로 바꿔도 시각적 차이 없음. */
+.mb-nav-item-icon { width:14px; height:14px; flex-shrink:0; object-fit:cover; }
+.mb-nav-item-icon-blank { width:14px; height:14px; flex-shrink:0; }
+@media (max-width:768px) {
+  #clock { display:none; }   /* 모바일에서는 메뉴바 우측 날짜/시간 숨김 */
+  .mb-resizer { display:none; }
+}
+
+/* ══ Desktop Icons — 우측 상단 / 좌측 하단 ══ */
+.icon-col {
+  position:absolute; width:80px; display:flex; flex-direction:column;
+  gap:32px; align-items:center;
+}
+#icons-right { right:30px; top:56px; }
+#icons-left  { left:30px;  bottom:40px; }
+.dt-icon { display:flex; flex-direction:column; gap:8px; align-items:center; width:100%; cursor:default; }
+.dt-icon img { width:48px; height:48px; object-fit:contain; image-rendering:auto; display:block; }
+.dt-icon.big img { width:80px; height:80px; object-fit:cover; }  /* Figma 81:357 — 80×80 cover 크롭 */
+.dt-label {
+  background:rgba(0,0,0,0.1); width:100%; text-align:center;
+  font-family:'VT323',monospace; font-size:16px; line-height:0.98;
+  letter-spacing:-0.8px; color:#fff; padding:1px 0;
+}
+/* 호버 — 클래식 맥 아이콘 선택 반전 */
+.dt-icon:hover .dt-label { background:#000; color:#fff; }
+.dt-icon:hover img { filter:brightness(0.78) contrast(1.05); }
+.dt-icon:active img { filter:brightness(0.6); }
+.dt-icon.clickable { cursor:pointer; }
+
+/* ══ CU-SeeMe Window — Figma 65:796 / 77:501 ══
+   ══ Mac OS9 WindowChrome 시험 적용 2단계 (Figma Mac-OS-9-UI-Kit, node 65:97644 Molecule/Window) ══
+   About Me와 동일한 정책 — 헤더 배경은 창 고유색(검정)을 그대로 두고,
+   테두리/베벨/핀스트라이프/close box 구조만 OS9 레퍼런스를 반영. */
+.cu-win {
+  /* design.md: CU-SeeMe 팝업 자체 사이징 — 최대 320px, 좁으면 세이프 에어리어만큼 축소 */
+  position:absolute; width:min(320px, calc(100vw - 40px)); max-width:320px;
+  background:#000;
+  display:flex; flex-direction:column; align-items:center;
+  border:1px solid #262626;
+  /* Mac OS9 WindowChrome — 실측(computed) 그대로: 1px 인셋 베벨 + 2px 하드 섀도 */
+  box-shadow: inset 1px 1px 0 0 #eee, inset -1px -1px 0 0 #999, 2px 2px 0 0 rgba(0,0,0,0.5);
+}
+.cu-header {
+  height:26px; width:100%; flex-shrink:0;
+  /* 3열 그리드(1fr auto 1fr) — 닫기 버튼이 왼쪽에만 있어서 타이틀이 진짜
+     중앙에서 밀려있던 문제 수정(.works-header와 동일한 방식, 2026-08-02). */
+  display:grid; grid-template-columns:1fr auto 1fr; align-items:center;
+  gap:7px;
+  padding:4px;
+  cursor:grab; touch-action:none; user-select:none; -webkit-user-select:none;
+  /* Blair-tunes와 동일 정책 — 헤더 배경을 회색으로 고정하지 않고 창 콘텐츠 배경(검정)과 통일 */
+  background:#000; border-bottom:1px solid #262626;
+  /* 창 외곽의 인셋 하이라이트(좌상단 화이트/우측 그레이)가 헤더 자체 배경에
+     가려지고 있어서, 헤더에도 동일하게 겹쳐 그려줌(프레임과 이어지게) */
+  box-shadow: inset 1px 1px 0 0 #eee, inset -1px 0 0 0 #999;
+}
+.cu-win.dragging .cu-header { cursor:grabbing; }
+.cu-header-side { display:flex; align-items:center; gap:7px; height:100%; min-width:0; }
+.cu-header-side-right { justify-content:flex-end; }
+.cu-header-pinstripe {
+  flex:1; min-width:8px; height:19px;
+  /* 반투명 화이트 스트라이프 — 검정 배경 위에서 핀스트라이프 텍스처로 보이게 */
+  background-color:rgba(255,255,255,0.1);
+  background-image: repeating-linear-gradient(to bottom, transparent 0, transparent 1px, rgba(255,255,255,0.45) 1px, rgba(255,255,255,0.45) 2px);
+  border-left:1px solid rgba(255,255,255,0.25); border-right:1px solid rgba(0,0,0,0.4);
+}
+.cu-title {
+  flex-shrink:1; min-width:0; text-align:center; white-space:nowrap;
+  overflow:hidden; text-overflow:ellipsis;
+  font-family:'VT323',monospace; font-size:16px; line-height:16px;
+  letter-spacing:-0.8px; color:#fff;
+}
+.cu-close {
+  flex-shrink:0;
+  width:18px; height:18px; padding:0; cursor:pointer;
+  /* 실측(computed) 그대로 — 실제 border(상/좌 회색, 우/하 밝은색)를
+     box-shadow 베벨(2px 인셋)과 겹쳐서 훨씬 또렷한 입체감을 냄 */
+  border-style:solid; border-width:1px; border-color:grey #f1f1f1 #f1f1f1 grey;
+  background-image: linear-gradient(153deg, #9a9a9a, #f1f1f1);
+  box-shadow: inset 0 0 0 1px #262626, inset 2px 2px 0 0 #f1f1f1, inset -2px -2px 0 0 gray;
+}
+.cu-close svg { display:none; }
+.cu-video {
+  /* design.md: 비디오 비율 3:2 고정 — 팝업 폭에 따라 함께 스케일, 왜곡 금지.
+     상하좌우 4px 인셋 — 창 프레임의 흰색 1px 인셋 하이라이트 라인과 영상이
+     겹쳐 보이지 않게 여백을 둠. */
+  width:calc(100% - 8px); aspect-ratio:3/2; background:#fff;
+  margin:4px 4px 4px;
+  border:1px solid #000; border-radius:4px; overflow:hidden; position:relative;
+}
+.cu-video video, .cu-video canvas {
+  position:absolute; inset:0; width:100%; height:100%;
+  object-fit:cover; image-rendering:pixelated;
+}
+.cu-msg {
+  position:absolute; inset:0; display:flex; align-items:center; justify-content:center;
+  font-family:'VT323',monospace; font-size:20px; letter-spacing:-1px; color:#000; text-align:center;
+  background:#fff; text-transform:uppercase;
+}
+.cu-btns {
+  height:48px; width:100%; display:flex; align-items:flex-start;
+  justify-content:space-between; padding:8px;
+}
+.cu-btn-group { display:flex; gap:4px; align-items:center; }
+.cu-btn {
+  background:#fff; border:1px solid #000; padding:4px 8px; cursor:pointer;
+  font-family:'VT323',monospace; font-size:20px; line-height:24px; letter-spacing:-1px;
+  color:#000; text-transform:uppercase; white-space:nowrap;
+  /* 흰 배경 버튼 입체감 — bt-btn과 동일 기법, 하이라이트(흰색)는 안 보이고
+     우하단 그레이 섀도만으로 살짝 튀어나온 느낌을 줌 */
+  box-shadow: inset 1px 1px 0 0 #fff, inset -1px -1px 0 0 #999;
+}
+.cu-btn:active { background:#000; color:#fff; }
+.cu-btn.primary {
+  background:#000CEE; color:#fff; padding:4px 10px;
+  box-shadow: inset 1px 1px 0 0 rgba(255,255,255,0.4), inset -1px -1px 0 0 #000870;
+}
+.cu-btn.primary:active { background:#0008a8; }
+
+/* ══ About Me Window — Figma 77:530(최초 구현) / 169:1053(2026-07-22 재동기화),
+   헤더 "About me" 클릭 시 등장 ══
+   design.md 팝업 규칙을 따름 — 처음엔 항상 화면 정중앙(CSS fixed+translate)에
+   뜨지만(Figma 원본이 모달형 소개 카드라 CU-SeeMe식 스태거 배치 대상은 아님),
+   헤더를 끌면 다른 팝업들과 동일하게 드래그로 옮길 수 있다(공통 사용성).
+   169:1053 기준으로 본문 카피/버튼 라벨(WANNA TALK?→STILL CURIOUS?)/사진/
+   일부 자간 값 갱신 — 자간 변경분은 .about-name/.about-body 옆 주석 참조. */
+.about-win {
+  position:fixed; top:50%; left:50%; transform:translate(-50%, -50%);
+  z-index:600;
+  width:min(320px, calc(100vw - 40px)); max-width:320px;
+  max-height:calc(100vh - 40px); overflow-y:auto;
+  background:#00F; color:#fff;
+  display:flex; flex-direction:column; align-items:center; gap:16px;
+  padding-bottom:24px;
+  /* Mac OS9 WindowChrome — 실측(computed) 그대로: 1px 인셋 베벨 + 2px 하드 섀도.
+     background(#00F)와 콘텐츠는 그대로 유지, 프레임/베벨만 교체. */
+  border:1px solid #262626;
+  box-shadow: inset 1px 1px 0 0 #eee, inset -1px -1px 0 0 #999, 2px 2px 0 0 rgba(0,0,0,0.5);
+}
+.about-header {
+  height:26px; width:100%; flex-shrink:0;
+  /* 3열 그리드(1fr auto 1fr) — 닫기 버튼이 왼쪽에만 있어서 타이틀이 진짜
+     중앙에서 밀려있던 문제 수정(.works-header와 동일한 방식, 2026-08-02). */
+  display:grid; grid-template-columns:1fr auto 1fr; align-items:center;
+  gap:7px;
+  padding:4px;
+  cursor:grab; touch-action:none; user-select:none; -webkit-user-select:none;
+  /* Mac OS9 타이틀바 — 모든 창 공통 회색(Figma Grays/400), 콘텐츠와 경계선으로 분리 */
+  background:#ccc; border-bottom:1px solid #262626;
+  /* 창 외곽의 인셋 하이라이트(좌상단 화이트/우측 그레이)가 헤더 자체 배경에
+     가려지고 있어서, 헤더에도 동일하게 겹쳐 그려줌(프레임과 이어지게) */
+  box-shadow: inset 1px 1px 0 0 #eee, inset -1px 0 0 0 #999;
+}
+.about-win.dragging .about-header { cursor:grabbing; }
+.about-header-side { display:flex; align-items:center; gap:7px; height:100%; min-width:0; }
+.about-header-side-right { justify-content:flex-end; }
+.about-header-pinstripe {
+  flex:1; min-width:8px; height:19px;
+  background-color:#ddd;
+  background-image: repeating-linear-gradient(to bottom, transparent 0, transparent 1px, #999 1px, #999 2px);
+  border-left:1px solid #eee; border-right:1px solid #c5c5c5;
+}
+.about-header-title {
+  flex-shrink:1; min-width:0; text-align:center; white-space:nowrap;
+  overflow:hidden; text-overflow:ellipsis;
+  font-family:'VT323',monospace; font-size:16px; line-height:16px;
+  letter-spacing:-0.8px; color:#262626;
+}
+.about-close {
+  flex-shrink:0;
+  width:18px; height:18px; padding:0; cursor:pointer;
+  border-style:solid; border-width:1px; border-color:grey #f1f1f1 #f1f1f1 grey;
+  background-image: linear-gradient(153deg, #9a9a9a, #f1f1f1);
+  box-shadow: inset 0 0 0 1px #262626, inset 2px 2px 0 0 #f1f1f1, inset -2px -2px 0 0 gray;
+}
+.about-close svg { display:none; }
+.about-photo {
+  width:213.333px; height:160px; flex-shrink:0; position:relative;
+  border:1px solid #000; overflow:hidden;
+}
+.about-photo img { width:100%; height:100%; object-fit:cover; display:block; }
+.about-con {
+  width:100%; display:flex; flex-direction:column; align-items:center; gap:24px;
+  padding:0 20px;
+}
+.about-tit { width:100%; display:flex; flex-direction:column; gap:8px; text-align:center; }
+.about-name {
+  /* Figma 169:1053 재동기화(2026-07-22): 자간이 -3.2px → -2.4px로 바뀜.
+     EB Garamond 40px는 Blair-tunes 타이틀(.bt-cur-tit)도 같은 -3.2px를
+     쓰던 공용 토큰이었는데, 이 창만 새 값으로 갱신하면서 둘이 갈라짐 —
+     design.md Typography 표 기준 의도적 예외로 기록해둘 것. */
+  font-family:'EB Garamond', Georgia, 'Times New Roman', serif; font-weight:400;
+  font-size:40px; line-height:40px; letter-spacing:-2px; color:#fff; width:100%;
+}
+.about-role {
+  font-family:'VT323',monospace; font-size:16px; line-height:16px;
+  letter-spacing:-0.8px; color:#fff; width:100%;
+}
+.about-body {
+  /* Figma 169:1053 재동기화(2026-07-22): 자간 -0.36px → -0.24px, opacity 80%
+     추가됨. Pretendard 12px는 원래 about-body/bt-row-txt/bt-dur/bt-cur-des가
+     전부 -0.36px로 통일돼 있던 공용 토큰이었는데, 이 창만 새 값으로 갱신하며
+     갈라짐 — design.md Typography 표 기준 의도적 예외로 기록해둘 것. */
+  width:100%; font-family:'Pretendard',-apple-system,sans-serif; font-size:12px;
+  line-height:18px; letter-spacing:-0.12px; color:#fff; text-align:center; opacity:0.8;
+}
+.about-body p { margin:0; }
+.about-btn {
+  background:#fff; border:1px solid #000; padding:4px 8px; cursor:pointer;
+  font-family:'VT323',monospace; font-size:20px; line-height:24px; letter-spacing:-1px;
+  color:#000; text-transform:uppercase; white-space:nowrap;
+}
+.about-btn:active { background:#000; color:#fff; }
+.about-updated {
+  width:100%; font-family:'VT323',monospace; font-size:16px; line-height:0.98;
+  letter-spacing:-0.8px; color:#fff; text-align:center;
+}
+
+/* ══ Project Popup — Figma 97:2319, Works 리스트에서 프로젝트 클릭 시 등장 ══
+   상세 페이지가 아직 없어서 "작업중입니다" 안내만 띄우는 자리표시자 모달.
+   About 창과 같은 작은 블루 모달 패턴(고정폭 240px, 중앙 정렬 + 드래그) 재사용. */
+.proj-popup {
+  position:fixed; top:50%; left:50%; transform:translate(-50%, -50%);
+  z-index:600;
+  width:min(240px, calc(100vw - 40px));
+  background:#00F; color:#fff;
+  display:flex; flex-direction:column; align-items:center; gap:16px;
+  padding-bottom:24px;
+  /* Mac OS9 WindowChrome — 실측 그대로, 헤더 배경은 창 고유색(블루) 유지 */
+  border:1px solid #262626;
+  box-shadow: inset 1px 1px 0 0 #eee, inset -1px -1px 0 0 #999, 2px 2px 0 0 rgba(0,0,0,0.5);
+}
+.proj-header {
+  height:26px; width:100%; flex-shrink:0;
+  /* 3열 그리드(1fr auto 1fr) — 닫기 버튼이 왼쪽에만 있어서 타이틀이 진짜
+     중앙에서 밀려있던 문제 수정(.works-header와 동일한 방식, 2026-08-02). */
+  display:grid; grid-template-columns:1fr auto 1fr; align-items:center;
+  gap:7px;
+  padding:4px;
+  cursor:grab; touch-action:none; user-select:none; -webkit-user-select:none;
+  background:#ccc; border-bottom:1px solid #262626;
+  /* 창 외곽의 인셋 하이라이트(좌상단 화이트/우측 그레이)가 헤더 자체 배경에
+     가려지고 있어서, 헤더에도 동일하게 겹쳐 그려줌(프레임과 이어지게) */
+  box-shadow: inset 1px 1px 0 0 #eee, inset -1px 0 0 0 #999;
+}
+.proj-popup.dragging .proj-header { cursor:grabbing; }
+.proj-header-side { display:flex; align-items:center; gap:7px; height:100%; min-width:0; }
+.proj-header-side-right { justify-content:flex-end; }
+.proj-header-pinstripe {
+  flex:1; min-width:8px; height:19px;
+  background-color:#ddd;
+  background-image: repeating-linear-gradient(to bottom, transparent 0, transparent 1px, #999 1px, #999 2px);
+  border-left:1px solid #eee; border-right:1px solid #c5c5c5;
+}
+.proj-header-title {
+  flex-shrink:1; min-width:0; text-align:center; white-space:nowrap;
+  overflow:hidden; text-overflow:ellipsis;
+  font-family:'VT323',monospace; font-size:16px; line-height:16px;
+  letter-spacing:-0.8px; color:#262626;
+}
+.proj-close {
+  flex-shrink:0;
+  width:18px; height:18px; padding:0; cursor:pointer;
+  border-style:solid; border-width:1px; border-color:grey #f1f1f1 #f1f1f1 grey;
+  background-image: linear-gradient(153deg, #9a9a9a, #f1f1f1);
+  box-shadow: inset 0 0 0 1px #262626, inset 2px 2px 0 0 #f1f1f1, inset -2px -2px 0 0 gray;
+}
+.proj-close svg { display:none; }
+.proj-con { width:100%; display:flex; flex-direction:column; align-items:center; gap:16px; padding:0 20px; }
+.proj-tit { width:100%; display:flex; flex-direction:column; gap:8px; text-align:center; }
+.proj-sorry {
+  font-family:'EB Garamond', Georgia, 'Times New Roman', serif; font-weight:400;
+  font-size:40px; line-height:40px; letter-spacing:-2px; color:#fff; width:100%;
+}
+.proj-msg {
+  width:100%; font-family:'Pretendard',-apple-system,sans-serif; font-size:12px;
+  line-height:18px; letter-spacing:-0.12px; color:#fff; text-align:center;
+}
+.proj-btn {
+  width:160px; background:#fff; border:1px solid #000; padding:4px 8px; cursor:pointer;
+  font-family:'VT323',monospace; font-size:20px; line-height:24px; letter-spacing:-1px;
+  color:#000; text-align:center; text-transform:uppercase; white-space:nowrap;
+}
+.proj-btn:active { background:#000; color:#fff; }
+@media (max-width:768px) {
+  /* Works/Film/AI Images는 모바일에서 풀스크린 + z-index:10000 !important —
+     그 안에서 연 Project 팝업(예: Works 카드 클릭)의 인라인 topZ 값(100번대)로는
+     절대 이길 수 없어서 팝업이 밑에 깔리는 버그가 있었음. 10000보다 높은
+     !important로 항상 위에 오게 함. */
+  .proj-popup { z-index:10001 !important; }
+}
+
+/* ══ Works Window — Figma 94:808, 데스크탑 "Works" 아이콘 클릭 시 화면 정중앙에 등장 ══
+   About 창과 같은 고정 중앙 모달 패턴이되, 폭/높이는 Figma 스펙대로 720px 고정
+   (뷰포트가 더 작으면 세이프 에어리어만큼만 축소). 리스트는 내부 스크롤 +
+   픽셀 스타일 커스텀 스크롤바(우측 8px 트랙). 풀스크린 전환 없이 항상 드래그/리사이즈
+   가능한 창 — 창 자신의 폭이 768px 이하로 좁아지면(@container) 그리드만 1열로 전환.
+   이미지가 있는 항목(DaLock/SKT T Factory/LOTTE ON)만 실제 프로젝트 이미지,
+   나머지는 Figma 원본과 동일하게 흰 정사각형 더미. */
+.works-win {
+  position:fixed; left:50%; transform:translate(-50%, -50%);
+  z-index:600;
+  width:min(960px, calc(100vw - 40px));
+  /* 세로 중앙 기준을 뷰포트 전체가 아니라 #menu-bar(28px) 아래 영역으로 옮김 —
+     top:50%로 순수 뷰포트 중앙에 맞추면 높이가 100vh-40px에 가까워질 때
+     (해상도가 낮을수록) 창 상단이 20px 세이프 에어리어까지만 올라가는데,
+     그 20px이 메뉴바 28px보다 안쪽이라 창 헤더가 메뉴바 밑에 8px 가려졌음.
+     28px 아래 영역의 중앙 = 28 + (100vh-28)/2 = 50% + 14px. */
+  top:calc(50% + 14px);
+  height:min(960px, calc(100vh - 68px));
+  min-width:360px; min-height:300px;
+  background:#000; border:1px solid #262626; color:#fff;
+  display:flex; flex-direction:column; align-items:center;
+  box-shadow: inset 1px 1px 0 0 #eee, inset -1px -1px 0 0 #999, 2px 2px 0 0 rgba(0,0,0,0.5);
+  /* 그리드 1열 전환은 뷰포트가 아니라 이 창 자신의 폭 기준(@container) —
+     항상 드래그/리사이즈 가능한 창이라 폭은 유저가 자유롭게 바꾼다. */
+  container-type: inline-size;
+}
+/* 우하단 리사이즈 핸들 — 처음엔 blairtunes(.bt-rs)처럼 완전 투명 히트 영역만
+   뒀었는데, 로직은 멀쩡한데도 "리사이즈가 안 된다"는 리포트가 있었음 — 원인은
+   버그가 아니라 순전히 발견성(discoverability): 아무 표시도 없는 16px 구역을
+   마우스로 정확히 맞히기 어려웠던 것. 클래식 Mac OS의 우하단 리사이즈 박스
+   (대각선 점 3줄, 1-2-3개)를 그려서 어디를 잡아야 하는지 보이게 함 —
+   픽셀 스크롤바 핸들과 같은 2px 사각형 도트 기법으로 그림(그라디언트 대신
+   또렷한 픽셀 느낌 유지). Works/Film/AI Images가 전부 공유하는 규칙. */
+.works-resize-handle, .film-resize-handle, .ai-resize-handle, .pv-resize-handle {
+  /* 히트 영역을 18px → 36px로 대폭 키우고 창 경계 바깥까지(-8px) 확장 —
+     이전 크기로도 실사용에서 "리사이즈가 안 된다" 리포트가 계속 있었음.
+     원인이 정밀도 문제든 다른 무엇이든, 훨씬 넉넉한 히트 영역이 더 안전함.
+     보이는 점(아래 i 태그)은 그대로 작게 유지해서 비주얼은 안 무거워짐. */
+  position:absolute; right:-8px; bottom:-8px; width:36px; height:36px;
+  cursor:nwse-resize; touch-action:none; z-index:2;
+}
+.works-resize-handle i, .film-resize-handle i, .ai-resize-handle i, .pv-resize-handle i {
+  position:absolute; width:2px; height:2px; background:rgba(255,255,255,0.65); pointer-events:none;
+}
+/* 좌/우 엣지 리사이즈 — Blair-tunes(.bt-rs-e/-w)와 동일한 투명 8px 히트 스트립.
+   너비만 바꾼다(높이는 그대로) — 하단 코너 핸들(위)과 달리 시각적 그립은
+   없고 커서(ew-resize)로만 안내. Works/Film/AI Images가 전부 공유. */
+.win-rs-e, .win-rs-w {
+  position:absolute; top:0; bottom:0; width:8px; cursor:ew-resize;
+  touch-action:none; z-index:2;
+}
+.win-rs-e { right:-4px; }
+.win-rs-w { left:-4px; }
+/* Mac OS9 WindowChrome — About/CU-SeeMe와 동일 패턴, 헤더 배경은 창 고유색(검정) 유지 */
+.works-header {
+  height:26px; width:100%; flex-shrink:0;
+  /* 3열 그리드(1fr auto 1fr) — 예전엔 [닫기][핀스트라이프][타이틀][핀스트라이프]가
+     전부 한 flex row라, 왼쪽에만 있는 닫기 버튼 너비만큼 타이틀이 진짜 중앙에서
+     오른쪽으로 밀려있었다(사용자 지적). 닫기 버튼을 왼쪽 핀스트라이프와 같은
+     묶음(.works-header-side)으로 묶어서 좌/우를 동일한 1fr 컬럼에 넣으면,
+     그 안에 뭐가 들었든(닫기 버튼 유무 상관없이) 타이틀은 항상 헤더 정중앙. */
+  display:grid; grid-template-columns:1fr auto 1fr; align-items:center;
+  gap:7px;
+  padding:4px;
+  cursor:grab; touch-action:none; user-select:none; -webkit-user-select:none;
+  background:#000; border-bottom:1px solid #262626;
+  /* 창 외곽의 인셋 하이라이트(좌상단 화이트/우측 그레이)가 헤더 자체 배경에
+     가려지고 있어서, 헤더에도 동일하게 겹쳐 그려줌(프레임과 이어지게) */
+  box-shadow: inset 1px 1px 0 0 #eee, inset -1px 0 0 0 #999;
+}
+.works-win.dragging .works-header { cursor:grabbing; }
+.works-header-side { display:flex; align-items:center; gap:7px; height:100%; min-width:0; }
+.works-header-side-right { justify-content:flex-end; }
+.works-header-pinstripe {
+  flex:1; min-width:8px; height:19px;
+  background-color:rgba(255,255,255,0.1);
+  background-image: repeating-linear-gradient(to bottom, transparent 0, transparent 1px, rgba(255,255,255,0.45) 1px, rgba(255,255,255,0.45) 2px);
+  border-left:1px solid rgba(255,255,255,0.25); border-right:1px solid rgba(0,0,0,0.4);
+}
+.works-header-title {
+  flex-shrink:1; min-width:0; text-align:center; white-space:nowrap;
+  overflow:hidden; text-overflow:ellipsis;
+  font-family:'VT323',monospace; font-size:16px; line-height:16px;
+  letter-spacing:-0.8px; color:#fff;
+}
+.works-close {
+  flex-shrink:0;
+  width:18px; height:18px; padding:0; cursor:pointer;
+  border-style:solid; border-width:1px; border-color:grey #f1f1f1 #f1f1f1 grey;
+  background-image: linear-gradient(153deg, #9a9a9a, #f1f1f1);
+  box-shadow: inset 0 0 0 1px #262626, inset 2px 2px 0 0 #f1f1f1, inset -2px -2px 0 0 gray;
+}
+.works-close svg { display:none; }
+.works-row { width:100%; flex:1; min-height:0; display:flex; justify-content:center; }
+.works-scroll {
+  flex:1; min-width:0; min-height:0; overflow-y:auto; scrollbar-width:none;
+}
+.works-scroll::-webkit-scrollbar { display:none; }
+.works-grid {
+  display:grid; grid-template-columns:repeat(2, minmax(0,1fr));
+  gap:24px 20px; padding:8px 20px 20px;
+}
+.works-item { display:flex; flex-direction:column; gap:12px; align-items:center; cursor:pointer; }
+.works-thumb { width:100%; aspect-ratio:1/1; background:#fff; overflow:hidden; }
+.works-thumb img { width:100%; height:100%; object-fit:cover; display:block; }
+.works-info { width:100%; display:flex; flex-direction:column; gap:4px; text-align:center; }
+.works-title {
+  font-family:'Pretendard',-apple-system,sans-serif; font-weight:500;
+  font-size:20px; line-height:24px; letter-spacing:-0.2px; color:#fff;
+}
+.works-desc {
+  font-family:'Pretendard',-apple-system,sans-serif; font-weight:200;
+  font-size:12px; line-height:18px; letter-spacing:-0.12px; color:#fff; white-space:pre-line;
+}
+/* 창 자신의 폭이 768px 이하로 좁아지면(리사이즈든 좁은 화면이든) 그리드 1열로 —
+   풀스크린 전환은 더 이상 없음, 리사이즈 핸들도 항상 살아있다. */
+@container (max-width:768px) {
+  .works-grid { grid-template-columns:1fr; }
+}
+
+/* ══ Film Window — Figma 107:2680, 데스크탑 "and my film" 아이콘 클릭 시 화면 정중앙에 등장 ══
+   Works 창과 동일한 고정 중앙 모달 + 720px 고정(세이프 에어리어 내) + 픽셀 스크롤바
+   패턴이되, 콘텐츠는 2열 매손리(masonry) 실제 필름 사진 6장 + 텍스트 카드 1개.
+   풀스크린 전환 없이 항상 드래그/리사이즈 가능 — 창 자신의 폭이 768px 이하로
+   좁아지면(@container) 두 컬럼을 세로로 순서대로 스택.
+   우하단 핸들로 리사이즈 가능(Works와 동일 헬퍼) — 사진들은 원래 720px 기준
+   고정 px 높이였던 걸 aspect-ratio로 바꿔서(기준 컬럼폭 330px) 리사이즈해도
+   비율이 안 깨지게 함. */
+.film-win {
+  position:fixed; top:50%; left:50%; transform:translate(-50%, -50%);
+  z-index:600;
+  width:min(720px, calc(100vw - 40px));
+  height:min(720px, calc(100vh - 40px));
+  min-width:360px; min-height:300px;
+  background:#000; border:1px solid #262626; color:#fff;
+  display:flex; flex-direction:column; align-items:center;
+  box-shadow: inset 1px 1px 0 0 #eee, inset -1px -1px 0 0 #999, 2px 2px 0 0 rgba(0,0,0,0.5);
+  container-type: inline-size;
+}
+/* Mac OS9 WindowChrome — About/CU-SeeMe/Works와 동일 패턴, 헤더 배경은 창 고유색(검정) 유지 */
+.film-header {
+  height:26px; width:100%; flex-shrink:0;
+  /* 3열 그리드(1fr auto 1fr) — 닫기 버튼이 왼쪽에만 있어서 타이틀이 진짜
+     중앙에서 밀려있던 문제 수정(.works-header와 동일한 방식, 2026-08-02). */
+  display:grid; grid-template-columns:1fr auto 1fr; align-items:center;
+  gap:7px;
+  padding:4px;
+  cursor:grab; touch-action:none; user-select:none; -webkit-user-select:none;
+  background:#000; border-bottom:1px solid #262626;
+  /* 창 외곽의 인셋 하이라이트(좌상단 화이트/우측 그레이)가 헤더 자체 배경에
+     가려지고 있어서, 헤더에도 동일하게 겹쳐 그려줌(프레임과 이어지게) */
+  box-shadow: inset 1px 1px 0 0 #eee, inset -1px 0 0 0 #999;
+}
+.film-win.dragging .film-header { cursor:grabbing; }
+.film-header-side { display:flex; align-items:center; gap:7px; height:100%; min-width:0; }
+.film-header-side-right { justify-content:flex-end; }
+.film-header-pinstripe {
+  flex:1; min-width:8px; height:19px;
+  background-color:rgba(255,255,255,0.1);
+  background-image: repeating-linear-gradient(to bottom, transparent 0, transparent 1px, rgba(255,255,255,0.45) 1px, rgba(255,255,255,0.45) 2px);
+  border-left:1px solid rgba(255,255,255,0.25); border-right:1px solid rgba(0,0,0,0.4);
+}
+.film-header-title {
+  flex-shrink:1; min-width:0; text-align:center; white-space:nowrap;
+  overflow:hidden; text-overflow:ellipsis;
+  font-family:'VT323',monospace; font-size:16px; line-height:16px;
+  letter-spacing:-0.8px; color:#fff;
+}
+.film-close {
+  flex-shrink:0;
+  width:18px; height:18px; padding:0; cursor:pointer;
+  border-style:solid; border-width:1px; border-color:grey #f1f1f1 #f1f1f1 grey;
+  background-image: linear-gradient(153deg, #9a9a9a, #f1f1f1);
+  box-shadow: inset 0 0 0 1px #262626, inset 2px 2px 0 0 #f1f1f1, inset -2px -2px 0 0 gray;
+}
+.film-close svg { display:none; }
+.film-row { width:100%; flex:1; min-height:0; display:flex; justify-content:center; }
+.film-scroll {
+  flex:1; min-width:0; min-height:0; overflow-y:auto; scrollbar-width:none;
+}
+.film-scroll::-webkit-scrollbar { display:none; }
+.film-photos { display:flex; align-items:flex-start; gap:20px; padding:8px 20px 20px; width:100%; }
+.film-col { display:flex; flex-direction:column; gap:20px; flex:1; min-width:0; }
+.film-item { display:flex; flex-direction:column; gap:8px; width:100%; flex-shrink:0; }
+.film-pic { width:100%; display:block; object-fit:cover; cursor:zoom-in; }
+.film-pic.contain { object-fit:contain; }
+.film-caption {
+  width:100%; font-family:'VT323',monospace; font-size:16px; line-height:0.98;
+  letter-spacing:-0.8px; color:#fff;
+}
+.film-text-slot {
+  height:144px; width:100%; display:flex; align-items:center; justify-content:center;
+  text-align:center; font-family:'VT323',monospace; font-size:16px; line-height:0.98;
+  letter-spacing:-0.8px; color:#fff;
+}
+/* 768px이 아니라 600px — Film 기본 오픈 폭이 720px(768보다 좁음)라 768을
+   그대로 쓰면 기본 크기에서부터 이미 1열로 깨짐. 컬럼폭 공식
+   (containerWidth-60)/2 기준 600px→270px/컬럼(여유 있음), 720px 기본값에서는
+   여전히 2열(330px/컬럼, 기존 데스크탑 모습 그대로) 유지. */
+@container (max-width:600px) {
+  .film-photos { flex-direction:column; }
+}
+
+/* ══ AI Image Window — Figma 95:1675, 데스크탑 "AI Images" 아이콘 클릭 시 화면 정중앙에 등장 ══
+   Film과 같은 720px 고정 폭 + 픽셀 스크롤바 모달이되, 내부 그리드는 Works와
+   동일한 2열 CSS grid(패딩/간격 값도 동일) — 사진 5장(4:5 비율, object-cover)
+   + 텍스트 카드 1개(VT323, dt-label과 같은 -0.8px 자간) 총 6칸.
+   풀스크린 전환 없이 항상 드래그/리사이즈 가능 — 창 자신의 폭이 768px 이하로
+   좁아지면(@container) 그리드 1열로 전환.
+   중앙에서 (+24px, +24px) 오프셋 — Film과 크기(720×720)가 완전히 같아서
+   순수 정중앙(top:50%/left:50%)이면 둘 다 열었을 때 좌표가 완전히 겹친다.
+   CU-SeeMe의 ±24px 스태거와 같은 규모로 어긋나게 둠(design.md 참조). */
+.ai-win {
+  position:fixed; top:50%; left:50%; transform:translate(calc(-50% + 24px), calc(-50% + 24px));
+  z-index:600;
+  width:min(720px, calc(100vw - 40px));
+  height:min(720px, calc(100vh - 40px));
+  min-width:360px; min-height:300px;
+  background:#000; border:1px solid #262626; color:#fff;
+  display:flex; flex-direction:column; align-items:center;
+  box-shadow: inset 1px 1px 0 0 #eee, inset -1px -1px 0 0 #999, 2px 2px 0 0 rgba(0,0,0,0.5);
+  container-type: inline-size;
+}
+/* Mac OS9 WindowChrome — About/CU-SeeMe/Works/Film과 동일 패턴, 헤더 배경은 창 고유색(검정) 유지 */
+.ai-header {
+  height:26px; width:100%; flex-shrink:0;
+  /* 3열 그리드(1fr auto 1fr) — 닫기 버튼이 왼쪽에만 있어서 타이틀이 진짜
+     중앙에서 밀려있던 문제 수정(.works-header와 동일한 방식, 2026-08-02). */
+  display:grid; grid-template-columns:1fr auto 1fr; align-items:center;
+  gap:7px;
+  padding:4px;
+  cursor:grab; touch-action:none; user-select:none; -webkit-user-select:none;
+  background:#000; border-bottom:1px solid #262626;
+  /* 창 외곽의 인셋 하이라이트(좌상단 화이트/우측 그레이)가 헤더 자체 배경에
+     가려지고 있어서, 헤더에도 동일하게 겹쳐 그려줌(프레임과 이어지게) */
+  box-shadow: inset 1px 1px 0 0 #eee, inset -1px 0 0 0 #999;
+}
+.ai-win.dragging .ai-header { cursor:grabbing; }
+.ai-header-side { display:flex; align-items:center; gap:7px; height:100%; min-width:0; }
+.ai-header-side-right { justify-content:flex-end; }
+.ai-header-pinstripe {
+  flex:1; min-width:8px; height:19px;
+  background-color:rgba(255,255,255,0.1);
+  background-image: repeating-linear-gradient(to bottom, transparent 0, transparent 1px, rgba(255,255,255,0.45) 1px, rgba(255,255,255,0.45) 2px);
+  border-left:1px solid rgba(255,255,255,0.25); border-right:1px solid rgba(0,0,0,0.4);
+}
+.ai-header-title {
+  flex-shrink:1; min-width:0; text-align:center; white-space:nowrap;
+  overflow:hidden; text-overflow:ellipsis;
+  font-family:'VT323',monospace; font-size:16px; line-height:16px;
+  letter-spacing:-0.8px; color:#fff;
+}
+.ai-close {
+  flex-shrink:0;
+  width:18px; height:18px; padding:0; cursor:pointer;
+  border-style:solid; border-width:1px; border-color:grey #f1f1f1 #f1f1f1 grey;
+  background-image: linear-gradient(153deg, #9a9a9a, #f1f1f1);
+  box-shadow: inset 0 0 0 1px #262626, inset 2px 2px 0 0 #f1f1f1, inset -2px -2px 0 0 gray;
+}
+.ai-close svg { display:none; }
+/* 실측(.titlebar-button:active) 그대로 — 눌렀을 때 밝기만 낮춰서
+   기존 베벨과 합쳐지며 움푹 들어간 느낌을 줌 */
+.about-close:active, .cu-close:active, .proj-close:active,
+.works-close:active, .film-close:active, .ai-close:active {
+  filter: brightness(69%);
+}
+.ai-row { width:100%; flex:1; min-height:0; display:flex; justify-content:center; }
+.ai-scroll {
+  flex:1; min-width:0; min-height:0; overflow-y:auto; scrollbar-width:none;
+}
+.ai-scroll::-webkit-scrollbar { display:none; }
+.ai-grid {
+  display:grid; grid-template-columns:repeat(2, minmax(0,1fr));
+  gap:24px 20px; padding:8px 20px 20px;
+}
+.ai-pic { width:100%; aspect-ratio:960/1200; object-fit:cover; display:block; }
+.ai-text-cell {
+  width:100%; height:100%; display:flex; align-items:center; justify-content:center;
+  background:rgba(0,0,0,0.1);
+  font-family:'VT323',monospace; font-size:16px; line-height:0.98;
+  letter-spacing:-0.8px; color:#fff; text-align:center;
+}
+.ai-text-cell p { margin:0; }
+/* Film과 동일한 이유로 768이 아니라 600 — AI Images도 기본 오픈 폭이 720px. */
+@container (max-width:600px) {
+  .ai-grid { grid-template-columns:1fr; }
+}
+
+/* ══ Pixel Scrollbar — 실측(::-webkit-scrollbar 렌더 결과) 그대로 ══
+   Works/Film/AI Images/Blair-tunes 트랙리스트가 전부 이 클래스를 공유한다(design.md
+   문서화). 16px 폭 — 베벨이 폭 대비 너무 얇으면(8px 이하) 안티앨리어싱에 묻혀
+   입체감이 사라지는 걸 실측 비교로 확인, Figma 스펙 대비 실제 크기 그대로 적용.
+   스크롤이 필요 없는 콘텐츠(뷰포트보다 짧음)에서는 [hidden]으로 핸들 자체를
+   완전히 숨긴다 — "스크롤할 게 없는데 핸들만 떠 있는" 상태를 만들지 않는다. */
+
+/* ══ Picture Viewer — film-pic 클릭 시 Mac OS9 스타일 이미지 확대 창 ══ */
+.pv-win {
+  position:fixed; top:50%; left:50%; transform:translate(-50%, -50%);
+  z-index:2000;
+  min-width:200px;
+  display:flex; flex-direction:column;
+  border:1px solid #262626;
+  box-shadow: inset 1px 1px 0 0 #eee, inset -1px -1px 0 0 #999, 2px 2px 0 0 rgba(0,0,0,0.5);
+}
+.pv-header {
+  height:26px; width:100%; flex-shrink:0;
+  display:grid; grid-template-columns:1fr auto 1fr; align-items:center;
+  gap:7px; padding:4px;
+  cursor:grab; touch-action:none; user-select:none; -webkit-user-select:none;
+  background:#ccc; border-bottom:1px solid #262626;
+  box-shadow: inset 1px 1px 0 0 #eee, inset -1px 0 0 0 #999;
+}
+.pv-win.dragging .pv-header { cursor:grabbing; }
+.pv-header-side { display:flex; align-items:center; gap:7px; height:100%; min-width:0; }
+.pv-header-side-right { justify-content:flex-end; }
+.pv-header-pinstripe {
+  flex:1; min-width:8px; height:19px;
+  background-color:#ddd;
+  background-image: repeating-linear-gradient(to bottom, transparent 0, transparent 1px, #999 1px, #999 2px);
+  border-left:1px solid #eee; border-right:1px solid #c5c5c5;
+}
+.pv-title {
+  flex-shrink:1; min-width:0; text-align:center; white-space:nowrap;
+  overflow:hidden; text-overflow:ellipsis;
+  font-family:'VT323',monospace; font-size:16px; line-height:16px;
+  letter-spacing:-0.8px; color:#262626;
+}
+.pv-close {
+  flex-shrink:0;
+  width:18px; height:18px; padding:0; cursor:pointer;
+  border-style:solid; border-width:1px; border-color:grey #f1f1f1 #f1f1f1 grey;
+  background-image: linear-gradient(153deg, #9a9a9a, #f1f1f1);
+  box-shadow: inset 0 0 0 1px #262626, inset 2px 2px 0 0 #f1f1f1, inset -2px -2px 0 0 gray;
+}
+.pv-close svg { display:none; }
+.pv-body { overflow:hidden; }
+.pv-img { display:block; width:auto; height:auto; max-width:min(calc(100vw - 42px), 900px); max-height:calc(100vh - 80px); }
+.pv-win::after {
+  content:''; position:absolute; inset:0; pointer-events:none; z-index:9999;
+  box-shadow: inset 1px 1px 0 0 #eee, inset -1px -1px 0 0 #999;
+}
+
+/* ══ Welcome Window — 포트폴리오 인트로 팝업 ══ */
+.welcome-win {
+  position:fixed; top:50%; left:50%; transform:translate(-50%, -50%);
+  z-index:600;
+  width:min(430px, calc(100vw - 40px));
+  background:#1112ea;
+  display:flex; flex-direction:column;
+  border:1px solid #262626;
+  box-shadow: inset 1px 1px 0 0 #eee, inset -1px -1px 0 0 #999, 2px 2px 0 0 rgba(0,0,0,0.5);
+}
+.welcome-header {
+  height:26px; width:100%; flex-shrink:0;
+  display:grid; grid-template-columns:1fr auto 1fr; align-items:center;
+  gap:7px; padding:4px;
+  cursor:grab; touch-action:none; user-select:none; -webkit-user-select:none;
+  background:#1112ea; border-bottom:1px solid rgba(255,255,255,0.2);
+  box-shadow: none;
+}
+.welcome-win.dragging .welcome-header { cursor:grabbing; }
+.welcome-header-side { display:flex; align-items:center; gap:7px; height:100%; min-width:0; }
+.welcome-header-side-right { justify-content:flex-end; }
+.welcome-header-pinstripe {
+  flex:1; min-width:8px; height:19px;
+  background-color:rgba(255,255,255,0.1);
+  background-image: repeating-linear-gradient(to bottom, transparent 0, transparent 1px, rgba(255,255,255,0.45) 1px, rgba(255,255,255,0.45) 2px);
+  border-left:1px solid rgba(255,255,255,0.25); border-right:1px solid rgba(0,0,0,0.4);
+}
+.welcome-header-title {
+  flex-shrink:1; min-width:0; text-align:center; white-space:nowrap;
+  overflow:hidden; text-overflow:ellipsis;
+  font-family:'VT323',monospace; font-size:16px; line-height:16px;
+  letter-spacing:-0.8px; color:#fff;
+}
+.welcome-close {
+  flex-shrink:0;
+  width:18px; height:18px; padding:0; cursor:pointer;
+  border-style:solid; border-width:1px; border-color:grey #f1f1f1 #f1f1f1 grey;
+  background-image: linear-gradient(153deg, #9a9a9a, #f1f1f1);
+  box-shadow: inset 0 0 0 1px #262626, inset 2px 2px 0 0 #f1f1f1, inset -2px -2px 0 0 gray;
+}
+.welcome-close svg { display:none; }
+.welcome-flower {
+  width:320px; height:320px; display:block;
+  flex-shrink:0; align-self:center;
+  image-rendering:pixelated;
+}
+.welcome-con { padding:0 20px 20px; }
+.welcome-text {
+  font-family:'EB Garamond', Georgia, serif; font-weight:400;
+  font-size:24px; line-height:32px; letter-spacing:-0.72px;
+  color:#fff;
+}
+
+.pixel-scrollbar {
+  flex-shrink:0; width:16px; box-sizing:border-box; padding:1px;
+  position:relative;
+  /* Figma "Background" 레이어: #aaa + 인셋 베벨(우하 화이트 스큐어모픽 라이트, 좌상 다크 섀도) */
+  background:#aaa; border:1px solid #262626;
+  box-shadow: inset -1px 0 1px rgba(255,255,255,0.75), inset 2px 2px 2px rgba(38,38,38,0.5);
+}
+/* 스크롤이 필요 없으면(핸들에 [hidden]) 폭만 그대로 예약해두고 트랙 배경/테두리/베벨을
+   전부 비워서 "빈 자리"로 — 핸들이 실제로 나타날 때만 트랙 크롬도 같이 보이게 함 */
+.pixel-scrollbar:has(.pixel-scrollbar-handle[hidden]) {
+  background:none; border-color:transparent; box-shadow:none;
+}
+/* Works/Film/AI Images — 트랙(영역) 배경/테두리/베벨을 항상 비워두고
+   핸들(썸)만 검정 콘텐츠 배경 위에 떠 있게 함 (스크롤 유무와 무관하게 항상) */
+.works-win .pixel-scrollbar, .film-win .pixel-scrollbar, .ai-win .pixel-scrollbar {
+  background:none; border-color:transparent; box-shadow:none;
+}
+.pixel-scrollbar-handle {
+  position:absolute; left:1px; right:1px; min-height:20px;
+  box-sizing:border-box;
+  /* 실측 그대로 — #99f 채우기 + 좌상단 라벤더 하이라이트 밴드 +
+     가로 리지 그립 텍스처(scrollhandle.png 9x9 패턴을 줄무늬로 재현) */
+  background-color:#99f;
+  border:1px solid #262626;
+  background-image:
+    linear-gradient(to right, rgba(255,255,255,0.55) 0, rgba(255,255,255,0.55) 3px, transparent 3px, transparent 100%),
+    repeating-linear-gradient(to bottom,
+    rgba(255,255,255,0.45) 0, rgba(255,255,255,0.45) 1px, transparent 1px, transparent 2px,
+    rgba(38,38,38,0.35) 2px, rgba(38,38,38,0.35) 3px, transparent 3px, transparent 4px);
+  box-shadow: inset -2px -1px 1px #4c4c99, inset 2px 2px 0 rgba(255,255,255,0.3);
+}
+.pixel-scrollbar-handle[hidden] { display:none; }
+
+/* ══ 커서 하프톤 트레일 — desktop.html 전용(index.html 미적용). 마우스가
+   움직일 때만 커서 근처에 작은 컬러 블롭이 생겼다가 하프톤 도트로 흩어지며
+   사라진다. 전체 화면을 덮는 fixed 캔버스지만 pointer-events:none이라 클릭/
+   드래그/아이콘 호버 등 어떤 인터랙션도 가로채지 않는다. 팝업(풀스크린 모바일
+   포함) 위에도 항상 보이도록 스택 맨 위에 둔다. */
+#cursor-fx { position:fixed; inset:0; z-index:20000; pointer-events:none; }
+
+/* ── 이펙트: Photo Booth 스타일 하트/새 (픽셀 스프라이트) ── */
+.fx { position:absolute; pointer-events:none; z-index:5; }
+
+/* 하트 — 아래에서 좌우로 흔들리며 떠오르고 상단에서 페이드 */
+.fx-heart {
+  bottom:-24px; opacity:0;
+  animation:heart-rise var(--dur,2.6s) ease-out both;
+}
+@keyframes heart-rise {
+  0%   { transform:translateY(0) scale(0.6); opacity:0; }
+  10%  { opacity:1; transform:translateY(calc(var(--rise) * 0.1)) scale(1); }
+  80%  { opacity:1; }
+  100% { transform:translateY(var(--rise,-200px)) scale(1.1); opacity:0; }
+}
+.fx-heart .sway {
+  display:inline-block;
+  animation:heart-sway var(--swaydur,0.8s) ease-in-out infinite alternate;
+}
+@keyframes heart-sway {
+  from { transform:translateX(calc(var(--amp,8px) * -1)) rotate(-7deg); }
+  to   { transform:translateX(var(--amp,8px)) rotate(7deg); }
+}
+
+/* 새 — 날개 퍼덕이며 화면을 가로질러 비행 */
+.fx-bird { animation:bird-fly var(--dur,2.6s) linear both; }
+@keyframes bird-fly {
+  0%   { transform:translateX(0); }
+  100% { transform:translateX(var(--dist,500px)); }
+}
+.fx-bird .bob {
+  display:inline-block;
+  animation:bird-bob 0.45s ease-in-out infinite alternate;
+}
+@keyframes bird-bob {
+  from { transform:translateY(-3px); }
+  to   { transform:translateY(3px); }
+}
+.fx-bird .fr1 { animation:flap-a 0.26s steps(1, end) infinite; }
+.fx-bird .fr2 { animation:flap-b 0.26s steps(1, end) infinite; }
+@keyframes flap-a { 0%, 100% { opacity:1; } 50% { opacity:0; } }
+@keyframes flap-b { 0%, 100% { opacity:0; } 50% { opacity:1; } }
+
+/* ══ 창 테두리 하이라이트 — inset box-shadow는 자식 요소에 덮이므로
+   ::after 가상 요소로 항상 content 위에 렌더링 ══ */
+.cu-win::after,
+.about-win::after,
+.proj-popup::after,
+.works-win::after,
+.film-win::after,
+.ai-win::after,
+.welcome-win::after {
+  content:''; position:absolute; inset:0; pointer-events:none; z-index:9999;
+  box-shadow: inset 1px 1px 0 0 #eee, inset -1px -1px 0 0 #999;
+}

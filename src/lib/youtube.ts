@@ -64,13 +64,12 @@ export function getYouTubeThumbnailFallbackUrl(videoId: string): string {
 
 /**
  * DB row → 플레이어가 바로 쓸 수 있는 트랙.
- * - youtube_video_id 없으면 URL에서 추출
+ * - youtube_video_id는 항상 youtube_url에서 파싱 (DB 컬럼 없음)
  * - thumbnail_url 없으면 video id로 생성
  * - theme_color / text_color는 DB 값 우선, 비어 있으면 폴백
- *   (도미넌트 컬러 추출은 Step 3 — 아직 미구현)
  */
 export function enrichTrack(track: Track): EnrichedTrack {
-  const videoId = track.youtube_video_id || extractYouTubeVideoId(track.youtube_url);
+  const videoId = extractYouTubeVideoId(track.youtube_url);
 
   const thumbnailUrl =
     track.thumbnail_url || (videoId ? getYouTubeThumbnailUrl(videoId) : null);

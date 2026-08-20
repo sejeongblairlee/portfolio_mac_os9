@@ -128,7 +128,7 @@
 .bt-row .bt-row-txt {
   flex: 1; min-width: 1px; display: flex; flex-direction: column;
   font-family: 'Pretendard', sans-serif; font-weight: 200;  /* ExtraLight (미재생) */
-  font-size: 12px; line-height: 18px; letter-spacing: -0.24px;
+  font-size: 12px; line-height: 18px; letter-spacing: -0.12px;
   white-space: nowrap; overflow: hidden;
 }
 .bt-row .bt-row-txt p { overflow: hidden; text-overflow: ellipsis; }
@@ -159,7 +159,7 @@
 }
 .bt-row .bt-dur {
   font-family: 'Pretendard', sans-serif; font-weight: 100;  /* Thin */
-  font-size: 12px; line-height: 18px; letter-spacing: -0.24px; white-space: nowrap;
+  font-size: 12px; line-height: 18px; letter-spacing: -0.12px; white-space: nowrap;
 }
 
 /* 트랙리스트/큐레이션 픽셀 스크롤바 — 박스/도트 패턴은 desktop.html의 공용
@@ -315,13 +315,13 @@
 }
 .bt-cur-tit .bt-live {
   font-family: 'EB Garamond', Georgia, serif; font-size: 14px; line-height: 20px;
-  letter-spacing: -0.7px; color: var(--bt-text, #fff); transition: color 300ms ease;
+  letter-spacing: -0.14px; color: var(--bt-text, #fff); transition: color 300ms ease;
   width: 100%;
 }
 .bt-cur-des {
   display: flex; flex-direction: column; gap: 8px; width: 100%;
   font-family: 'Pretendard', sans-serif; font-weight: 200;   /* ExtraLight */
-  font-size: 12px; line-height: 18px; letter-spacing: -0.24px;
+  font-size: 12px; line-height: 18px; letter-spacing: -0.12px;
   color: var(--bt-text, #fff); transition: color 300ms ease;
 }
 
@@ -351,6 +351,7 @@
   .bt-volume { width: 200px; }
   .bt-col-cur {
     max-width: none; width: 100%; flex: none;
+    padding: 0 12px 20px;
   }
   /* 모바일 타이틀: "Smooth operator /Sade" — 타이틀은 텍스트 길이만큼만
      차지(width:100%는 flex 행에서 그대로 유효해 고정폭처럼 보였음).
@@ -400,3 +401,10 @@
 .bt-mini-overlay:hover { opacity: 1; }
 .bt-mini-overlay .bt-btn.side { background: rgba(255,255,255,0.8); }
 .bt-mini .bt-row { cursor: default; }
+
+/* 창 테두리 하이라이트 — ::after로 content 위에 렌더링 */
+.bt-win::after,
+.bt-mini::after {
+  content: ''; position: absolute; inset: 0; pointer-events: none; z-index: 9999;
+  box-shadow: inset 1px 1px 0 0 #eee, inset -1px -1px 0 0 #999;
+}

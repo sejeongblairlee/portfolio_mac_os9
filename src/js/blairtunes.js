@@ -51,7 +51,7 @@ function extractYouTubeVideoId(url) {
 }
 
 function enrichTrack(t) {
-  const videoId = t.youtube_video_id || extractYouTubeVideoId(t.youtube_url);
+  const videoId = extractYouTubeVideoId(t.youtube_url);
   return {
     ...t,
     youtube_video_id: videoId,

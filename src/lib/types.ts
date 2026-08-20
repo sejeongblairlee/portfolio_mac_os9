@@ -14,9 +14,6 @@ export interface Track {
   title: string;
   artist: string;
   youtube_url: string;
-  /** Step 2에서 youtube_url 파싱으로 채워질 예정 */
-  youtube_video_id: string | null;
-  /** Step 2에서 썸네일 추출로 채워질 예정 */
   thumbnail_url: string | null;
   /** 큐레이션 코멘트 (한국어) */
   curation: string | null;
@@ -38,11 +35,12 @@ export interface Track {
 }
 
 /**
- * fetch 시점에 YouTube 메타데이터가 파생·보정된 트랙 (Step 2).
- * DB에 youtube_video_id / thumbnail_url이 비어 있어도
- * youtube_url에서 파생 가능하면 채워진 상태로 UI에 전달된다.
+ * fetch 시점에 YouTube 메타데이터가 파생·보정된 트랙.
+ * youtube_video_id는 항상 youtube_url에서 파싱해서 채워진다.
  */
 export interface EnrichedTrack extends Track {
+  /** youtube_url에서 파싱된 영상 ID */
+  youtube_video_id: string | null;
   /** maxresdefault 404 대비용 hqdefault 폴백 (UI의 <img onerror>에서 사용) */
   thumbnail_fallback_url: string | null;
 }
