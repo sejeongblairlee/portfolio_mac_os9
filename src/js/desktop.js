@@ -237,7 +237,10 @@ document.getElementById('btn-filter').addEventListener('click', () => {
   // 기존 루프를 먼저 취소 — 빠른 연속 클릭으로 루프가 중복 실행되는 버그 방지
   if (ditherRafId) { cancelAnimationFrame(ditherRafId); ditherRafId = null; }
   filterOn = !filterOn;
-  youVideo.style.display = filterOn ? 'none' : 'block';
+  // you-video는 절대 display:none으로 숨기지 않는다 — 숨겨진 <video>는 브라우저가
+  // 디코딩을 스로틀링해서(특히 모바일) drawImage가 그 시점 프레임에 멈춰버리는
+  // "필터 누르면 영상이 멈추는" 버그의 원인이었음(video/canvas가 같은 자리에
+  // 절대위치로 겹쳐있으니, video는 항상 켜둔 채로 canvas만 위에 덮어서 해결).
   youCanvas.style.display = filterOn ? 'block' : 'none';
   if (filterOn) ditherLoop();
 });
@@ -248,14 +251,13 @@ document.getElementById('btn-mute').addEventListener('click', (e) => {
   camMuted = !camMuted;
   camStream.getVideoTracks().forEach((t) => { t.enabled = !camMuted; });
   if (camMuted) {
-    youVideo.style.display = 'none';
-    youCanvas.style.display = 'none';
+    // 여기서도 video/canvas는 숨기지 않음 — you-msg(불투명 흰 배경, inset:0)가
+    // 그 위를 완전히 덮으므로 안 보여도 되고, 숨기면 위와 동일한 프리즈 버그가 남는다.
     youMsg.innerHTML = 'Cam off';
     youMsg.style.display = 'flex';
     e.target.textContent = 'CAM ON';
   } else {
     youMsg.style.display = 'none';
-    (filterOn ? youCanvas : youVideo).style.display = 'block';
     // 루프가 이미 실행 중이면 새로 시작하지 않음 (mute 중에도 루프는 유지됨)
     if (filterOn && !ditherRafId) ditherLoop();
     e.target.textContent = 'MUTE CAM';
@@ -774,7 +776,7 @@ const pvTitle = document.getElementById('pv-title');
 document.querySelectorAll('.film-pic').forEach((img) => {
   img.addEventListener('click', () => {
     const caption = img.closest('.film-item')?.querySelector('.film-caption')?.textContent ?? '';
-    openInPv(img.src, caption);
+    openInPv(img.src, caption, img.getBoundingClientRect().width);
   });
 });
 winPv.addEventListener('pointerdown', () => { winPv.style.zIndex = nextZ(); });
@@ -819,10 +821,23 @@ let pvMinW = 200;  // 열릴 때마다 자연 표시 폭으로 갱신 — 그보
   winPv.addEventListener('pointercancel', end);
 })();
 
-function openInPv(src, caption) {
-  pvImg.src = src;
-  pvImg.style.width = '';
-  pvImg.style.height = '';
+// Film/AI Images 공통 규칙: 비율은 항상 유지, 뷰포트("OS 영역")를 넘기지 않는
+// 선에서 최대한 확대하되, 원본 해상도가 작아 그보다 작게 나올 상황이면 리스트
+// 썸네일 폭(minW)을 하한으로 삼는다 — 축소는 하더라도 목록에서 보던 것보다
+// 작아지지는 않게. 상한(maxW/maxH)은 .pv-img의 CSS max-width/max-height와
+// 반드시 같은 값으로 맞춰야 함(둘 다 "OS 영역" 세이프 마진 기준).
+function fitPvSize(naturalW, naturalH, minW) {
+  const ratio = naturalW / naturalH;
+  const maxW = Math.min(window.innerWidth - 42, 900);
+  const maxH = window.innerHeight - 80;
+  let w = Math.min(Math.max(naturalW, minW || 0), maxW);
+  let h = w / ratio;
+  if (h > maxH) { h = maxH; w = h * ratio; }
+  if (w > maxW) { w = maxW; h = w / ratio; }   // 위에서 높이 기준으로 다시 늘렸을 수 있어 폭 상한 재확인
+  return { w, h };
+}
+
+function openInPv(src, caption, minW) {
   pvTitle.textContent = caption;
   winPv.style.display = 'flex';
   winPv.style.zIndex = nextZ();
@@ -830,14 +845,23 @@ function openInPv(src, caption) {
   winPv.style.transform = 'translate(-50%, -50%)';
   winPv.style.left = '50%';
   winPv.style.top = '50%';
-  pvMinW = 200;
-  const captureMin = () => { const w = pvImg.getBoundingClientRect().width; if (w > 0) pvMinW = w; };
-  if (pvImg.complete) requestAnimationFrame(captureMin);
-  else pvImg.addEventListener('load', () => requestAnimationFrame(captureMin), { once: true });
+
+  const applySize = () => {
+    const { w, h } = fitPvSize(pvImg.naturalWidth, pvImg.naturalHeight, minW || 200);
+    pvImg.style.width = w + 'px';
+    pvImg.style.height = h + 'px';
+    pvMinW = w;   // 코너/엣지 드래그로도 이보다(=지금 적용된, 썸네일 하한 반영된 폭) 작게는 못 줄임
+  };
+  // 로드 전에는 이전 이미지의 인라인 크기가 잠깐 남아있지 않도록 초기화
+  pvImg.style.width = '';
+  pvImg.style.height = '';
+  pvImg.src = src;
+  if (pvImg.complete && pvImg.naturalWidth) applySize();
+  else pvImg.addEventListener('load', applySize, { once: true });
 }
 document.querySelectorAll('.ai-pic').forEach((img) => {
   img.style.cursor = 'zoom-in';
-  img.addEventListener('click', () => openInPv(img.src, ''));
+  img.addEventListener('click', () => openInPv(img.src, '', img.getBoundingClientRect().width));
 });
 
 // ── "AI Images" 아이콘 → AI 이미지 창 화면 정중앙에 열기 ────────────────────
