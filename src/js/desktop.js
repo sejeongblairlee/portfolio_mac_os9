@@ -462,11 +462,7 @@ document.getElementById('proj-cheer').addEventListener('click', () => {
 });
 makeCenteredWinDraggable(winProject, winProject.querySelector('.proj-header'), '.proj-close');
 
-// Glider 4.0 — 아직 콘텐츠가 없어서 Works 카드와 동일한
-// "작업중입니다" 팝업을 그대로 재사용(같은 winProject 공유, 별도 창 아님).
-document.getElementById('icon-glider').addEventListener('click', () => {
-  openCenteredDraggableWin(winProject);
-});
+// Glider's playable window and icon handler live in glider.js.
 
 // 픽셀 스크롤바(Figma 71:3350) 공용 싱크 헬퍼 — Film/Blair-tunes가 전부
 // 이 함수 하나로 핸들 높이/위치를 계산한다. 스크롤할 콘텐츠가 없으면(뷰포트
@@ -903,6 +899,7 @@ const MB_SUDOKU_ICON = svgDataUri(
 const MB_FLOWER_ICON = 'src/images/desktop/globe.png';
 
 const MB_NAV_ITEMS = [
+  { winId: 'glider-win', label: 'Glider · Jazz After Hours', icon: 'src/images/desktop/utilities-help.png', open: () => document.getElementById('icon-glider').click() },
   { winId: 'win-welcome', label: 'Welcome', icon: MB_FLOWER_ICON, open: () => openCenteredDraggableWin(document.getElementById('win-welcome')) },
   { winId: 'win-about', label: 'About Me', icon: MB_ABOUT_ICON, open: () => document.getElementById('mb-about').click() },
   { winId: 'win-browser', label: 'Works', icon: 'src/images/desktop/icon-ie.png', open: () => document.getElementById('icon-works').click() },
@@ -1141,7 +1138,7 @@ document.addEventListener('click', (e) => {
   // 사라지고, 전부 닫으면 다시 나타나야 한다는 요구사항. CU-SeeMe는 페이지
   // 로드 시 기본으로 열려 있는 창이라 여기 포함하면 처음부터 계속 숨는
   // 꼴이 되므로 의도적으로 제외 — "폴더"(데스크탑 아이콘으로 여는 팝업류)만.
-  const POPUP_IDS = ['win-browser', 'win-film', 'win-about', 'win-project', 'win-ai', 'bt-win', 'bt-mini', 'sudoku-win'];
+  const POPUP_IDS = ['win-browser', 'win-film', 'win-about', 'win-project', 'win-ai', 'bt-win', 'bt-mini', 'sudoku-win', 'glider-win'];
   function isAnyPopupOpen() {
     return POPUP_IDS.some((id) => {
       const el = document.getElementById(id);
