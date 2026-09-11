@@ -68,14 +68,17 @@ function layoutWindows() {
   };
 
   if (mobile) {
-    // 수직 스택, 중앙 정렬 — ±8px 오프셋은 장식용, 세이프 에어리어 우선
+    // 모바일에서는 두 CU-SeeMe 창을 하나의 그룹으로 보고, 메뉴바(28px) 아래
+    // 작업 영역의 정중앙에 수직 스택한다. 가로 장식 오프셋은 제거해 다른
+    // 팝업들과 동일한 중심축을 사용한다.
     const centerX = (vw - winW) / 2;
-    const off = Math.min(8, Math.max(0, centerX - SAFE));
-    place(local, centerX - off, 120);
-    const belowY = local.style.display !== 'none'
-      ? local.offsetTop + local.offsetHeight + 18
-      : 120;
-    place(you, centerX + off, belowY);
+    const gap = wins.length > 1 ? 18 : 0;
+    const groupH = wins.reduce((sum, w) => sum + w.offsetHeight, 0) + gap;
+    let nextY = 28 + Math.max(0, (vh - 28 - groupH) / 2);
+    wins.forEach((w) => {
+      place(w, centerX, nextY);
+      nextY += w.offsetHeight + 18;
+    });
   } else {
     // 중앙 근처, 어긋난 스태거 배치 (일렬 정렬 금지) — 폭은 320px 고정
     const lh = local.offsetHeight, yh = you.offsetHeight;
@@ -502,8 +505,22 @@ window.__syncPixelScrollbar = syncPixelScrollbar;
 // 이뤄져서 데스크탑에서 창을 좁게 쓰기만 해도 "리사이즈가 안 된다"는 리포트로
 // 이어졌다. Blair-tunes 플레이어처럼 폭과 무관하게 항상 드래그/리사이즈 가능하도록
 // 통일 — 폭에 따른 레이아웃 반응(그리드 1열 전환)은 컨테이너 쿼리(CSS)가 담당한다.
+function centerPopupForMobile(win) {
+  if (!win || window.innerWidth > 768) return;
+  // 모바일에서는 이전 드래그 좌표나 창별 CSS 오프셋을 이어받지 않고,
+  // 메뉴바(28px) 아래 작업 영역의 정중앙에서 매번 새로 연다.
+  delete win.dataset.dragged;
+  win.style.left = '50%';
+  win.style.top = 'calc(50% + 14px)';
+  win.style.right = 'auto';
+  win.style.bottom = 'auto';
+  win.style.transform = 'translate(-50%, -50%)';
+}
+window.__centerPopupForMobile = centerPopupForMobile;
+
 function openCenteredDraggableWin(win) {
   win.style.display = 'flex';
+  centerPopupForMobile(win);
   win.style.zIndex = nextZ();
 }
 function makeCenteredWinDraggable(win, headerEl, closeSelector) {
@@ -788,6 +805,7 @@ function openInPv(src, caption, minW) {
   winPv.style.transform = 'translate(-50%, -50%)';
   winPv.style.left = '50%';
   winPv.style.top = '50%';
+  centerPopupForMobile(winPv);
 
   const applySize = () => {
     const { w, h } = fitPvSize(pvImg.naturalWidth, pvImg.naturalHeight, minW || 200);

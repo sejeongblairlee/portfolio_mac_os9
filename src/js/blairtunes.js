@@ -902,6 +902,7 @@ async function initBlairTunes() {
   });
   document.getElementById('bt-restore').addEventListener('click', () => {
     setMinimized(false);
+    window.__centerPopupForMobile?.(document.getElementById('bt-win'));
     window.__bringToFront?.(document.getElementById('bt-win'));
   });
 
@@ -1002,6 +1003,7 @@ async function initBlairTunes() {
       const wasClosed = win.hidden && !state.isMinimized;
       if (state.isMinimized) setMinimized(false);   // 미니 → 풀 플레이어 (재생 유지)
       win.hidden = false;
+      window.__centerPopupForMobile?.(win);
       // ResizeObserver는 창이 hidden→visible로 바뀌는 순간을 못 잡을 때가
       // 있어서(관찰 시작 시점에 이미 display:none이면 최초 콜백이 안 옴)
       // 여기서 직접 한 번 더 불러 확실히 맞춘다 — getBoundingClientRect()가

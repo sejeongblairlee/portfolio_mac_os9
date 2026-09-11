@@ -477,6 +477,7 @@ function initSudoku() {
   if (icon) {
     icon.addEventListener('click', () => {
       win.hidden = false;
+      window.__centerPopupForMobile?.(win);
       window.__bringToFront?.(win);
       window.__tigerRun?.reportWindowAction();
       win.focus();
