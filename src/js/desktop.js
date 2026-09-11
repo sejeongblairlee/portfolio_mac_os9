@@ -85,14 +85,13 @@ function layoutWindows() {
 }
 layoutWindows();
 window.addEventListener('resize', layoutWindows);
-// 초기 상태: Works도 기본으로 같이 열어두되 맨 밑에 깔리게 — CU-SeeMe 두 창보다
-// 먼저 openCenteredDraggableWin()으로 z-index를 받아야 더 낮은 값이 됨.
-// openCenteredDraggableWin/updateWorksScrollbar는 파일 아래쪽(Works 섹션)에서
-// 선언되지만 함수 선언이라 호이스팅되고, 이 콜백은 RAF라 스크립트 전체가
-// 동기 실행을 마친 뒤에야 실행되므로 아래쪽 const(winWorks 등)도 이미 준비돼 있음.
+// 초기 상태: Works(브라우저 창)도 기본으로 같이 열어두되 맨 밑에 깔리게 —
+// CU-SeeMe 두 창보다 먼저 openCenteredDraggableWin()으로 z-index를 받아야
+// 더 낮은 값이 됨. openBrowserWin은 파일 아래쪽(Works 섹션)에서 선언되지만
+// 함수 선언이라 호이스팅되고, 이 콜백은 RAF라 스크립트 전체가 동기 실행을
+// 마친 뒤에야 실행되므로 아래쪽 const(winBrowser 등)도 이미 준비돼 있음.
 requestAnimationFrame(() => {
-  openCenteredDraggableWin(document.getElementById('win-works'));
-  updateWorksScrollbar();
+  openBrowserWin();
   // CU-SeeMe 두 창을 Works보다 위로 — Remote 먼저, Local 마지막(icon-seeme
   // 재오픈 로직과 동일 순서, 최종적으로 Local이 맨 위=기본 포커스).
   focusWin(document.getElementById('win-you'));
@@ -466,59 +465,7 @@ document.getElementById('icon-glider').addEventListener('click', () => {
   openCenteredDraggableWin(winProject);
 });
 
-// ── "Works" 아이콘 → 프로젝트 리스트 창(Works) 화면 정중앙에 열기 ───────────
-// Figma 94:808 — 2열 그리드(모바일 1열) + 우측 픽셀 스타일 커스텀 스크롤바.
-// 전 항목 실제 프로젝트 이미지 (2026-07-22 Figma 업데이트 반영). 이미지는
-// 전부 Figma 노드를 2x(652×652)로 export해서 레티나에서도 또렷하게 보인다
-// (work-thumb 표시 크기는 326px 기준이라 2x면 실제 표시 밀도가 2배).
-const WORKS_ITEMS = [
-  { title: 'Portfolio Old Mac OS ver.', desc: 'A to Z..', img: 'src/images/works/portfolio-old-macos.jpg' },
-  { title: 'DaLock', desc: 'Product Design, Design System, Rebranding', img: 'src/images/works/dalock.jpg' },
-  { title: 'Samsungcard monimo', desc: 'UX Strategy, UX Planning', img: 'src/images/works/samsungcard-monimo.jpg' },
-  { title: 'F&F MLB Discovery SUPRA', desc: 'Team Lead, UX Strategy\nUX Design, Design System', img: 'src/images/works/ff-mlb-supra.jpg' },
-  { title: 'CJ ENM Eddy', desc: 'Team Lead, Service Strategy, UX Design', img: 'src/images/works/cj-enm-eddy.jpg' },
-  { title: 'SHINSEGAE S.I.Village', desc: 'Service Strategy', img: 'src/images/works/shinsegae-sivillage.jpg' },
-  { title: 'LOTTECARD LOCA', desc: 'UX Stategy, UX Design', img: 'src/images/works/lottecard-loca.jpg' },
-  { title: 'SKT T Factory', desc: 'UI Design, Design System', img: 'src/images/works/skt-t-factory.jpg' },
-  { title: 'LINA TMR Assitant', desc: 'User Research, UX Design', img: 'src/images/works/lina-tmr.jpg' },
-  { title: 'LOTTE ON', desc: 'User Research, UX Strategy, UX Design', img: 'src/images/works/lotte-on.jpg' },
-  { title: 'CJ Viewing', desc: 'Design System, UI Design', img: 'src/images/works/cj-viewing.jpg' },
-];
-const worksGrid = document.getElementById('works-grid');
-WORKS_ITEMS.forEach((item) => {
-  const el = document.createElement('div');
-  el.className = 'works-item';
-  const thumb = document.createElement('div');
-  thumb.className = 'works-thumb';
-  if (item.img) {
-    const img = document.createElement('img');
-    img.src = item.img;
-    img.alt = item.title;
-    img.loading = 'lazy';
-    thumb.appendChild(img);
-  }
-  const info = document.createElement('div');
-  info.className = 'works-info';
-  const title = document.createElement('p');
-  title.className = 'works-title';
-  title.textContent = item.title;
-  const desc = document.createElement('p');
-  desc.className = 'works-desc';
-  desc.textContent = item.desc;
-  info.append(title, desc);
-  el.append(thumb, info);
-  worksGrid.appendChild(el);
-});
-
-// 프로젝트 카드 클릭 → 상세 준비중 팝업(Figma 97:2319). 아직 프로젝트별 상세
-// 페이지가 없어서 어떤 카드를 눌러도 동일한 "작업중입니다" 안내만 뜬다 —
-// 이벤트 위임이라 winProject가 이 시점엔 아직 선언 전이어도 문제없음(클릭은
-// 스크립트 전체 실행이 끝난 뒤에야 발생하므로).
-worksGrid.addEventListener('click', (e) => {
-  if (e.target.closest('.works-item')) openCenteredDraggableWin(winProject);
-});
-
-// 픽셀 스크롤바(Figma 71:3350) 공용 싱크 헬퍼 — Works/Film/Blair-tunes가 전부
+// 픽셀 스크롤바(Figma 71:3350) 공용 싱크 헬퍼 — Film/Blair-tunes가 전부
 // 이 함수 하나로 핸들 높이/위치를 계산한다. 스크롤할 콘텐츠가 없으면(뷰포트
 // 안에 다 들어감) 핸들을 [hidden]으로 완전히 숨긴다 — 예전에는 이럴 때
 // 트랙 전체를 채워서 "스크롤 없음"을 표시했는데, 실제로 스크롤 영역이 없는데
@@ -541,15 +488,6 @@ function syncPixelScrollbar(track, handle, viewH, contentH, scrollTop) {
   handle.style.top = (PAD + top) + 'px';
 }
 window.__syncPixelScrollbar = syncPixelScrollbar;
-
-const worksScroll = document.getElementById('works-scroll');
-const worksTrack = document.getElementById('works-scrollbar');
-const worksThumb = document.getElementById('works-scrollbar-thumb');
-function updateWorksScrollbar() {
-  syncPixelScrollbar(worksTrack, worksThumb, worksScroll.clientHeight, worksScroll.scrollHeight, worksScroll.scrollTop);
-}
-worksScroll.addEventListener('scroll', updateWorksScrollbar);
-window.addEventListener('resize', updateWorksScrollbar);
 
 // 중앙 고정 모달(About/Works/Film 전부)을 CU-SeeMe와 같은 방식으로 드래그
 // 가능하게 만드는 공용 헬퍼 — "팝업은 사용성 다 공통"이라는 요청에 따라
@@ -728,23 +666,28 @@ function makeEdgeResizable(win, minW, onResize) {
   });
 }
 
-const winWorks = document.getElementById('win-works');
-document.getElementById('icon-works').addEventListener('click', () => {
-  openCenteredDraggableWin(winWorks);
-  requestAnimationFrame(updateWorksScrollbar);
-});
+// "Works" 아이콘(Internet Explorer, Figma 69:143679) → 별도로 배포한 실제
+// 포트폴리오(blair.contextroom.works)를 레트로 브라우저 창 안에 iframe으로
+// 띄운다. 이 맥 OS 사이트는 취향 아카이브 용도라 Upwork 등에 올리기엔 안 맞아서
+// 실무용 포트폴리오를 따로 만듦(2026-09-03). iframe src는 처음 열 때만 지연
+// 세팅 — 마크업에 미리 박아두면 창이 닫혀 있어도 항상 외부 사이트를 로드하게 됨.
+const winBrowser = document.getElementById('win-browser');
+const browserFrame = document.getElementById('browser-frame');
+const PORTFOLIO_URL = 'https://blair.contextroom.works/';
+function openBrowserWin() {
+  if (!browserFrame.src) browserFrame.src = PORTFOLIO_URL;
+  openCenteredDraggableWin(winBrowser);
+}
+document.getElementById('icon-works').addEventListener('click', openBrowserWin);
 // 헤더 메뉴바의 "Works" 텍스트도 데스크탑 아이콘과 동일하게 열기 — 같은 창 공유.
-document.getElementById('mb-works').addEventListener('click', () => {
-  openCenteredDraggableWin(winWorks);
-  requestAnimationFrame(updateWorksScrollbar);
+document.getElementById('mb-works').addEventListener('click', openBrowserWin);
+winBrowser.addEventListener('pointerdown', () => { winBrowser.style.zIndex = nextZ(); });
+document.getElementById('browser-close').addEventListener('click', () => {
+  winBrowser.style.display = 'none';
 });
-winWorks.addEventListener('pointerdown', () => { winWorks.style.zIndex = nextZ(); });
-document.getElementById('works-close').addEventListener('click', () => {
-  winWorks.style.display = 'none';
-});
-makeCenteredWinDraggable(winWorks, winWorks.querySelector('.works-header'), '.works-close');
-makeCenteredWinResizable(winWorks, document.getElementById('works-resize-handle'), 360, 300, updateWorksScrollbar);
-makeEdgeResizable(winWorks, 360, updateWorksScrollbar);
+makeCenteredWinDraggable(winBrowser, winBrowser.querySelector('.browser-header'), '.browser-close');
+makeCenteredWinResizable(winBrowser, document.getElementById('browser-resize-handle'), 360, 300);
+makeEdgeResizable(winBrowser, 360);
 
 // ── "and my film" 아이콘 → 필름 사진 창(Film) 화면 정중앙에 열기 ────────────
 // Figma 107:2680 — 2열 매손리(모바일 1열) + 공용 픽셀 스크롤바(syncPixelScrollbar).
@@ -944,7 +887,7 @@ const MB_FLOWER_ICON = 'src/images/desktop/globe.png';
 const MB_NAV_ITEMS = [
   { winId: 'win-welcome', label: 'Welcome', icon: MB_FLOWER_ICON, open: () => openCenteredDraggableWin(document.getElementById('win-welcome')) },
   { winId: 'win-about', label: 'About Me', icon: MB_ABOUT_ICON, open: () => document.getElementById('mb-about').click() },
-  { winId: 'win-works', label: 'Works', icon: 'src/images/desktop/folder-default.png', open: () => document.getElementById('icon-works').click() },
+  { winId: 'win-browser', label: 'Works', icon: 'src/images/desktop/icon-ie.png', open: () => document.getElementById('icon-works').click() },
   { winId: 'win-film', label: 'and my film', icon: 'src/images/desktop/adobe-photoshop.png', open: () => document.getElementById('icon-film').click() },
   { winId: 'win-ai', label: 'AI Images', icon: 'src/images/desktop/adobe-illustrator-55.png', open: () => document.getElementById('icon-ai').click() },
   { winId: 'win-local', label: 'CU-SeeMe', icon: 'src/images/desktop/icon-zoom.png', open: () => document.getElementById('icon-seeme').click() },
@@ -1180,7 +1123,7 @@ document.addEventListener('click', (e) => {
   // 사라지고, 전부 닫으면 다시 나타나야 한다는 요구사항. CU-SeeMe는 페이지
   // 로드 시 기본으로 열려 있는 창이라 여기 포함하면 처음부터 계속 숨는
   // 꼴이 되므로 의도적으로 제외 — "폴더"(데스크탑 아이콘으로 여는 팝업류)만.
-  const POPUP_IDS = ['win-works', 'win-film', 'win-about', 'win-project', 'win-ai', 'bt-win', 'bt-mini', 'sudoku-win'];
+  const POPUP_IDS = ['win-browser', 'win-film', 'win-about', 'win-project', 'win-ai', 'bt-win', 'bt-mini', 'sudoku-win'];
   function isAnyPopupOpen() {
     return POPUP_IDS.some((id) => {
       const el = document.getElementById(id);

@@ -419,14 +419,14 @@ body {
   .proj-popup { z-index:10001 !important; }
 }
 
-/* ══ Works Window — Figma 94:808, 데스크탑 "Works" 아이콘 클릭 시 화면 정중앙에 등장 ══
-   About 창과 같은 고정 중앙 모달 패턴이되, 폭/높이는 Figma 스펙대로 720px 고정
-   (뷰포트가 더 작으면 세이프 에어리어만큼만 축소). 리스트는 내부 스크롤 +
-   픽셀 스타일 커스텀 스크롤바(우측 8px 트랙). 풀스크린 전환 없이 항상 드래그/리사이즈
-   가능한 창 — 창 자신의 폭이 768px 이하로 좁아지면(@container) 그리드만 1열로 전환.
-   이미지가 있는 항목(DaLock/SKT T Factory/LOTTE ON)만 실제 프로젝트 이미지,
-   나머지는 Figma 원본과 동일하게 흰 정사각형 더미. */
-.works-win {
+/* ══ Browser(Works) Window — 데스크탑 "Works"(IE) 아이콘 클릭 시 화면 정중앙에 등장 ══
+   예전엔 로컬 프로젝트 썸네일 그리드였지만, Upwork 등에 올리기엔 이 맥 OS
+   컨셉 사이트가 안 맞아서 실제 포트폴리오를 별도로 만들어 배포(blair.contextroom.works)
+   했고, 이 창은 그걸 레트로 인터넷 익스플로러 창처럼 iframe으로 띄운다
+   (2026-09-03). About 창과 같은 고정 중앙 모달 패턴, 폭/높이는 960px 기준
+   (뷰포트가 더 작으면 세이프 에어리어만큼만 축소). 풀스크린 전환 없이 항상
+   드래그/리사이즈 가능. */
+.browser-win {
   position:fixed; left:50%; transform:translate(-50%, -50%);
   z-index:600;
   width:min(960px, calc(100vw - 40px));
@@ -441,9 +441,6 @@ body {
   background:#000; border:1px solid #262626; color:#fff;
   display:flex; flex-direction:column; align-items:center;
   box-shadow: inset 1px 1px 0 0 #eee, inset -1px -1px 0 0 #999, 2px 2px 0 0 rgba(0,0,0,0.5);
-  /* 그리드 1열 전환은 뷰포트가 아니라 이 창 자신의 폭 기준(@container) —
-     항상 드래그/리사이즈 가능한 창이라 폭은 유저가 자유롭게 바꾼다. */
-  container-type: inline-size;
 }
 /* 우하단 리사이즈 핸들 — 처음엔 blairtunes(.bt-rs)처럼 완전 투명 히트 영역만
    뒀었는데, 로직은 멀쩡한데도 "리사이즈가 안 된다"는 리포트가 있었음 — 원인은
@@ -452,7 +449,7 @@ body {
    (대각선 점 3줄, 1-2-3개)를 그려서 어디를 잡아야 하는지 보이게 함 —
    픽셀 스크롤바 핸들과 같은 2px 사각형 도트 기법으로 그림(그라디언트 대신
    또렷한 픽셀 느낌 유지). Works/Film/AI Images가 전부 공유하는 규칙. */
-.works-resize-handle, .film-resize-handle, .ai-resize-handle, .pv-resize-handle {
+.browser-resize-handle, .film-resize-handle, .ai-resize-handle, .pv-resize-handle {
   /* 히트 영역을 18px → 36px로 대폭 키우고 창 경계 바깥까지(-8px) 확장 —
      이전 크기로도 실사용에서 "리사이즈가 안 된다" 리포트가 계속 있었음.
      원인이 정밀도 문제든 다른 무엇이든, 훨씬 넉넉한 히트 영역이 더 안전함.
@@ -460,7 +457,7 @@ body {
   position:absolute; right:-8px; bottom:-8px; width:36px; height:36px;
   cursor:nwse-resize; touch-action:none; z-index:2;
 }
-.works-resize-handle i, .film-resize-handle i, .ai-resize-handle i, .pv-resize-handle i {
+.browser-resize-handle i, .film-resize-handle i, .ai-resize-handle i, .pv-resize-handle i {
   position:absolute; width:2px; height:2px; background:rgba(255,255,255,0.65); pointer-events:none;
 }
 /* 좌/우 엣지 리사이즈 — Blair-tunes(.bt-rs-e/-w)와 동일한 투명 8px 히트 스트립.
@@ -473,12 +470,12 @@ body {
 .win-rs-e { right:-4px; }
 .win-rs-w { left:-4px; }
 /* Mac OS9 WindowChrome — About/CU-SeeMe와 동일 패턴, 헤더 배경은 창 고유색(검정) 유지 */
-.works-header {
+.browser-header {
   height:26px; width:100%; flex-shrink:0;
   /* 3열 그리드(1fr auto 1fr) — 예전엔 [닫기][핀스트라이프][타이틀][핀스트라이프]가
      전부 한 flex row라, 왼쪽에만 있는 닫기 버튼 너비만큼 타이틀이 진짜 중앙에서
      오른쪽으로 밀려있었다(사용자 지적). 닫기 버튼을 왼쪽 핀스트라이프와 같은
-     묶음(.works-header-side)으로 묶어서 좌/우를 동일한 1fr 컬럼에 넣으면,
+     묶음(.browser-header-side)으로 묶어서 좌/우를 동일한 1fr 컬럼에 넣으면,
      그 안에 뭐가 들었든(닫기 버튼 유무 상관없이) 타이틀은 항상 헤더 정중앙. */
   display:grid; grid-template-columns:1fr auto 1fr; align-items:center;
   gap:7px;
@@ -489,55 +486,45 @@ body {
      가려지고 있어서, 헤더에도 동일하게 겹쳐 그려줌(프레임과 이어지게) */
   box-shadow: inset 1px 1px 0 0 #eee, inset -1px 0 0 0 #999;
 }
-.works-win.dragging .works-header { cursor:grabbing; }
-.works-header-side { display:flex; align-items:center; gap:7px; height:100%; min-width:0; }
-.works-header-side-right { justify-content:flex-end; }
-.works-header-pinstripe {
+.browser-win.dragging .browser-header { cursor:grabbing; }
+.browser-header-side { display:flex; align-items:center; gap:7px; height:100%; min-width:0; }
+.browser-header-side-right { justify-content:flex-end; }
+.browser-header-pinstripe {
   flex:1; min-width:8px; height:19px;
   background-color:rgba(255,255,255,0.1);
   background-image: repeating-linear-gradient(to bottom, transparent 0, transparent 1px, rgba(255,255,255,0.45) 1px, rgba(255,255,255,0.45) 2px);
   border-left:1px solid rgba(255,255,255,0.25); border-right:1px solid rgba(0,0,0,0.4);
 }
-.works-header-title {
+.browser-header-title {
   flex-shrink:1; min-width:0; text-align:center; white-space:nowrap;
   overflow:hidden; text-overflow:ellipsis;
   font-family:'VT323',monospace; font-size:16px; line-height:16px;
   letter-spacing:-0.8px; color:#fff;
 }
-.works-close {
+.browser-close {
   flex-shrink:0;
   width:18px; height:18px; padding:0; cursor:pointer;
   border-style:solid; border-width:1px; border-color:grey #f1f1f1 #f1f1f1 grey;
   background-image: linear-gradient(153deg, #9a9a9a, #f1f1f1);
   box-shadow: inset 0 0 0 1px #262626, inset 2px 2px 0 0 #f1f1f1, inset -2px -2px 0 0 gray;
 }
-.works-close svg { display:none; }
-.works-row { width:100%; flex:1; min-height:0; display:flex; justify-content:center; }
-.works-scroll {
-  flex:1; min-width:0; min-height:0; overflow-y:auto; scrollbar-width:none;
+.browser-close svg { display:none; }
+/* 레트로 IE 주소창 — 헤더 바로 아래, 실제 라우팅은 없고 배포된 포트폴리오
+   URL을 그대로 보여주기만 하는 장식용 바(진짜 인터넷에 접속한 느낌을 주기 위함). */
+.browser-toolbar {
+  width:100%; flex-shrink:0; display:flex; align-items:center; gap:8px;
+  padding:6px 10px; background:#ccc; border-bottom:1px solid #262626;
+  box-shadow: inset 1px 1px 0 0 #fff, inset -1px -1px 0 0 #888;
 }
-.works-scroll::-webkit-scrollbar { display:none; }
-.works-grid {
-  display:grid; grid-template-columns:repeat(2, minmax(0,1fr));
-  gap:24px 20px; padding:8px 20px 20px;
+.browser-toolbar-icon { width:16px; height:16px; flex-shrink:0; image-rendering:pixelated; }
+.browser-url {
+  flex:1; min-width:0; overflow:hidden; text-overflow:ellipsis; white-space:nowrap;
+  padding:3px 8px; background:#fff; color:#222;
+  border-style:solid; border-width:1px; border-color:#888 #fff #fff #888;
+  font-family:'VT323',monospace; font-size:16px; line-height:16px; letter-spacing:-0.8px;
 }
-.works-item { display:flex; flex-direction:column; gap:12px; align-items:center; cursor:pointer; }
-.works-thumb { width:100%; aspect-ratio:1/1; background:#fff; overflow:hidden; }
-.works-thumb img { width:100%; height:100%; object-fit:cover; display:block; }
-.works-info { width:100%; display:flex; flex-direction:column; gap:4px; text-align:center; }
-.works-title {
-  font-family:'Pretendard',-apple-system,sans-serif; font-weight:500;
-  font-size:20px; line-height:24px; letter-spacing:-0.2px; color:#fff;
-}
-.works-desc {
-  font-family:'Pretendard',-apple-system,sans-serif; font-weight:200;
-  font-size:12px; line-height:18px; letter-spacing:-0.12px; color:#fff; white-space:pre-line;
-}
-/* 창 자신의 폭이 768px 이하로 좁아지면(리사이즈든 좁은 화면이든) 그리드 1열로 —
-   풀스크린 전환은 더 이상 없음, 리사이즈 핸들도 항상 살아있다. */
-@container (max-width:768px) {
-  .works-grid { grid-template-columns:1fr; }
-}
+.browser-body { width:100%; flex:1; min-height:0; background:#fff; }
+.browser-frame { width:100%; height:100%; display:block; border:0; background:#fff; }
 
 /* ══ Film Window — Figma 107:2680, 데스크탑 "and my film" 아이콘 클릭 시 화면 정중앙에 등장 ══
    Works 창과 동일한 고정 중앙 모달 + 720px 고정(세이프 에어리어 내) + 픽셀 스크롤바
@@ -682,7 +669,7 @@ body {
 /* 실측(.titlebar-button:active) 그대로 — 눌렀을 때 밝기만 낮춰서
    기존 베벨과 합쳐지며 움푹 들어간 느낌을 줌 */
 .about-close:active, .cu-close:active, .proj-close:active,
-.works-close:active, .film-close:active, .ai-close:active {
+.browser-close:active, .film-close:active, .ai-close:active {
   filter: brightness(69%);
 }
 .ai-row { width:100%; flex:1; min-height:0; display:flex; justify-content:center; }
@@ -826,9 +813,9 @@ body {
 .pixel-scrollbar:has(.pixel-scrollbar-handle[hidden]) {
   background:none; border-color:transparent; box-shadow:none;
 }
-/* Works/Film/AI Images — 트랙(영역) 배경/테두리/베벨을 항상 비워두고
+/* Film/AI Images — 트랙(영역) 배경/테두리/베벨을 항상 비워두고
    핸들(썸)만 검정 콘텐츠 배경 위에 떠 있게 함 (스크롤 유무와 무관하게 항상) */
-.works-win .pixel-scrollbar, .film-win .pixel-scrollbar, .ai-win .pixel-scrollbar {
+.film-win .pixel-scrollbar, .ai-win .pixel-scrollbar {
   background:none; border-color:transparent; box-shadow:none;
 }
 .pixel-scrollbar-handle {
@@ -901,7 +888,7 @@ body {
 .cu-win::after,
 .about-win::after,
 .proj-popup::after,
-.works-win::after,
+.browser-win::after,
 .film-win::after,
 .ai-win::after,
 .welcome-win::after {

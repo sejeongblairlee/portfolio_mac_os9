@@ -76,7 +76,7 @@
 <!-- ▐▌ DESKTOP ICONS — 우측 ▐▌ -->
 <div class="icon-col" id="icons-right">
   <div class="dt-icon clickable" id="icon-works">
-    <img src="src/images/desktop/folder-default.png" alt="">
+    <img src="src/images/desktop/icon-ie.png" alt="">
     <div class="dt-label">Works</div>
   </div>
   <div class="dt-icon clickable" id="icon-ai">
@@ -221,27 +221,28 @@
   </div>
 </div>
 
-<!-- ▐▌ WINDOW: Works — 데스크탑 "Works" 아이콘 클릭 시 화면 정중앙에 등장 ▐▌ -->
-<div class="works-win" id="win-works" style="display:none;">
-  <div class="works-header">
-    <div class="works-header-side">
-      <button class="works-close" id="works-close" aria-label="닫기"></button>
-      <span class="works-header-pinstripe" aria-hidden="true"></span>
+<!-- ▐▌ WINDOW: Works — 데스크탑 "Works"(IE) 아이콘 클릭 시 화면 정중앙에 등장.
+     예전엔 로컬 썸네일 리스트였지만, 실제 포트폴리오 사이트(별도 배포)를 레트로
+     IE 브라우저 창처럼 iframe으로 띄우는 방식으로 교체(2026-09-03). ▐▌ -->
+<div class="browser-win" id="win-browser" style="display:none;">
+  <div class="browser-header">
+    <div class="browser-header-side">
+      <button class="browser-close" id="browser-close" aria-label="닫기"></button>
+      <span class="browser-header-pinstripe" aria-hidden="true"></span>
     </div>
-    <span class="works-header-title">Works</span>
-    <div class="works-header-side works-header-side-right">
-      <span class="works-header-pinstripe" aria-hidden="true"></span>
-    </div>
-  </div>
-  <div class="works-row">
-    <div class="works-scroll" id="works-scroll">
-      <div class="works-grid" id="works-grid"></div>
-    </div>
-    <div class="pixel-scrollbar" id="works-scrollbar">
-      <div class="pixel-scrollbar-handle" id="works-scrollbar-thumb" hidden></div>
+    <span class="browser-header-title">Works</span>
+    <div class="browser-header-side browser-header-side-right">
+      <span class="browser-header-pinstripe" aria-hidden="true"></span>
     </div>
   </div>
-  <div class="works-resize-handle" id="works-resize-handle">
+  <div class="browser-toolbar">
+    <img class="browser-toolbar-icon" src="src/images/desktop/icon-ie.png" alt="">
+    <span class="browser-url" id="browser-url">https://blair.contextroom.works/</span>
+  </div>
+  <div class="browser-body">
+    <iframe class="browser-frame" id="browser-frame" title="Sejeong Blair Lee — Portfolio" loading="lazy"></iframe>
+  </div>
+  <div class="browser-resize-handle" id="browser-resize-handle">
     <i style="right:10px; bottom:10px;"></i><i style="right:10px; bottom:14px;"></i><i style="right:14px; bottom:10px;"></i>
     <i style="right:10px; bottom:18px;"></i><i style="right:14px; bottom:14px;"></i><i style="right:18px; bottom:10px;"></i>
   </div>
