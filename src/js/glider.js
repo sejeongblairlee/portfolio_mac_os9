@@ -1,31 +1,31 @@
 /* Original two-room paper-plane game, inspired by the classic Glider.
    Physics use 400 × 250 units; room art renders at 800 × 500 for fine detail.
-   The original title GIF was supplied by the site owner. */
+   Title artwork is a 2026 homage based on the owner's supplied reference. */
 (() => {
   'use strict';
   const mount = document.createElement('div');
   mount.innerHTML = `<section class="glider-win is-splash" id="glider-win" hidden aria-label="Glider · Jazz After Hours" tabindex="-1">
     <header class="glider-header"><button class="glider-close" aria-label="Close game">×</button><span class="glider-title">Glider · Jazz After Hours</span></header>
-    <div class="glider-hud"><span id="glider-room">01 / TOKYO</span><span id="glider-score">NOTES 0/3 · ♥♥♥</span></div>
     <div class="glider-stage">
-      <div class="glider-splash"><img src="src/images/glider/title-original.gif" alt="Original Glider 4.0 title screen by John Calhoun"><div class="glider-splash-bottom"><span class="glider-load-status" role="status">도쿄 · 파리의 방을 불러오는 중…</span><button class="glider-enter" disabled>START GAME →</button></div></div>
+      <div class="glider-splash"><img src="src/images/glider/title-paris-v3.png" alt="Glider 4.0 paper airplane against Paris wallpaper"><p class="glider-credit">A 2026 homage<br>by Sejeong Lee.<small>Inspired by John Calhoun's original.</small></p><button class="glider-enter" disabled aria-label="Start game"><span class="glider-load-status" role="status">LOADING…</span></button></div>
       <canvas width="800" height="500" aria-label="Paper plane game: use left and right to glide, hold Lift for a short updraft boost."></canvas>
-      <div class="glider-overlay" hidden><small>JAZZ AFTER HOURS</small><h2>Jazz After Hours</h2><p>도쿄에서 파리까지, 종이비행기 여행.</p><button class="glider-start">LET'S FLY →</button></div>
+      <div class="glider-hud" aria-label="Game status"><span id="glider-room" class="glider-hud-box">Tokyo Blue Note</span><span class="glider-cards"><b id="glider-room-number" title="Room">1</b><b id="glider-note-number" title="Notes collected in this room">0</b></span><span id="glider-score" class="glider-hud-box" title="Score">000000</span><span class="glider-hud-box glider-supplies"><span class="glider-fuel" title="Lift energy"><span id="glider-fuel">100</span><i class="glider-battery" aria-hidden="true"></i></span><span class="glider-notes" title="Total notes"><span id="glider-notes">0</span> ♪</span><span id="glider-lives" aria-label="3 lives"></span></span></div>
+      <div class="glider-overlay" hidden><small>JAZZ AFTER HOURS</small><h2>Jazz After Hours</h2><p>A paper flight from Tokyo to Paris.</p><button class="glider-start">LET'S FLY →</button></div>
     </div>
     <div class="glider-footer"><div class="glider-controls"><button data-key="left" aria-label="Fly left">←</button><button data-key="right" aria-label="Fly right">→</button><button data-key="lift" aria-label="Hold to boost upward">↑ LIFT</button></div><div class="glider-actions"><button class="glider-pause" aria-label="Pause game">Ⅱ</button><button class="glider-reset" aria-label="Restart game">↻</button></div></div>
-    <p class="glider-help">← → / A D 이동 · Space 상승 · P 일시정지 · 바닥과 가구를 조심!</p>
   </section>`;
   const win = mount.firstElementChild;
   document.body.append(win);
   const canvas = win.querySelector('canvas'), ctx = canvas.getContext('2d');
+  win.querySelector('.glider-stage').append(win.querySelector('.glider-footer'));
   ctx.scale(2,2);
   const roomArt = ['tokyo-room-v2.png','paris-room-v2.png'].map(name=>{const img=new Image();img.src=`src/images/glider/${name}`;return img;});
   const enter=win.querySelector('.glider-enter'),loadStatus=win.querySelector('.glider-load-status');
   function loadArt(){
     enter.disabled=true;
     Promise.all(roomArt.map(img=>img.decode())).then(()=>{
-      loadStatus.textContent='TOKYO → PARIS · 음표를 모아 다음 방으로';enter.textContent='START GAME →';enter.disabled=false;
-    }).catch(()=>{loadStatus.textContent='배경을 불러오지 못했어요. 다시 시도해주세요.';enter.textContent='RETRY ↻';enter.disabled=false;});
+      loadStatus.textContent='CLICK OR PRESS ENTER TO BEGIN';enter.disabled=false;
+    }).catch(()=>{loadStatus.textContent='COULD NOT LOAD ROOMS · CLICK TO RETRY';enter.disabled=false;});
   }
   enter.addEventListener('click',()=>{
     if(!roomArt.every(img=>img.complete&&img.naturalWidth)){roomArt.forEach(img=>{img.src=img.src.split('?')[0]+'?retry='+Date.now();});loadArt();return;}
@@ -36,6 +36,9 @@
   const heading = overlay.querySelector('h2'), copy = overlay.querySelector('p');
   const start = win.querySelector('.glider-start'), pause = win.querySelector('.glider-pause');
   const score = win.querySelector('#glider-score'), roomLabel = win.querySelector('#glider-room');
+  const lifeDisplay=win.querySelector('#glider-lives');
+  const planeIcon='<svg viewBox="0 0 30 14" aria-hidden="true"><path d="M1 2h6l4 2 17 1-9 8-6-7-5 5-2-7H2z" fill="#eaf5f4" stroke="#839193"/><path d="m11 4 8 9-1-7 10-1M7 2 6 4l2 7 3-7" fill="#b5c6c9" stroke="#67757a" stroke-width=".5"/></svg>';
+  lifeDisplay.innerHTML=planeIcon.repeat(3);
   const rooms = [
     { name:'01 / TOKYO · BLUE NOTE', color:'#6dcce3', floor:230, door:[154,210], vents:[{x:43,w:40},{x:179,w:42},{x:307,w:38}],
       blocks:[{x:87,y:191,w:73,h:33},{x:108,y:170,w:49,h:21},{x:174,y:186,w:54,h:35},{x:280,y:202,w:25,h:21},{x:320,y:202,w:25,h:21},{x:353,y:182,w:12,h:39}], notes:[{x:72,y:123},{x:193,y:73},{x:325,y:125}] },
@@ -76,13 +79,19 @@
       ctx.save();ctx.translate(Math.round(plane.x),Math.round(plane.y));ctx.scale(plane.facing,1);
       ctx.fillStyle='#f4edd9';ctx.beginPath();ctx.moveTo(-10,-5);ctx.lineTo(12,0);ctx.lineTo(-8,6);ctx.lineTo(-4,0);ctx.closePath();ctx.fill();ctx.strokeStyle='#202431';ctx.lineWidth=.5;ctx.stroke();line(-4,0,10,0,'#858ea0',.5);line(-10,-5,-4,0,'#b2bbc5',.5);ctx.restore();
     }
-    rect(9,10,45,4,'#060f23');rect(10,11,Math.round(43*plane.fuel),2,rooms[room].color);text('LIFT',9,24,'#b8b8c5',6);
-    if(hint>0) {rect(75,8,256,17,'#111a2e');text('COLLECT ALL 3 NOTES, THEN EXIT →',84,19,'#eee0bb',8);}
-    score.textContent=`NOTES ${collected[room].size}/3 · ${'♥'.repeat(lives)}${'♡'.repeat(3-lives)}`;roomLabel.textContent=rooms[room].name;
+    if(hint>0) {rect(75,30,256,17,'#111a2e');text('COLLECT ALL 3 NOTES, THEN EXIT →',84,41,'#eee0bb',8);}
+    const total=collected.reduce((sum,notes)=>sum+notes.size,0);
+    score.textContent=String(total*1000).padStart(6,'0');roomLabel.textContent=room===0?'Tokyo Blue Note':'Le Minuit, Paris';
+    win.querySelector('#glider-room-number').textContent=room+1;
+    win.querySelector('#glider-note-number').textContent=collected[room].size;
+    win.querySelector('#glider-fuel').textContent=Math.round(plane.fuel*100);
+    win.querySelector('#glider-notes').textContent=total;
+    lifeDisplay.setAttribute('aria-label',`${lives} lives`);
+    [...lifeDisplay.children].forEach((icon,i)=>icon.style.opacity=i<lives?'1':'.18');
   }
   function show(title,body,button) {heading.textContent=title;copy.textContent=body;start.textContent=button;overlay.hidden=false;}
   function clearKeys(){Object.keys(keys).forEach(k=>keys[k]=false);win.querySelectorAll('.pressed').forEach(el=>el.classList.remove('pressed'));}
-  function loseLife(){lives--;clearKeys();if(lives===0){mode='over';show('A little turbulence…','종이비행기가 잠시 쉬어갑니다. 다시 도쿄에서 출발해볼까요?','TRY AGAIN →');}else resetPlane();}
+  function loseLife(){lives--;clearKeys();if(lives===0){mode='over';show('A little turbulence…','Out of paper planes. Take another flight from Tokyo.','TRY AGAIN →');}else resetPlane();}
   function update(dt) {
     elapsed+=dt;invincible=Math.max(0,invincible-dt);hint=Math.max(0,hint-dt);
     const direction=Number(keys.right)-Number(keys.left);
@@ -98,8 +107,8 @@
     rooms[room].notes.forEach((n,i)=>{if(Math.hypot(plane.x-n.x,plane.y-n.y)<18)collected[room].add(i);});
     if(plane.x>387){
       if(plane.y>rooms[room].door[0] && plane.y<rooms[room].door[1] && collected[room].size===3){
-        clearKeys();if(room===0){room=1;resetPlane();mode='between';show('Next stop: Paris','東京 → PARIS · 세 음표를 챙겼어요. 이번에는 한밤의 작은 재즈바로.','ENTER PARIS →');}
-        else {mode='won';show('One lovely night.','도쿄에서 파리까지, 여섯 음표를 모두 모았어요. Thanks for staying a little longer.','FLY AGAIN ↻');}
+        clearKeys();if(room===0){room=1;resetPlane();mode='between';show('Next stop: Paris','Three notes collected. A little jazz bar awaits.','ENTER PARIS →');}
+        else {mode='won';show('One lovely night.','Six notes, two cities. Thanks for staying a little longer.','FLY AGAIN ↻');}
       }else{plane.x=387;hint=2;}
     }
     const collision=plane.y>rooms[room].floor-5 || rooms[room].blocks.some(b=>plane.x+7>b.x&&plane.x-7<b.x+b.w&&plane.y+4>b.y&&plane.y-4<b.y+b.h);
@@ -107,7 +116,7 @@
   }
   function tick(time){if(win.hidden){frame=0;return;}const dt=Math.min((time-last)/1000||0,1/30);last=time;if(mode==='playing')update(dt);draw();frame=requestAnimationFrame(tick);}
   function animate(){if(!frame){last=performance.now();frame=requestAnimationFrame(tick);}}
-  function setPaused(){if(mode==='playing'){mode='paused';clearKeys();show('Intermission','잠깐 쉬어가도 좋아요. 준비되면 다시 날아가요.','RESUME →');}else if(mode==='paused'){mode='playing';overlay.hidden=true;}pause.textContent=mode==='paused'?'▶':'Ⅱ';}
+  function setPaused(){if(mode==='playing'){mode='paused';clearKeys();show('Intermission','Arrow keys / A D: glide. Space: lift. Collect three notes, then find the exit.','RESUME →');}else if(mode==='paused'){mode='playing';overlay.hidden=true;}pause.textContent=mode==='paused'?'▶':'Ⅱ';}
   function open(){win.hidden=false;if(mode==='intro')loadArt();window.__centerPopupForMobile?.(win);if(matchMedia('(max-width:768px)').matches){delete win.dataset.dragged;win.style.left='50vw';win.style.top='calc(50dvh + 14px)';win.style.transform='translate(-50%, -50%)';}window.__bringToFront?.(win);win.focus({preventScroll:true});animate();}
   document.getElementById('icon-glider').addEventListener('click',open);
   win.querySelector('.glider-close').addEventListener('click',()=>{if(mode==='playing')setPaused();win.hidden=true;clearKeys();cancelAnimationFrame(frame);frame=0;});
@@ -115,7 +124,7 @@
   pause.addEventListener('click',setPaused);
   win.querySelector('.glider-reset').addEventListener('click',()=>{reset();mode='playing';overlay.hidden=true;pause.textContent='Ⅱ';clearKeys();win.focus({preventScroll:true});});
   const keyMap={ArrowLeft:'left',a:'left',A:'left',ArrowRight:'right',d:'right',D:'right',' ':'lift',ArrowUp:'lift'};
-  win.addEventListener('keydown',e=>{if(keyMap[e.key]){e.preventDefault();keys[keyMap[e.key]]=true;}if((e.key==='p'||e.key==='P')&&!e.repeat){e.preventDefault();setPaused();}});
+  win.addEventListener('keydown',e=>{if(mode==='intro'&&e.key==='Enter'){e.preventDefault();enter.click();return;}if(keyMap[e.key]){e.preventDefault();keys[keyMap[e.key]]=true;}if((e.key==='p'||e.key==='P')&&!e.repeat){e.preventDefault();setPaused();}});
   window.addEventListener('keyup',e=>{if(keyMap[e.key])keys[keyMap[e.key]]=false;});
   window.addEventListener('blur',()=>{clearKeys();if(!win.hidden&&mode==='playing')setPaused();});
   document.addEventListener('visibilitychange',()=>{if(document.hidden){clearKeys();if(!win.hidden&&mode==='playing')setPaused();}});

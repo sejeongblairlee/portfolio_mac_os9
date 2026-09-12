@@ -10,12 +10,15 @@
 .glider-win.is-splash { width:min(648px, calc(100vw - 24px)); overflow-y:auto; }
 .glider-win.is-splash .glider-hud, .glider-win.is-splash canvas,
 .glider-win.is-splash .glider-footer, .glider-win.is-splash .glider-help { display:none; }
-.glider-splash { background:#000; color:#ddd; }
+.glider-splash { position:relative; background:#000; color:#fff4d9; }
 .glider-splash[hidden] { display:none; }
 .glider-splash img { display:block; width:100%; height:auto; image-rendering:pixelated; }
-.glider-splash-bottom { display:flex; align-items:center; justify-content:space-between; gap:10px; padding:12px; background:#c6c6c6; color:#151515; font-size:15px; }
-.glider-splash-bottom button { flex-shrink:0; border:2px solid; border-color:#fff #555 #555 #fff; background:#ddd; padding:8px 12px; min-height:40px; }
-.glider-splash-bottom button:disabled { opacity:.5; cursor:wait; }
+.glider-credit { position:absolute; top:12%; left:60%; right:5%; margin:0; font-size:clamp(12px, 3.3cqw, 22px); line-height:1.15; text-shadow:2px 2px #000; }
+.glider-credit small { display:block; margin-top:10%; font-size:.68em; line-height:1.2; }
+.glider-enter { position:absolute; inset:0; width:100%; background:transparent; border:0; padding:0; }
+.glider-enter:focus-visible { outline:2px solid cyan; outline-offset:-3px; }
+.glider-load-status { position:absolute; bottom:2%; left:0; right:0; font-size:clamp(11px, 2.7cqw, 18px); color:#fff4d9; text-shadow:2px 2px #000; }
+.glider-enter:disabled { cursor:wait; }
 .glider-header { display:flex; align-items:center; gap:8px; height:26px; flex-shrink:0; cursor:grab; touch-action:none; user-select:none; }
 .glider-header::after, .glider-header::before { content:''; height:16px; flex:1; background:repeating-linear-gradient(#666 0 1px, #ddd 1px 3px); }
 .glider-header::before { order:1; }
@@ -23,30 +26,40 @@
 .glider-header::after { order:3; }
 .glider-win button { font:inherit; color:inherit; cursor:pointer; }
 .glider-close { width:18px; height:18px; border:1px solid; border-color:#fff #555 #555 #fff; background:#ccc; font-size:16px; }
-.glider-hud { display:flex; justify-content:space-between; align-items:center; gap:8px; padding:5px 8px; font-size:17px; background:#e4e0d4; border:1px solid #555; flex-shrink:0; }
-.glider-stage { position:relative; background:#111326; border:1px solid #252525; overflow:hidden; flex-shrink:0; }
+.glider-hud { position:absolute; top:1%; left:1%; right:1%; display:grid; grid-template-columns:1.6fr .38fr .7fr 1.4fr; align-items:stretch; gap:1%; font-size:clamp(10px, 3.1cqw, 25px); line-height:1; z-index:2; pointer-events:none; }
+.glider-hud-box { min-width:0; display:flex; align-items:center; padding:2px 4px; background:#000; border:2px solid #ccc; box-shadow:inset 0 0 0 1px #555, 0 0 0 1px #111; }
+#glider-room { color:#ef3c22; white-space:nowrap; overflow:hidden; }
+#glider-score { color:#32b7e2; }
+.glider-cards { display:grid; grid-template-columns:1fr 1fr; gap:3px; }
+.glider-cards b { position:relative; display:grid; place-items:center; font-weight:normal; color:#111; background:#fff; border:1px solid #555; padding-top:3px; }
+.glider-cards b::before { content:''; position:absolute; top:2px; left:2px; right:2px; height:2px; background:linear-gradient(90deg,#c983a6 15%,#eee 15% 25%,#67b4c5 25% 90%,#fff 90%); }
+.glider-supplies { justify-content:space-between; gap:3px; padding-inline:3px; }
+.glider-fuel { display:flex; align-items:center; gap:2px; color:#e7d94e; }
+.glider-battery { position:relative; display:inline-block; width:.3em; height:.75em; border:1px solid #bbb; background:linear-gradient(#e34721 35%,#dec645 35%); }
+.glider-battery::before { content:''; position:absolute; top:-3px; left:1px; right:1px; height:2px; background:#ddd; }
+.glider-notes { color:#3fad55; white-space:nowrap; }
+#glider-lives { display:flex; gap:1px; }
+#glider-lives svg { width:3.4cqw; height:auto; }
+.glider-stage { position:relative; container-type:inline-size; background:#000; border:1px solid #252525; overflow:hidden; flex-shrink:0; }
 .glider-stage canvas { display:block; width:100%; height:auto; aspect-ratio:8/5; image-rendering:pixelated; }
-.glider-overlay { position:absolute; inset:0; display:flex; flex-direction:column; align-items:center; justify-content:center; padding:14px; background:#060913c9; color:#f3e3b4; text-align:center; gap:10px; }
+.glider-overlay { position:absolute; inset:0; z-index:4; display:flex; flex-direction:column; align-items:center; justify-content:center; padding:14px; background:#000d; color:#eee; text-align:center; gap:10px; }
 .glider-overlay[hidden] { display:none; }
-.glider-overlay small { font-size:14px; letter-spacing:3px; color:#b7bed6; }
+.glider-overlay small { font-size:14px; letter-spacing:3px; color:#45d7dc; }
 .glider-overlay h2 { font:normal clamp(22px, 5vw, 38px)/1 'VT323',monospace; margin:0; }
 .glider-overlay p { margin:0; max-width:340px; font:14px/1.5 monospace; }
-.glider-overlay button { background:#efdfa9; color:#202035; border:2px solid; border-color:#fff2ce #72663e #72663e #fff2ce; padding:8px 22px; font-size:20px; }
-.glider-footer { display:flex; justify-content:space-between; align-items:center; gap:8px; padding:7px 4px 4px; flex-shrink:0; }
+.glider-overlay button { background:#000; color:#eee; border:3px double #eee; padding:8px 22px; font-size:20px; }
+.glider-footer { position:absolute; bottom:1%; left:1%; right:1%; z-index:3; display:flex; justify-content:space-between; align-items:center; gap:8px; pointer-events:none; }
 .glider-controls { display:flex; gap:6px; }
-.glider-controls button, .glider-actions button { min-width:40px; min-height:40px; padding:4px 10px; background:#ddd; border:2px solid; border-color:#fff #555 #555 #fff; touch-action:none; user-select:none; -webkit-user-select:none; font-size:19px; }
+.glider-controls button, .glider-actions button { pointer-events:auto; min-width:34px; min-height:32px; padding:2px 7px; background:#000d; color:#eee; border:1px solid #aaa; touch-action:none; user-select:none; -webkit-user-select:none; font-size:17px; }
 .glider-controls button:active, .glider-controls button.pressed { border-color:#555 #fff #fff #555; background:#b9b9b9; }
 .glider-actions { display:flex; gap:5px; }
-.glider-help { margin:0; padding:3px 5px 6px; font-size:15px; color:#373737; }
 @media(max-width:768px) {
   html:has(.glider-win:not([hidden])), body:has(.glider-win:not([hidden])) { overflow:clip; }
   body:has(.glider-win:not([hidden])) { contain:paint; height:100dvh; }
   .glider-win { width:min(calc(100vw - 24px), max(280px, calc(160dvh - 320px))); overflow-y:auto; }
   .glider-title { font-size:15px; }
-  .glider-hud { font-size:14px; }
   .glider-overlay { gap:7px; }
   .glider-overlay p { font-size:11px; }
   .glider-overlay small { font-size:10px; }
   .glider-overlay button { padding:5px 15px; font-size:17px; }
-  .glider-help { font-size:13px; }
 }
