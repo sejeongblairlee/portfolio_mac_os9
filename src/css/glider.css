@@ -7,6 +7,15 @@
   font-family:'VT323', monospace; z-index:600;
 }
 .glider-win[hidden] { display:none; }
+.glider-win.is-splash { width:min(648px, calc(100vw - 24px)); overflow-y:auto; }
+.glider-win.is-splash .glider-hud, .glider-win.is-splash canvas,
+.glider-win.is-splash .glider-footer, .glider-win.is-splash .glider-help { display:none; }
+.glider-splash { background:#000; color:#ddd; }
+.glider-splash[hidden] { display:none; }
+.glider-splash img { display:block; width:100%; height:auto; image-rendering:pixelated; }
+.glider-splash-bottom { display:flex; align-items:center; justify-content:space-between; gap:10px; padding:12px; background:#c6c6c6; color:#151515; font-size:15px; }
+.glider-splash-bottom button { flex-shrink:0; border:2px solid; border-color:#fff #555 #555 #fff; background:#ddd; padding:8px 12px; min-height:40px; }
+.glider-splash-bottom button:disabled { opacity:.5; cursor:wait; }
 .glider-header { display:flex; align-items:center; gap:8px; height:26px; flex-shrink:0; cursor:grab; touch-action:none; user-select:none; }
 .glider-header::after, .glider-header::before { content:''; height:16px; flex:1; background:repeating-linear-gradient(#666 0 1px, #ddd 1px 3px); }
 .glider-header::before { order:1; }
