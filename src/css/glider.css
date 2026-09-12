@@ -30,7 +30,6 @@
 .glider-fuel { display:flex; align-items:center; gap:2px; color:#e7d94e; }
 .glider-battery { position:relative; display:inline-block; width:.3em; height:.75em; border:1px solid #bbb; background:linear-gradient(#e34721 35%,#dec645 35%); }
 .glider-battery::before { content:''; position:absolute; top:-3px; left:1px; right:1px; height:2px; background:#ddd; }
-.glider-notes { color:#3fad55; white-space:nowrap; }
 #glider-lives { display:flex; gap:1px; }
 #glider-lives svg { width:3.4cqw; height:auto; }
 .glider-stage { position:relative; container-type:inline-size; background:#000; border:1px solid #252525; overflow:hidden; flex-shrink:0; }
