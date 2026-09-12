@@ -899,7 +899,7 @@ const MB_SUDOKU_ICON = svgDataUri(
 const MB_FLOWER_ICON = 'src/images/desktop/globe.png';
 
 const MB_NAV_ITEMS = [
-  { winId: 'glider-win', label: 'Glider · Jazz After Hours', icon: 'src/images/desktop/utilities-help.png', open: () => document.getElementById('icon-glider').click() },
+  { winId: 'glider-win', label: 'Glider 2026', icon: 'src/images/desktop/utilities-help.png', open: () => document.getElementById('icon-glider').click() },
   { winId: 'win-welcome', label: 'Welcome', icon: MB_FLOWER_ICON, open: () => openCenteredDraggableWin(document.getElementById('win-welcome')) },
   { winId: 'win-about', label: 'About Me', icon: MB_ABOUT_ICON, open: () => document.getElementById('mb-about').click() },
   { winId: 'win-browser', label: 'Works', icon: 'src/images/desktop/icon-ie.png', open: () => document.getElementById('icon-works').click() },

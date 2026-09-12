@@ -470,7 +470,8 @@ body {
 .win-rs-e { right:-4px; }
 .win-rs-w { left:-4px; }
 /* Mac OS9 WindowChrome — About/CU-SeeMe와 동일 패턴, 헤더 배경은 창 고유색(검정) 유지 */
-.browser-header {
+.browser-header, .mac-window-header {
+  color:#fff;
   height:26px; width:100%; flex-shrink:0;
   /* 3열 그리드(1fr auto 1fr) — 예전엔 [닫기][핀스트라이프][타이틀][핀스트라이프]가
      전부 한 flex row라, 왼쪽에만 있는 닫기 버튼 너비만큼 타이틀이 진짜 중앙에서
@@ -486,22 +487,22 @@ body {
      가려지고 있어서, 헤더에도 동일하게 겹쳐 그려줌(프레임과 이어지게) */
   box-shadow: inset 1px 1px 0 0 #eee, inset -1px 0 0 0 #999;
 }
-.browser-win.dragging .browser-header { cursor:grabbing; }
-.browser-header-side { display:flex; align-items:center; gap:7px; height:100%; min-width:0; }
-.browser-header-side-right { justify-content:flex-end; }
-.browser-header-pinstripe {
+.browser-win.dragging .browser-header, .dragging .mac-window-header { cursor:grabbing; }
+.browser-header-side, .mac-window-header-side { display:flex; align-items:center; gap:7px; height:100%; min-width:0; }
+.browser-header-side-right, .mac-window-header-side-right { justify-content:flex-end; }
+.browser-header-pinstripe, .mac-window-header-pinstripe {
   flex:1; min-width:8px; height:19px;
   background-color:rgba(255,255,255,0.1);
   background-image: repeating-linear-gradient(to bottom, transparent 0, transparent 1px, rgba(255,255,255,0.45) 1px, rgba(255,255,255,0.45) 2px);
   border-left:1px solid rgba(255,255,255,0.25); border-right:1px solid rgba(0,0,0,0.4);
 }
-.browser-header-title {
+.browser-header-title, .mac-window-header-title {
   flex-shrink:1; min-width:0; text-align:center; white-space:nowrap;
   overflow:hidden; text-overflow:ellipsis;
   font-family:'VT323',monospace; font-size:16px; line-height:16px;
   letter-spacing:-0.8px; color:#fff;
 }
-.browser-close {
+.browser-close, .mac-window-close {
   flex-shrink:0;
   width:18px; height:18px; padding:0; cursor:pointer;
   border-style:solid; border-width:1px; border-color:grey #f1f1f1 #f1f1f1 grey;
@@ -669,7 +670,7 @@ body {
 /* 실측(.titlebar-button:active) 그대로 — 눌렀을 때 밝기만 낮춰서
    기존 베벨과 합쳐지며 움푹 들어간 느낌을 줌 */
 .about-close:active, .cu-close:active, .proj-close:active,
-.browser-close:active, .film-close:active, .ai-close:active {
+.browser-close:active, .film-close:active, .ai-close:active, .mac-window-close:active {
   filter: brightness(69%);
 }
 .ai-row { width:100%; flex:1; min-height:0; display:flex; justify-content:center; }

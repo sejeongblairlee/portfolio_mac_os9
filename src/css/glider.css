@@ -2,7 +2,7 @@
   position:fixed; left:50%; top:calc(50% + 14px); transform:translate(-50%, -50%);
   width:min(804px, calc(100vw - 40px), max(280px, calc(160dvh - 320px))); max-height:calc(100dvh - 68px);
   display:flex; flex-direction:column; background:#c6c6c6; color:#161719;
-  border:1px solid #262626; padding:3px;
+  border:1px solid #262626; padding:0;
   box-shadow:inset 1px 1px #fff, inset -1px -1px #666, 3px 3px #0008;
   font-family:'VT323', monospace; z-index:600;
 }
@@ -19,13 +19,7 @@
 .glider-enter:focus-visible { outline:2px solid cyan; outline-offset:-3px; }
 .glider-load-status { position:absolute; bottom:2%; left:0; right:0; font-size:clamp(11px, 2.7cqw, 18px); color:#fff4d9; text-shadow:2px 2px #000; }
 .glider-enter:disabled { cursor:wait; }
-.glider-header { display:flex; align-items:center; gap:8px; height:26px; flex-shrink:0; cursor:grab; touch-action:none; user-select:none; }
-.glider-header::after, .glider-header::before { content:''; height:16px; flex:1; background:repeating-linear-gradient(#666 0 1px, #ddd 1px 3px); }
-.glider-header::before { order:1; }
-.glider-title { order:2; font-size:17px; white-space:nowrap; }
-.glider-header::after { order:3; }
-.glider-win button { font:inherit; color:inherit; cursor:pointer; }
-.glider-close { width:18px; height:18px; border:1px solid; border-color:#fff #555 #555 #fff; background:#ccc; font-size:16px; }
+.glider-stage button { font:inherit; color:inherit; cursor:pointer; }
 .glider-hud { position:absolute; top:1%; left:1%; right:1%; display:grid; grid-template-columns:1.6fr .38fr .7fr 1.4fr; align-items:stretch; gap:1%; font-size:clamp(10px, 3.1cqw, 25px); line-height:1; z-index:2; pointer-events:none; }
 .glider-hud-box { min-width:0; display:flex; align-items:center; padding:2px 4px; background:#000; border:2px solid #ccc; box-shadow:inset 0 0 0 1px #555, 0 0 0 1px #111; }
 #glider-room { color:#ef3c22; white-space:nowrap; overflow:hidden; }
@@ -57,7 +51,6 @@
   html:has(.glider-win:not([hidden])), body:has(.glider-win:not([hidden])) { overflow:clip; }
   body:has(.glider-win:not([hidden])) { contain:paint; height:100dvh; }
   .glider-win { width:min(calc(100vw - 24px), max(280px, calc(160dvh - 320px))); overflow-y:auto; }
-  .glider-title { font-size:15px; }
   .glider-overlay { gap:7px; }
   .glider-overlay p { font-size:11px; }
   .glider-overlay small { font-size:10px; }
