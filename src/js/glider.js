@@ -48,13 +48,32 @@
   let room=0, lives=3, mode='intro', collected=[new Set(),new Set()], plane;
   let frame=0, last=0, elapsed=0, invincible=0, hint=0;
   const keys={left:false,right:false,lift:false};
-  function resetPlane() { plane={x:22,y:124,vx:0,vy:0,fuel:1,facing:1}; invincible=1.5; }
+  function resetPlane() { plane={x:22,y:124,vx:36,vy:8,fuel:1,facing:1}; invincible=1.5; }
   function reset() { room=0;lives=3;collected=[new Set(),new Set()];elapsed=0;hint=0;resetPlane(); }
   reset();
   const rect=(x,y,w,h,c)=>{ctx.fillStyle=c;ctx.fillRect(Math.round(x),Math.round(y),w,h);};
   function line(x,y,xx,yy,c,width=1) {ctx.strokeStyle=c;ctx.lineWidth=width;ctx.beginPath();ctx.moveTo(x,y);ctx.lineTo(xx,yy);ctx.stroke();}
   function text(t,x,y,c='#ecddb4',size=8) {ctx.fillStyle=c;ctx.font=`${size}px monospace`;ctx.textAlign='left';ctx.fillText(t,x,y);}
   function note(x,y,c) {rect(x+3,y-7,2,9,c);rect(x+5,y-7,4,2,c);rect(x-1,y,5,3,c);}
+  // Integer-pixel folded wings: white paper, cool shaded underside, dark seams.
+  const paperSprite=[
+    '  ######                       ',
+    ' #WWWWWW##                     ',
+    ' #WWcWWWWW##################   ',
+    '##WWcWWWWWWWWWWWWWWWWWWWWWWW## ',
+    '#W#WcWWW#######################',
+    ' ##WcWW#ssss#WWWWWWWWWWWWW##   ',
+    '  #WcW#sssss#WWWWWWWWWWW#     ',
+    '  #Wc#sssssss#WWWWWWWW##      ',
+    '   ##sssssssss#WWWWW##        ',
+    '    #ssssssssss#WWW#          ',
+    '     ###########W#           ',
+    '                #            '
+  ];
+  const paperColors={'#':'#27343b',W:'#f1faf7',c:'#a6d5d7',s:'#89989d'};
+  const spriteCanvas=document.createElement('canvas');spriteCanvas.width=31;spriteCanvas.height=12;
+  const spriteContext=spriteCanvas.getContext('2d');
+  paperSprite.forEach((row,y)=>[...row].forEach((pixel,x)=>{if(paperColors[pixel]){spriteContext.fillStyle=paperColors[pixel];spriteContext.fillRect(x,y,1,1);}}));
   function scenery() {
     rect(0,0,400,250,'#111');
     const art=roomArt[room];
@@ -74,14 +93,17 @@
   }
   function draw() {
     ctx.imageSmoothingEnabled=false;scenery();
-    rooms[room].notes.forEach((n,i)=>{if(!collected[room].has(i)){const y=n.y+Math.sin(elapsed*3+i)*2;rect(n.x-6,y-12,17,19,'#171b3080');note(n.x,y,rooms[room].color);}});
+    rooms[room].notes.forEach((n,i)=>{if(!collected[room].has(i)){const y=n.y+Math.sin(elapsed*3+i)*2;note(n.x+1,y+1,'#263139');note(n.x,y,rooms[room].color);}});
     if(invincible<=0 || Math.floor(elapsed*12)%2===0) {
       ctx.save();ctx.translate(Math.round(plane.x),Math.round(plane.y));ctx.scale(plane.facing,1);
-      ctx.fillStyle='#f4edd9';ctx.beginPath();ctx.moveTo(-10,-5);ctx.lineTo(12,0);ctx.lineTo(-8,6);ctx.lineTo(-4,0);ctx.closePath();ctx.fill();ctx.strokeStyle='#202431';ctx.lineWidth=.5;ctx.stroke();line(-4,0,10,0,'#858ea0',.5);line(-10,-5,-4,0,'#b2bbc5',.5);ctx.restore();
+      // Discrete one-pixel nose movement keeps the sprite crisp while banking.
+      const bank=plane.vy < -12 ? -1 : plane.vy > 12 ? 1 : 0;
+      for(let x=0;x<31;x++)ctx.drawImage(spriteCanvas,x,0,1,12,x-15,Math.round((x-15)*bank/18)-6,1,12);
+      ctx.restore();
     }
-    if(hint>0) {rect(75,30,256,17,'#111a2e');text('COLLECT ALL 3 NOTES, THEN EXIT →',84,41,'#eee0bb',8);}
     const total=collected.reduce((sum,notes)=>sum+notes.size,0);
-    score.textContent=String(total*1000).padStart(6,'0');roomLabel.textContent=room===0?'Tokyo Blue Note':'Le Minuit, Paris';
+    score.textContent=String(total*1000).padStart(6,'0');roomLabel.textContent=mode==='won'?'Flight complete!':mode==='over'?'Out of planes':hint>0?'Find all 3 notes':room===0?'Tokyo Blue Note':'Le Minuit, Paris';
+    roomLabel.title=mode==='won'||mode==='over'?'Press Enter or Restart to fly again':roomLabel.textContent;
     win.querySelector('#glider-room-number').textContent=room+1;
     win.querySelector('#glider-note-number').textContent=collected[room].size;
     win.querySelector('#glider-fuel').textContent=Math.round(plane.fuel*100);
@@ -91,25 +113,27 @@
   }
   function show(title,body,button) {heading.textContent=title;copy.textContent=body;start.textContent=button;overlay.hidden=false;}
   function clearKeys(){Object.keys(keys).forEach(k=>keys[k]=false);win.querySelectorAll('.pressed').forEach(el=>el.classList.remove('pressed'));}
-  function loseLife(){lives--;clearKeys();if(lives===0){mode='over';show('A little turbulence…','Out of paper planes. Take another flight from Tokyo.','TRY AGAIN →');}else resetPlane();}
+  function loseLife(){lives--;clearKeys();if(lives===0){mode='over';overlay.hidden=true;win.querySelector('.glider-reset').focus({preventScroll:true});}else resetPlane();}
   function update(dt) {
     elapsed+=dt;invincible=Math.max(0,invincible-dt);hint=Math.max(0,hint-dt);
     const direction=Number(keys.right)-Number(keys.left);
-    plane.vx+=(direction*80-plane.vx)*Math.min(1,dt*8);if(direction)plane.facing=direction;
+    // A released plane keeps gliding; reversing has a short, smooth turn.
+    if(direction)plane.facing=direction;
+    plane.vx+=((direction?direction*72:plane.facing*36)-plane.vx)*(1-Math.exp(-dt*4));
     const onVent=rooms[room].vents.some((v,i)=>plane.x>v.x && plane.x<v.x+v.w && plane.y>rooms[room].notes[i].y-10);
     const boost=keys.lift&&plane.fuel>0;
-    plane.vy+= (onVent?-140:boost?-150:49)*dt;
-    plane.vy=Math.max(-67,Math.min(44,plane.vy));
+    const verticalTarget=onVent?-43:boost?-48:23;
+    plane.vy+=(verticalTarget-plane.vy)*(1-Math.exp(-dt*(onVent||boost?3.2:2)));
     plane.fuel=Math.max(0,Math.min(1,plane.fuel+((boost&&!onVent)?-.46:.24)*dt));
     plane.x+=plane.vx*dt;plane.y+=plane.vy*dt;
     if(plane.y<19){plane.y=19;plane.vy=7;}
-    if(plane.x<12){if(room===1 && plane.y>rooms[room].door[0] && plane.y<rooms[room].door[1]){room=0;plane.x=379;plane.y=168;}else plane.x=12;}
+    if(plane.x<12){if(room===1 && plane.y>rooms[room].door[0] && plane.y<rooms[room].door[1]){room=0;plane.x=379;plane.y=168;invincible=.8;}else{plane.x=12;plane.facing=1;plane.vx=36;}}
     rooms[room].notes.forEach((n,i)=>{if(Math.hypot(plane.x-n.x,plane.y-n.y)<18)collected[room].add(i);});
     if(plane.x>387){
       if(plane.y>rooms[room].door[0] && plane.y<rooms[room].door[1] && collected[room].size===3){
-        clearKeys();if(room===0){room=1;resetPlane();mode='between';show('Next stop: Paris','Three notes collected. A little jazz bar awaits.','ENTER PARIS →');}
-        else {mode='won';show('One lovely night.','Six notes, two cities. Thanks for staying a little longer.','FLY AGAIN ↻');}
-      }else{plane.x=387;hint=2;}
+        if(room===0){room=1;plane.x=22;invincible=.8;hint=0;}
+        else {clearKeys();mode='won';overlay.hidden=true;win.querySelector('.glider-reset').focus({preventScroll:true});}
+      }else{plane.x=387;plane.facing=-1;plane.vx=-36;hint=2;}
     }
     const collision=plane.y>rooms[room].floor-5 || rooms[room].blocks.some(b=>plane.x+7>b.x&&plane.x-7<b.x+b.w&&plane.y+4>b.y&&plane.y-4<b.y+b.h);
     if(collision&&invincible===0)loseLife();
@@ -124,7 +148,7 @@
   pause.addEventListener('click',setPaused);
   win.querySelector('.glider-reset').addEventListener('click',()=>{reset();mode='playing';overlay.hidden=true;pause.textContent='Ⅱ';clearKeys();win.focus({preventScroll:true});});
   const keyMap={ArrowLeft:'left',a:'left',A:'left',ArrowRight:'right',d:'right',D:'right',' ':'lift',ArrowUp:'lift'};
-  win.addEventListener('keydown',e=>{if(mode==='intro'&&e.key==='Enter'){e.preventDefault();enter.click();return;}if(keyMap[e.key]){e.preventDefault();keys[keyMap[e.key]]=true;}if((e.key==='p'||e.key==='P'||e.key==='Tab')&&!e.repeat){e.preventDefault();setPaused();}});
+  win.addEventListener('keydown',e=>{if(e.key==='Enter'&&['intro','won','over'].includes(mode)){e.preventDefault();if(mode==='intro')enter.click();else win.querySelector('.glider-reset').click();return;}if(keyMap[e.key]){e.preventDefault();keys[keyMap[e.key]]=true;}if((e.key==='p'||e.key==='P'||(e.key==='Tab'&&mode==='playing'))&&!e.repeat){e.preventDefault();setPaused();}});
   window.addEventListener('keyup',e=>{if(keyMap[e.key])keys[keyMap[e.key]]=false;});
   window.addEventListener('blur',()=>{clearKeys();if(!win.hidden&&mode==='playing')setPaused();});
   document.addEventListener('visibilitychange',()=>{if(document.hidden){clearKeys();if(!win.hidden&&mode==='playing')setPaused();}});
