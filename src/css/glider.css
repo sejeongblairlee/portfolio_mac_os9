@@ -13,11 +13,10 @@
 .glider-splash { position:relative; background:#000; color:#fff4d9; }
 .glider-splash[hidden] { display:none; }
 .glider-splash img { display:block; width:100%; height:auto; image-rendering:pixelated; }
-.glider-credit { position:absolute; top:12%; left:60%; right:5%; margin:0; font-size:clamp(12px, 3.3cqw, 22px); line-height:1.15; text-shadow:2px 2px #000; }
-.glider-credit small { display:block; margin-top:10%; font-size:.68em; line-height:1.2; }
 .glider-enter { position:absolute; inset:0; width:100%; background:transparent; border:0; padding:0; }
 .glider-enter:focus-visible { outline:2px solid cyan; outline-offset:-3px; }
 .glider-load-status { position:absolute; bottom:2%; left:0; right:0; font-size:clamp(11px, 2.7cqw, 18px); color:#fff4d9; text-shadow:2px 2px #000; }
+.glider-load-status:empty { display:none; }
 .glider-enter:disabled { cursor:wait; }
 .glider-stage button { font:inherit; color:inherit; cursor:pointer; }
 .glider-hud { position:absolute; top:1%; left:1%; right:1%; display:grid; grid-template-columns:1.6fr .38fr .7fr 1.4fr; align-items:stretch; gap:1%; font-size:clamp(10px, 3.1cqw, 25px); line-height:1; z-index:2; pointer-events:none; }

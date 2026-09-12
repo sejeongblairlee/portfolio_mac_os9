@@ -7,7 +7,7 @@
   mount.innerHTML = `<section class="glider-win is-splash" id="glider-win" hidden aria-label="Glider 2026" tabindex="-1">
     <header class="glider-header mac-window-header"><div class="mac-window-header-side"><button class="glider-close mac-window-close" aria-label="Close game"></button><span class="mac-window-header-pinstripe" aria-hidden="true"></span></div><span class="glider-title mac-window-header-title">Glider 2026</span><div class="mac-window-header-side mac-window-header-side-right"><span class="mac-window-header-pinstripe" aria-hidden="true"></span></div></header>
     <div class="glider-stage">
-      <div class="glider-splash"><img src="src/images/glider/title-2026-v4.png" alt="Glider 2026 paper airplane against Paris wallpaper"><p class="glider-credit">A 2026 homage<br>by Sejeong Lee.<small>Inspired by John Calhoun's original.</small></p><button class="glider-enter" disabled aria-label="Start game"><span class="glider-load-status" role="status">LOADING…</span></button></div>
+      <div class="glider-splash"><img src="src/images/glider/title-2026-final.png" alt="Glider 2026 paper airplane against Paris wallpaper"><button class="glider-enter" disabled aria-label="Start game"><span class="glider-load-status" role="status">LOADING…</span></button></div>
       <canvas width="800" height="500" aria-label="Paper plane game: use left and right to glide, hold Lift for a short updraft boost."></canvas>
       <div class="glider-hud" aria-label="Game status"><span id="glider-room" class="glider-hud-box">Tokyo Blue Note</span><span class="glider-cards"><b id="glider-room-number" title="Room">1</b><b id="glider-note-number" title="Notes collected in this room">0</b></span><span id="glider-score" class="glider-hud-box" title="Score">000000</span><span class="glider-hud-box glider-supplies"><span class="glider-fuel" title="Lift energy"><span id="glider-fuel">100</span><i class="glider-battery" aria-hidden="true"></i></span><span class="glider-notes" title="Total notes"><span id="glider-notes">0</span> ♪</span><span id="glider-lives" aria-label="3 lives"></span></span></div>
       <div class="glider-overlay" hidden><small>JAZZ AFTER HOURS</small><h2>Jazz After Hours</h2><p>A paper flight from Tokyo to Paris.</p><button class="glider-start">LET'S FLY →</button></div>
@@ -24,7 +24,7 @@
   function loadArt(){
     enter.disabled=true;
     Promise.all(roomArt.map(img=>img.decode())).then(()=>{
-      loadStatus.textContent='CLICK OR PRESS ENTER TO BEGIN';enter.disabled=false;
+      loadStatus.textContent='';enter.disabled=false;
     }).catch(()=>{loadStatus.textContent='COULD NOT LOAD ROOMS · CLICK TO RETRY';enter.disabled=false;});
   }
   enter.addEventListener('click',()=>{
@@ -124,7 +124,7 @@
   pause.addEventListener('click',setPaused);
   win.querySelector('.glider-reset').addEventListener('click',()=>{reset();mode='playing';overlay.hidden=true;pause.textContent='Ⅱ';clearKeys();win.focus({preventScroll:true});});
   const keyMap={ArrowLeft:'left',a:'left',A:'left',ArrowRight:'right',d:'right',D:'right',' ':'lift',ArrowUp:'lift'};
-  win.addEventListener('keydown',e=>{if(mode==='intro'&&e.key==='Enter'){e.preventDefault();enter.click();return;}if(keyMap[e.key]){e.preventDefault();keys[keyMap[e.key]]=true;}if((e.key==='p'||e.key==='P')&&!e.repeat){e.preventDefault();setPaused();}});
+  win.addEventListener('keydown',e=>{if(mode==='intro'&&e.key==='Enter'){e.preventDefault();enter.click();return;}if(keyMap[e.key]){e.preventDefault();keys[keyMap[e.key]]=true;}if((e.key==='p'||e.key==='P'||e.key==='Tab')&&!e.repeat){e.preventDefault();setPaused();}});
   window.addEventListener('keyup',e=>{if(keyMap[e.key])keys[keyMap[e.key]]=false;});
   window.addEventListener('blur',()=>{clearKeys();if(!win.hidden&&mode==='playing')setPaused();});
   document.addEventListener('visibilitychange',()=>{if(document.hidden){clearKeys();if(!win.hidden&&mode==='playing')setPaused();}});
