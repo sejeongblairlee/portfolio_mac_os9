@@ -35,10 +35,11 @@ const SAFE = 20;
 
 function clampToSafeArea(x, y, winW, winH, vw, vh) {
   const maxX = Math.max(vw - winW - SAFE, SAFE);
-  const maxY = Math.max(vh - winH - SAFE, SAFE);
+  const minY = vw <= 768 ? 28 + SAFE : SAFE;
+  const maxY = Math.max(vh - winH - SAFE, minY);
   return [
     Math.min(Math.max(x, SAFE), maxX),
-    Math.min(Math.max(y, SAFE), maxY),
+    Math.min(Math.max(y, minY), maxY),
   ];
 }
 
@@ -149,6 +150,10 @@ document.querySelectorAll('.cu-win').forEach((win) => {
     const minVisible = 60;
     nx = Math.max(-win.offsetWidth + minVisible, Math.min(nx, window.innerWidth - minVisible));
     ny = Math.max(0, Math.min(ny, window.innerHeight - 24));
+    if (window.matchMedia('(max-width: 768px), (pointer: coarse) and (max-height: 768px)').matches) {
+      nx = Math.max(20, Math.min(nx, window.innerWidth - win.offsetWidth - 20));
+      ny = Math.max(48, Math.min(ny, window.innerHeight - win.offsetHeight - 20));
+    }
     win.style.left = nx + 'px';
     win.style.top = ny + 'px';
   });
@@ -547,6 +552,10 @@ function makeCenteredWinDraggable(win, headerEl, closeSelector) {
     const minVisible = 60;
     nx = Math.max(-win.offsetWidth + minVisible, Math.min(nx, window.innerWidth - minVisible));
     ny = Math.max(0, Math.min(ny, window.innerHeight - 24));
+    if (window.matchMedia('(max-width: 768px), (pointer: coarse) and (max-height: 768px)').matches) {
+      nx = Math.max(20, Math.min(nx, window.innerWidth - win.offsetWidth - 20));
+      ny = Math.max(48, Math.min(ny, window.innerHeight - win.offsetHeight - 20));
+    }
     win.style.left = nx + 'px';
     win.style.top = ny + 'px';
   });

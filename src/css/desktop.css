@@ -442,6 +442,24 @@ body {
   display:flex; flex-direction:column; align-items:center;
   box-shadow: inset 1px 1px 0 0 #eee, inset -1px -1px 0 0 #999, 2px 2px 0 0 rgba(0,0,0,0.5);
 }
+/* Mobile Works stays within the visible viewport below the OS menu bar.
+   Override inline drag/resize geometry so reopening or rotating cannot hide its header. */
+@media (max-width: 768px), (pointer: coarse) and (max-height: 768px) {
+  .browser-win {
+    left: max(20px, env(safe-area-inset-left)) !important;
+    top: 48px !important;
+    transform: none !important;
+    width: calc(100vw - max(20px, env(safe-area-inset-left)) - max(20px, env(safe-area-inset-right))) !important;
+    height: calc(100vh - 48px - max(20px, env(safe-area-inset-bottom))) !important;
+    height: calc(100dvh - 48px - max(20px, env(safe-area-inset-bottom))) !important;
+    min-width: 0;
+    min-height: 0;
+  }
+  .browser-win .browser-header { cursor: default; }
+  .browser-win .browser-resize-handle,
+  .browser-win .win-rs-e,
+  .browser-win .win-rs-w { display: none; }
+}
 /* 우하단 리사이즈 핸들 — 처음엔 blairtunes(.bt-rs)처럼 완전 투명 히트 영역만
    뒀었는데, 로직은 멀쩡한데도 "리사이즈가 안 된다"는 리포트가 있었음 — 원인은
    버그가 아니라 순전히 발견성(discoverability): 아무 표시도 없는 16px 구역을
@@ -895,4 +913,25 @@ body {
 .welcome-win::after {
   content:''; position:absolute; inset:0; pointer-events:none; z-index:9999;
   box-shadow: inset 1px 1px 0 0 #eee, inset -1px -1px 0 0 #999;
+}
+
+/* Keep the desktop canvas and its menu in the visible mobile viewport. */
+@media (max-width: 768px), (pointer: coarse) and (max-height: 768px) {
+  html { height: 100%; overflow: hidden; }
+  body { position: fixed; inset: 0; height: 100dvh; overflow: hidden; }
+  #menu-bar { position: fixed; z-index: 2147483647; }
+  .mb-lead, .mb-trail { gap: 2px; }
+  .mb-item { padding-inline: 4px; font-size: 12px; }
+  .mb-tiger { width: 36px; }
+  .mb-nav-label { max-width: 65px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+  .cu-win { position: fixed; max-height: calc(100dvh - 68px); overflow: auto; }
+  .welcome-win {
+    left: 20px !important;
+    top: 80px !important;
+    transform: none !important;
+    width: calc(100vw - 40px);
+    max-height: calc(100dvh - 100px);
+    overflow: auto;
+  }
+  .welcome-header, .cu-header { position: sticky; top: 0; z-index: 1; flex-shrink: 0; }
 }
