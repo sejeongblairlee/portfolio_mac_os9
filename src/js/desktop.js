@@ -853,6 +853,15 @@ makeCenteredWinDraggable(winAi, winAi.querySelector('.ai-header'), '.ai-close');
 makeCenteredWinResizable(winAi, document.getElementById('ai-resize-handle'), 360, 300, updateAiScrollbar);
 makeEdgeResizable(winAi, 360, updateAiScrollbar);
 
+// 공유 링크도 기존 아이콘의 열기/중앙 배치/스크롤바 처리를 재사용한다.
+const sharedWindowIcon = { film: 'icon-film', 'ai-images': 'icon-ai' }[
+  new URLSearchParams(window.location.search).get('open')
+];
+if (sharedWindowIcon) {
+  requestAnimationFrame(() => document.getElementById(sharedWindowIcon).click());
+}
+
+
 // ── "If you want to ...SEE ME?" 아이콘 → CU-SeeMe 창 다시 열기 ─────────────
 document.getElementById('icon-seeme').addEventListener('click', () => {
   ['win-local', 'win-you'].forEach((id) => {
