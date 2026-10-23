@@ -223,13 +223,18 @@ function applyBayerDither(ctx, w, h) {
 // you-canvas: 웹캠 실시간 도트 필터 (BACK TO 90's 토글)
 // 15fps 제한 — 레트로 느낌 + local-canvas 루프와 getImageData 겹침 방지
 const youCtx = youCanvas.getContext('2d');
-const YOU_W = youCanvas.width, YOU_H = youCanvas.height;
+const YOU_W = youCanvas.width;
 let ditherRafId = null;
 let lastDitherTime = 0;
 function ditherLoop(now) {
   if (!filterOn || !camStream) { ditherRafId = null; return; }
-  if (now - lastDitherTime >= 66) {  // ~15fps
+  if (now - lastDitherTime >= 66 && youVideo.readyState >= 2 &&
+      youVideo.videoWidth > 0 && youVideo.videoHeight > 0) {  // ~15fps
     lastDitherTime = now;
+    // 카메라의 실제 비율을 유지해야 CSS object-fit:cover가 원본 영상과
+    // 같은 영역을 보여준다. 모바일 세로 영상을 4:3으로 압축하지 않는다.
+    const YOU_H = Math.max(1, Math.round(YOU_W * youVideo.videoHeight / youVideo.videoWidth));
+    if (youCanvas.height !== YOU_H) youCanvas.height = YOU_H;
     youCtx.save();
     youCtx.scale(-1, 1);
     youCtx.drawImage(youVideo, -YOU_W, 0, YOU_W, YOU_H);
