@@ -1,4 +1,4 @@
 User-agent: *
 Allow: /
 
-Sitemap: https://portfolio-mu-tan-9x1aeva6c8.vercel.app/sitemap.xml
+Sitemap: https://sj.contextroom.works/sitemap.xml
