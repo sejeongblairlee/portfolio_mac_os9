@@ -1011,14 +1011,14 @@ async function initBlairTunes() {
     window.__bringToFront?.(win);
     window.__tigerRun?.reportWindowAction();
     const t = tracks[currentIndexOf()];
-    if (wasClosed && t?.youtube_video_id && t.youtube_video_id !== currentVideoId) {
+    if (autoplay && wasClosed && t?.youtube_video_id && t.youtube_video_id !== currentVideoId) {
       rebuildPlayer(t.youtube_video_id, autoplay).catch((e) => console.warn('[blair-tunes] YT init:', e));
     }
   };
   document.getElementById('icon-tunes')?.addEventListener('click', () => openPlayer());
 
   // 곡 목록과 컨트롤 준비 후, 바탕화면의 초기 RAF 배치 다음에 연다.
-  // 링크 접속은 사용자 재생 제스처가 아니므로 자동재생하지 않는다.
+  // 링크에서는 창만 열고, YouTube 플레이어는 사용자가 재생할 때 준비한다.
   if (new URLSearchParams(window.location.search).get('open') === 'blairtunes') {
     requestAnimationFrame(() => openPlayer({ autoplay: false }));
   }
