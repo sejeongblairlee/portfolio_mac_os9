@@ -995,29 +995,34 @@ async function initBlairTunes() {
   document.querySelectorAll('.bt-prev').forEach((b) => b.addEventListener('click', () => stepTrack(-1)));
   document.querySelectorAll('.bt-next').forEach((b) => b.addEventListener('click', () => stepTrack(1)));
 
-  // "Enjoy Music!" → 플레이어 열기 + 현재 트랙 자동재생 (클릭 제스처 활용)
-  const icon = document.getElementById('icon-tunes');
-  if (icon) {
-    icon.addEventListener('click', () => {
-      const win = document.getElementById('bt-win');
-      const wasClosed = win.hidden && !state.isMinimized;
-      if (state.isMinimized) setMinimized(false);   // 미니 → 풀 플레이어 (재생 유지)
-      win.hidden = false;
-      window.__centerPopupForMobile?.(win);
-      // ResizeObserver는 창이 hidden→visible로 바뀌는 순간을 못 잡을 때가
-      // 있어서(관찰 시작 시점에 이미 display:none이면 최초 콜백이 안 옴)
-      // 여기서 직접 한 번 더 불러 확실히 맞춘다 — getBoundingClientRect()가
-      // 강제 동기 레이아웃을 유발하므로 hidden 해제 직후에 호출해도 정확한
-      // 값을 읽는다.
-      syncSideColumnHeights();
-      window.__bringToFront?.(win);
-      window.__tigerRun?.reportWindowAction();
-      const t = tracks[currentIndexOf()];
-      if (wasClosed && t?.youtube_video_id && t.youtube_video_id !== currentVideoId) {
-        rebuildPlayer(t.youtube_video_id, true).catch((e) => console.warn('[blair-tunes] YT init:', e));
-      }
-    });
+  // 아이콘과 공유 링크에서 같은 창 열기/모바일 배치 로직을 사용한다.
+  const openPlayer = ({ autoplay = true } = {}) => {
+    const win = document.getElementById('bt-win');
+    const wasClosed = win.hidden && !state.isMinimized;
+    if (state.isMinimized) setMinimized(false);   // 미니 → 풀 플레이어 (재생 유지)
+    win.hidden = false;
+    window.__centerPopupForMobile?.(win);
+    // ResizeObserver는 창이 hidden→visible로 바뀌는 순간을 못 잡을 때가
+    // 있어서(관찰 시작 시점에 이미 display:none이면 최초 콜백이 안 옴)
+    // 여기서 직접 한 번 더 불러 확실히 맞춘다 — getBoundingClientRect()가
+    // 강제 동기 레이아웃을 유발하므로 hidden 해제 직후에 호출해도 정확한
+    // 값을 읽는다.
+    syncSideColumnHeights();
+    window.__bringToFront?.(win);
+    window.__tigerRun?.reportWindowAction();
+    const t = tracks[currentIndexOf()];
+    if (wasClosed && t?.youtube_video_id && t.youtube_video_id !== currentVideoId) {
+      rebuildPlayer(t.youtube_video_id, autoplay).catch((e) => console.warn('[blair-tunes] YT init:', e));
+    }
+  };
+  document.getElementById('icon-tunes')?.addEventListener('click', () => openPlayer());
+
+  // 곡 목록과 컨트롤 준비 후, 바탕화면의 초기 RAF 배치 다음에 연다.
+  // 링크 접속은 사용자 재생 제스처가 아니므로 자동재생하지 않는다.
+  if (new URLSearchParams(window.location.search).get('open') === 'blairtunes') {
+    requestAnimationFrame(() => openPlayer({ autoplay: false }));
   }
+
 }
 
 initBlairTunes();
