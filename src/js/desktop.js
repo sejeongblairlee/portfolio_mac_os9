@@ -89,15 +89,9 @@ function layoutWindows() {
 }
 layoutWindows();
 window.addEventListener('resize', layoutWindows);
-// 초기 상태: Works(브라우저 창)도 기본으로 같이 열어두되 맨 밑에 깔리게 —
-// CU-SeeMe 두 창보다 먼저 openCenteredDraggableWin()으로 z-index를 받아야
-// 더 낮은 값이 됨. openBrowserWin은 파일 아래쪽(Works 섹션)에서 선언되지만
-// 함수 선언이라 호이스팅되고, 이 콜백은 RAF라 스크립트 전체가 동기 실행을
-// 마친 뒤에야 실행되므로 아래쪽 const(winBrowser 등)도 이미 준비돼 있음.
+// 초기 상태: CU-SeeMe와 Welcome만 열고 Works는 아이콘/메뉴 클릭 시 연다.
 requestAnimationFrame(() => {
-  openBrowserWin();
-  // CU-SeeMe 두 창을 Works보다 위로 — Remote 먼저, Local 마지막(icon-seeme
-  // 재오픈 로직과 동일 순서, 최종적으로 Local이 맨 위=기본 포커스).
+  // Remote 먼저, Local 마지막으로 기존 CU-SeeMe 포커스 순서를 유지한다.
   focusWin(document.getElementById('win-you'));
   focusWin(document.getElementById('win-local'));
   openCenteredDraggableWin(document.getElementById('win-welcome'));
