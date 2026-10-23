@@ -854,9 +854,9 @@ makeCenteredWinResizable(winAi, document.getElementById('ai-resize-handle'), 360
 makeEdgeResizable(winAi, 360, updateAiScrollbar);
 
 // 공유 링크도 기존 아이콘의 열기/중앙 배치/스크롤바 처리를 재사용한다.
-const sharedWindowIcon = { film: 'icon-film', 'ai-images': 'icon-ai' }[
+const sharedWindowIcon = new Map([['film', 'icon-film'], ['ai-images', 'icon-ai']]).get(
   new URLSearchParams(window.location.search).get('open')
-];
+);
 if (sharedWindowIcon) {
   requestAnimationFrame(() => document.getElementById(sharedWindowIcon).click());
 }
