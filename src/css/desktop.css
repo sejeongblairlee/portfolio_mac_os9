@@ -239,6 +239,7 @@ body {
      우하단 그레이 섀도만으로 살짝 튀어나온 느낌을 줌 */
   box-shadow: inset 1px 1px 0 0 #fff, inset -1px -1px 0 0 #999;
 }
+#btn-filter { text-transform:none; }
 .cu-btn:active { background:#000; color:#fff; }
 .cu-btn.primary {
   background:#000CEE; color:#fff; padding:4px 10px;
